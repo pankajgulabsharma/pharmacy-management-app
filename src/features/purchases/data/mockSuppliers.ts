@@ -1,0 +1,68 @@
+import type { Supplier } from "../types";
+
+export const mockSuppliers: Supplier[] = [
+  {
+    id: "s1",
+    name: "Shree Ganesh Pharma Distributors",
+    gstin: "27AAPFS1234K1Z5",
+    phone: "9820012345",
+    city: "Mumbai",
+    creditDays: 30,
+  },
+  {
+    id: "s2",
+    name: "Om Sai Medical Agencies",
+    gstin: "27AACFO5678L1Z2",
+    phone: "9821023456",
+    city: "Thane",
+    creditDays: 15,
+  },
+  {
+    id: "s3",
+    name: "Balaji Drug House",
+    gstin: "27AAHFB9012M1Z8",
+    phone: "9833034567",
+    city: "Navi Mumbai",
+    creditDays: 45,
+  },
+  {
+    id: "s4",
+    name: "Navkar Healthcare LLP",
+    gstin: "27AARFN3456N1Z1",
+    phone: "9867045678",
+    city: "Mumbai",
+    creditDays: 30,
+  },
+  {
+    id: "s5",
+    name: "Mahalaxmi Pharma Traders",
+    gstin: "27AAMFM7788P1Z4",
+    phone: "9819056789",
+    city: "Kalyan",
+    creditDays: 21,
+  },
+  {
+    id: "s6",
+    name: "Sanjivani Medico Distributors",
+    gstin: "27AASFS2468Q1Z7",
+    phone: "9892067890",
+    city: "Pune",
+    creditDays: 30,
+  },
+  {
+    id: "s7",
+    name: "Arihant Surgical & Pharma",
+    gstin: "27AAAFA1357R1Z3",
+    phone: "9930078901",
+    city: "Bhiwandi",
+    creditDays: 7,
+  },
+  {
+    id: "s8",
+    name: "Jai Ambe Medical Stores (Wholesale)",
+    gstin: "27AAJFJ8642S1Z9",
+    phone: "9769089012",
+    city: "Vasai",
+    creditDays: 60,
+  },
+];
