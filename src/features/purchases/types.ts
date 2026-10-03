@@ -32,15 +32,7 @@ export const PURCHASE_LIMITS = {
 /* Domain                                                             */
 /* ------------------------------------------------------------------ */
 
-export type Supplier = {
-  id: string;
-  name: string;
-  gstin: string;
-  phone: string;
-  city: string;
-  /** Payment terms in days from invoice date */
-  creditDays: number;
-};
+export type { Supplier } from "@/features/suppliers/types";
 
 export type PurchaseLine = {
   id: string;
@@ -80,8 +72,16 @@ export type PurchaseTotals = {
   netPaise: Paise;
 };
 
+export type PurchaseStatus = "active" | "cancelled";
+
 export type Purchase = {
   id: string;
+  status: PurchaseStatus;
+  /**
+   * True when this invoice's goods were added to inventory by the app.
+   * Older history imported without stock is false and is read-only.
+   */
+  stockPosted: boolean;
   supplierId: string;
   supplierName: string;
   supplierGstin: string;
@@ -95,12 +95,21 @@ export type Purchase = {
   lines: PurchaseLine[];
   notes: string;
   paidPaise: Paise;
-  /** Calculated once at save time — the invoice is immutable */
+  /** Total of debit notes (returns) raised against this invoice */
+  returnedPaise: Paise;
+  /** Calculated at save time; recalculated only by an edit */
   totals: PurchaseTotals;
+  /** Starts at 1, +1 on every edit */
+  revision: number;
+  /** ISO timestamp of the last change */
+  updatedAt: string;
+  cancelledAt?: string;
+  cancelReason?: string;
 };
 
 /** Derived from paid vs net and due date — never stored */
-export type PaymentStatus = "paid" | "partial" | "due" | "overdue";
+export type PaymentStatus =
+  "paid" | "partial" | "due" | "overdue" | "cancelled";
 export type PurchaseStatusFilter = "all" | PaymentStatus;
 
 export const PAYMENT_STATUS_META: Record<
@@ -111,6 +120,83 @@ export const PAYMENT_STATUS_META: Record<
   partial: { label: "Partially paid", tone: "caution" },
   due: { label: "Due", tone: "warning" },
   overdue: { label: "Overdue", tone: "danger" },
+  cancelled: { label: "Cancelled", tone: "neutral" },
+};
+
+/* ------------------------------------------------------------------ */
+/* Purchase return (debit note)                                       */
+/* ------------------------------------------------------------------ */
+
+export const RETURN_REASONS = {
+  expired: "Expired",
+  near_expiry: "Near expiry",
+  damaged: "Damaged / broken",
+  wrong_item: "Wrong item supplied",
+  excess: "Excess / not ordered",
+  other: "Other",
+} as const;
+
+export type ReturnReason = keyof typeof RETURN_REASONS;
+
+export const CANCEL_REASONS = [
+  "Wrong supplier selected",
+  "Duplicate entry",
+  "Wrong quantities / rates — will re-enter",
+  "Goods not received",
+  "Other",
+] as const;
+
+export type PurchaseReturnLine = {
+  id: string;
+  /** Line of the original invoice */
+  purchaseLineId: string;
+  medicineId: string;
+  medicineName: string;
+  brand: string;
+  unit: PackUnit;
+  unitsPerStrip: number;
+  batchNo: string;
+  expiry: string;
+  /** Packs returned (loose units for LSE medicines) */
+  qty: number;
+  /** Credit per pack = landed cost per pack of the original line (incl. GST) */
+  ratePaise: Paise;
+  gstPercent: GstRate;
+  /** qty × rate, incl. GST */
+  amountPaise: Paise;
+  /** GST part of amountPaise */
+  gstPaise: Paise;
+};
+
+export type PurchaseReturn = {
+  id: string;
+  /** Sequential, e.g. "DN-0007" */
+  returnNo: string;
+  purchaseId: string;
+  invoiceNo: string;
+  supplierId: string;
+  supplierName: string;
+  supplierGstin: string;
+  /** "YYYY-MM-DD" */
+  date: string;
+  reason: ReturnReason;
+  notes: string;
+  lines: PurchaseReturnLine[];
+  totalQty: number;
+  /** Incl. GST — reduces what we owe the supplier */
+  totalPaise: Paise;
+  gstPaise: Paise;
+  /** ISO timestamp */
+  createdAt: string;
+};
+
+/** What the return form submits */
+export type PurchaseReturnInput = {
+  purchaseId: string;
+  date: string;
+  reason: ReturnReason;
+  notes: string;
+  lines: { purchaseLineId: string; qty: number }[];
 };
 
 /* ------------------------------------------------------------------ */

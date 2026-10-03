@@ -1,4 +1,4 @@
-import type { Purchase } from "../types";
+import type { Purchase, PurchaseReturn } from "../types";
 
 function normalize(s: string) {
   return s.toLowerCase().trim().replace(/\s+/g, " ");
@@ -31,4 +31,27 @@ export function purchaseMatchesQuery(p: Purchase, query: string): boolean {
   if (!q) return true;
   const hay = haystackFor(p);
   return q.split(" ").every((token) => hay.includes(token));
+}
+
+const returnCache = new WeakMap<PurchaseReturn, string>();
+
+/** Debit note search: number, supplier, invoice, medicine, batch */
+export function returnMatchesQuery(r: PurchaseReturn, query: string): boolean {
+  const q = normalize(query);
+  if (!q) return true;
+  let hay = returnCache.get(r);
+  if (hay === undefined) {
+    hay = normalize(
+      [
+        r.returnNo,
+        r.supplierName,
+        r.supplierGstin,
+        r.invoiceNo,
+        r.notes,
+        ...r.lines.flatMap((l) => [l.medicineName, l.batchNo]),
+      ].join(" "),
+    );
+    returnCache.set(r, hay);
+  }
+  return q.split(" ").every((t) => hay.includes(t));
 }

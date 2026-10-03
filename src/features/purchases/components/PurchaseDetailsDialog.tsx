@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type FormEvent } from "react";
-import { FileText, X } from "lucide-react";
+import { Ban, FileText, Lock, Pencil, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ModalShell } from "@/components/common/ModalShell";
@@ -18,36 +18,41 @@ import {
   parseRupees,
   type Paise,
 } from "@/lib/money";
+import { usePurchaseStore } from "../store/usePurchaseStore";
+import { usePurchaseRules } from "../hooks/usePurchaseRules";
 import {
   PAYMENT_STATUS_META,
   type PaymentStatus,
   type Purchase,
+  type PurchaseReturn,
 } from "../types";
-import { calcLine, getDuePaise } from "../utils/calc";
+import { calcLine, getCreditPaise, getDuePaise } from "../utils/calc";
+import type { RuleResult } from "../utils/rules";
 import { validatePayment } from "../utils/validation";
 
-type Props = {
-  purchase: Purchase | null;
-  status: PaymentStatus | null;
+type Actions = {
   onClose: () => void;
   onRecordPayment: (id: string, amountPaise: Paise) => void;
+  onEdit: (p: Purchase) => void;
+  onCancel: (p: Purchase) => void;
+  onReturn: (p: Purchase) => void;
+  onViewReturn: (r: PurchaseReturn) => void;
 };
 
-/** Read-only invoice view + record a payment against the balance */
-export function PurchaseDetailsDialog({
-  purchase,
-  status,
-  onClose,
-  onRecordPayment,
-}: Props) {
+type Props = Actions & {
+  purchase: Purchase | null;
+  status: PaymentStatus | null;
+};
+
+/** Invoice view: actions (edit / return / cancel), returns and payments */
+export function PurchaseDetailsDialog({ purchase, status, ...actions }: Props) {
   if (!purchase || !status) return null;
   return (
     <Details
       key={purchase.id}
       purchase={purchase}
       status={status}
-      onClose={onClose}
-      onRecordPayment={onRecordPayment}
+      {...actions}
     />
   );
 }
@@ -57,13 +62,17 @@ function Details({
   status,
   onClose,
   onRecordPayment,
-}: {
-  purchase: Purchase;
-  status: PaymentStatus;
-  onClose: () => void;
-  onRecordPayment: (id: string, amountPaise: Paise) => void;
-}) {
+  onEdit,
+  onCancel,
+  onReturn,
+  onViewReturn,
+}: Actions & { purchase: Purchase; status: PaymentStatus }) {
   const titleId = useId();
+  const rules = usePurchaseRules(p);
+  const allReturns = usePurchaseStore((s) => s.returns);
+  const returns = allReturns.filter((r) => r.purchaseId === p.id);
+  const creditPaise = getCreditPaise(p);
+  const cancelled = p.status === "cancelled";
   const amountRef = useRef<HTMLInputElement>(null);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +117,20 @@ function Details({
           <StatusBadge tone={meta.tone} className="ml-1">
             {meta.label}
           </StatusBadge>
+          {p.revision > 1 ? (
+            <StatusBadge
+              tone="neutral"
+              title="Number of times this invoice was edited"
+            >
+              Rev {p.revision}
+            </StatusBadge>
+          ) : null}
+          {!p.stockPosted ? (
+            <StatusBadge tone="neutral">
+              <Lock className="h-2.5 w-2.5 mr-1" />
+              Imported
+            </StatusBadge>
+          ) : null}
         </div>
         <button
           type="button"
@@ -119,7 +142,41 @@ function Details({
         </button>
       </div>
 
+      {/* Actions */}
+      {rules && !cancelled ? (
+        <ActionBar
+          rules={rules}
+          onEdit={() => onEdit(p)}
+          onReturn={() => onReturn(p)}
+          onCancel={() => onCancel(p)}
+        />
+      ) : null}
+
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-3">
+        {cancelled ? (
+          <div className="flex gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-[11px]">
+            <Ban className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-foreground">
+                Cancelled
+                {p.cancelledAt
+                  ? ` on ${new Date(p.cancelledAt).toLocaleString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`
+                  : ""}
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                {p.cancelReason || "No reason recorded"} · its stock was removed
+                from inventory.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         {/* Meta */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
           <Meta label="Invoice date" value={formatISODate(p.invoiceDate)} />
@@ -227,7 +284,11 @@ function Details({
         {/* Totals + payment */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] items-start gap-3">
           <div className="rounded-lg border border-border p-3">
-            {duePaise > 0 ? (
+            {cancelled ? (
+              <p className="text-[11px] text-muted-foreground">
+                No payments can be recorded on a cancelled invoice.
+              </p>
+            ) : duePaise > 0 ? (
               <form onSubmit={handlePay} noValidate className="space-y-2">
                 <p className="text-[11px] font-medium text-foreground">
                   Record payment
@@ -286,9 +347,40 @@ function Details({
               </form>
             ) : (
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                This invoice is fully paid.
+                {creditPaise > 0
+                  ? `Nothing to pay. ${inrFromPaise(creditPaise)} is with the supplier as credit.`
+                  : "This invoice is fully paid."}
               </p>
             )}
+
+            {returns.length > 0 ? (
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="text-[11px] font-medium text-foreground mb-1.5">
+                  Debit notes ({returns.length})
+                </p>
+                <ul className="space-y-1">
+                  {returns.map((r) => (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => onViewReturn(r)}
+                        className="w-full flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[11px] hover:bg-muted"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <CodeChip>{r.returnNo}</CodeChip>
+                          <span className="text-muted-foreground truncate">
+                            {formatISODate(r.date)} · {r.totalQty} packs
+                          </span>
+                        </span>
+                        <span className="tabular-nums font-medium">
+                          {inrFromPaise(r.totalPaise)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-lg border border-border bg-muted/20 p-3 text-[11px] space-y-1.5">
@@ -312,6 +404,9 @@ function Details({
               </span>
             </div>
             <SumRow label="Paid" value={inrFromPaise(p.paidPaise)} />
+            {p.returnedPaise > 0 ? (
+              <SumRow label="Returned" value={inrFromPaise(p.returnedPaise)} />
+            ) : null}
             <div className="flex items-baseline justify-between">
               <span className="text-muted-foreground">Balance</span>
               <span
@@ -329,6 +424,86 @@ function Details({
         </div>
       </div>
     </ModalShell>
+  );
+}
+
+/** Edit / Return / Cancel, each disabled with the rule's reason when not allowed */
+function ActionBar({
+  rules,
+  onEdit,
+  onReturn,
+  onCancel,
+}: {
+  rules: { edit: RuleResult; cancel: RuleResult; return: RuleResult };
+  onEdit: () => void;
+  onReturn: () => void;
+  onCancel: () => void;
+}) {
+  const blocked = [rules.edit, rules.return, rules.cancel].find(
+    (r): r is Extract<RuleResult, { allowed: false }> => !r.allowed,
+  );
+  return (
+    <div className="border-b border-border px-4 py-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionButton
+          icon={Pencil}
+          label="Edit"
+          rule={rules.edit}
+          onClick={onEdit}
+        />
+        <ActionButton
+          icon={Undo2}
+          label="Return to supplier"
+          rule={rules.return}
+          onClick={onReturn}
+        />
+        <ActionButton
+          icon={Ban}
+          label="Cancel invoice"
+          rule={rules.cancel}
+          onClick={onCancel}
+          danger
+        />
+      </div>
+      {blocked ? (
+        <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-muted-foreground">
+          <Lock className="h-3 w-3 shrink-0 mt-px" />
+          {blocked.reason}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  label,
+  rule,
+  onClick,
+  danger,
+}: {
+  icon: typeof Pencil;
+  label: string;
+  rule: RuleResult;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={!rule.allowed}
+      title={rule.allowed ? label : rule.reason}
+      onClick={onClick}
+      className={cn(
+        "h-8 rounded-lg text-[11px] gap-1.5",
+        danger &&
+          "text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950",
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </Button>
   );
 }
 

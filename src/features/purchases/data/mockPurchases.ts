@@ -5,7 +5,7 @@ import { rupeesToPaise } from "@/lib/money";
 import type { GstRate, Purchase, PurchaseLine, Supplier } from "../types";
 import { calcTotals } from "../utils/calc";
 import { getDueDate } from "../utils/draft";
-import { mockSuppliers } from "./mockSuppliers";
+import { mockSuppliers } from "@/features/suppliers/data/mockSuppliers";
 
 /**
  * Demo purchase invoices.
@@ -21,6 +21,13 @@ const INVOICE_COUNT = 60;
 /** Invoices are spread over roughly the last 6 months */
 const SPREAD_DAYS = 180;
 const SEED = 20260917;
+/**
+ * The newest N invoices were "entered in this app", so their goods are in
+ * inventory and they can be edited, cancelled and returned. Older ones are
+ * history imported without stock (read-only) — like a shop migrating from
+ * paper or older software.
+ */
+export const STOCK_POSTED_COUNT = 8;
 
 /** mulberry32 — tiny deterministic PRNG */
 function createRandom(seed: number) {
@@ -174,18 +181,26 @@ function generate(): Purchase[] {
     counters[supplier.id] =
       (counters[supplier.id] ?? 1000 + int(0, 400)) + int(3, 25);
 
+    const createdAt = `${invoiceISO}T${String(int(9, 20)).padStart(2, "0")}:${String(int(0, 59)).padStart(2, "0")}:00`;
+    const stockPosted = i < STOCK_POSTED_COUNT;
+
     out.push({
       id: `pur_${String(INVOICE_COUNT - i).padStart(3, "0")}`,
+      status: "active",
+      stockPosted,
       supplierId: supplier.id,
       supplierName: supplier.name,
       supplierGstin: supplier.gstin,
       invoiceNo: `${PREFIX[supplier.id] ?? "INV-"}${counters[supplier.id]}`,
       invoiceDate: invoiceISO,
       dueDate: getDueDate(invoiceISO, supplier.creditDays),
-      createdAt: `${invoiceISO}T${String(int(9, 20)).padStart(2, "0")}:${String(int(0, 59)).padStart(2, "0")}:00`,
+      createdAt,
+      updatedAt: createdAt,
+      revision: 1,
       lines,
       notes: chance(0.2) ? pick(NOTES) : "",
       paidPaise: paidFor(totals.netPaise, ageDays, supplier),
+      returnedPaise: 0,
       totals,
     });
   }

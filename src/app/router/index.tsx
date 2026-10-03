@@ -6,6 +6,7 @@ import BillingPage from "@/features/billing/pages/BillingPage";
 import MedicinesPage from "@/features/medicines/pages/MedicinesPage";
 import InventoryPage from "@/features/inventory/pages/InventoryPage";
 import PurchasesPage from "@/features/purchases/pages/PurchasesPage";
+import SuppliersPage from "@/features/suppliers/pages/SuppliersPage";
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: "medicines", element: <MedicinesPage /> },
       { path: "inventory", element: <InventoryPage /> },
       { path: "purchases", element: <PurchasesPage /> },
+      { path: "suppliers", element: <SuppliersPage /> },
     ],
   },
 ]);

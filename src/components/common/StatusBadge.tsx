@@ -32,6 +32,8 @@ type Props = {
   children: ReactNode;
   size?: keyof typeof SIZE_CLASS;
   shape?: keyof typeof SHAPE_CLASS;
+  /** Tooltip */
+  title?: string;
   className?: string;
 };
 
@@ -41,10 +43,12 @@ export function StatusBadge({
   children,
   size = "sm",
   shape = "pill",
+  title,
   className,
 }: Props) {
   return (
     <span
+      title={title}
       className={cn(
         "inline-flex items-center font-medium whitespace-nowrap",
         TONE_CLASS[tone],

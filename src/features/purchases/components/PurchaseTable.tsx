@@ -148,6 +148,7 @@ const PurchaseRow = memo(function PurchaseRow({
       className={cn(
         "border-b border-border/60 last:border-0 hover:bg-muted/40",
         index % 2 === 1 && "bg-muted/20",
+        p.status === "cancelled" && "opacity-60",
       )}
     >
       <td className="px-3 py-2.5 align-middle">

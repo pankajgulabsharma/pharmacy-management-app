@@ -1,10 +1,12 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  FileText,
   IndianRupee,
   Plus,
   ReceiptText,
   Truck,
+  Undo2,
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,36 +18,82 @@ import {
   FilterChips,
   type FilterChipOption,
 } from "@/components/common/FilterChips";
+import {
+  SegmentedTabs,
+  type SegmentedTab,
+} from "@/components/common/SegmentedTabs";
 import { diffInDays, parseISODate, startOfDay } from "@/lib/date";
-import { formatPaise, type Paise } from "@/lib/money";
+import { formatPaise, inrFromPaise, type Paise } from "@/lib/money";
 import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
+import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
 import { StockError } from "@/features/inventory/utils/ledger";
-import { mockSuppliers } from "../data/mockSuppliers";
 import { PurchaseError, usePurchaseStore } from "../store/usePurchaseStore";
-import type { PaymentStatus, Purchase, PurchaseStatusFilter } from "../types";
+import type {
+  PaymentStatus,
+  Purchase,
+  PurchaseReturn,
+  PurchaseReturnInput,
+  PurchaseStatusFilter,
+} from "../types";
 import { getDuePaise, getPaymentStatus } from "../utils/calc";
-import { purchaseMatchesQuery } from "../utils/search";
+import { ReturnError } from "../utils/returns";
+import { purchaseMatchesQuery, returnMatchesQuery } from "../utils/search";
 import { PurchaseTable } from "../components/PurchaseTable";
 import { PurchaseFormDialog } from "../components/PurchaseFormDialog";
 import { PurchaseDetailsDialog } from "../components/PurchaseDetailsDialog";
+import { CancelPurchaseDialog } from "../components/CancelPurchaseDialog";
+import { PurchaseReturnDialog } from "../components/PurchaseReturnDialog";
+import { ReturnTable } from "../components/ReturnTable";
+import { ReturnDetailsDialog } from "../components/ReturnDetailsDialog";
 
 /** Window used by the summary cards */
 const RECENT_DAYS = 30;
 
+type Tab = "invoices" | "returns";
+
+/** Show domain errors as-is; hide anything unexpected behind a generic message */
+function errorMessage(err: unknown, fallback: string) {
+  const known =
+    err instanceof PurchaseError ||
+    err instanceof StockError ||
+    err instanceof ReturnError;
+  return known ? err.message : fallback;
+}
+
 export default function PurchasesPage() {
   const purchases = usePurchaseStore((s) => s.purchases);
+  const returns = usePurchaseStore((s) => s.returns);
   const addPurchase = usePurchaseStore((s) => s.addPurchase);
+  const updatePurchase = usePurchaseStore((s) => s.updatePurchase);
+  const cancelPurchase = usePurchaseStore((s) => s.cancelPurchase);
+  const createReturn = usePurchaseStore((s) => s.createReturn);
   const recordPayment = usePurchaseStore((s) => s.recordPayment);
-  // Medicines with live stock for the item picker
+  const suppliers = useSupplierStore((s) => s.suppliers);
   const medicines = useMedicinesWithStock();
+
+  const [tab, setTab] = useState<Tab>("invoices");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>("all");
-  const [formOpen, setFormOpen] = useState(false);
-  const [viewingId, setViewingId] = useState<string | null>(null);
   const [today] = useState(() => startOfDay(new Date()));
 
-  // Keeps typing responsive on large lists: filtering runs at lower priority
+  // Dialogs — ids, not objects, so dialogs always show the latest version
+  const [form, setForm] = useState<{ open: boolean; editingId: string | null }>(
+    {
+      open: false,
+      editingId: null,
+    },
+  );
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [returnForId, setReturnForId] = useState<string | null>(null);
+  const [viewingReturnId, setViewingReturnId] = useState<string | null>(null);
+
   const deferredQuery = useDeferredValue(query);
+
+  const byId = useMemo(
+    () => new Map(purchases.map((p) => [p.id, p])),
+    [purchases],
+  );
 
   /* Payment status depends on the date, so it is derived — never stored */
   const statusById = useMemo(() => {
@@ -64,9 +112,13 @@ export default function PurchasesPage() {
       partial: 0,
       due: 0,
       overdue: 0,
+      cancelled: 0,
     };
 
     for (const p of purchases) {
+      const s = statusById.get(p.id) ?? "due";
+      counts[s]++;
+      if (p.status === "cancelled") continue;
       const d = parseISODate(p.invoiceDate);
       if (d) {
         const age = diffInDays(today, d);
@@ -76,14 +128,12 @@ export default function PurchasesPage() {
         }
       }
       outstanding += getDuePaise(p);
-      const s = statusById.get(p.id) ?? "due";
-      counts[s]++;
       if (s === "overdue") overdue++;
     }
     return { recentCount, recentTotal, outstanding, overdue, counts };
   }, [purchases, statusById, today]);
 
-  const filtered = useMemo(
+  const filteredPurchases = useMemo(
     () =>
       purchases.filter(
         (p) =>
@@ -93,6 +143,24 @@ export default function PurchasesPage() {
     [purchases, statusById, statusFilter, deferredQuery],
   );
 
+  const filteredReturns = useMemo(
+    () => returns.filter((r) => returnMatchesQuery(r, deferredQuery)),
+    [returns, deferredQuery],
+  );
+
+  const tabs = useMemo<SegmentedTab<Tab>[]>(
+    () => [
+      {
+        id: "invoices",
+        label: "Invoices",
+        icon: FileText,
+        count: purchases.length,
+      },
+      { id: "returns", label: "Returns", icon: Undo2, count: returns.length },
+    ],
+    [purchases.length, returns.length],
+  );
+
   const filterOptions = useMemo<FilterChipOption<PurchaseStatusFilter>[]>(
     () => [
       { id: "all", label: "All", count: purchases.length },
@@ -100,33 +168,91 @@ export default function PurchasesPage() {
       { id: "partial", label: "Partial", count: stats.counts.partial },
       { id: "overdue", label: "Overdue", count: stats.counts.overdue },
       { id: "paid", label: "Paid", count: stats.counts.paid },
+      { id: "cancelled", label: "Cancelled", count: stats.counts.cancelled },
     ],
     [purchases.length, stats.counts],
   );
 
   /* ---------------- handlers ---------------- */
 
-  const openForm = useCallback(() => setFormOpen(true), []);
-  const closeForm = useCallback(() => setFormOpen(false), []);
+  const openNew = useCallback(
+    () => setForm({ open: true, editingId: null }),
+    [],
+  );
+  const openEdit = useCallback(
+    (p: Purchase) => setForm({ open: true, editingId: p.id }),
+    [],
+  );
+  const closeForm = useCallback(
+    () => setForm({ open: false, editingId: null }),
+    [],
+  );
   const handleView = useCallback((p: Purchase) => setViewingId(p.id), []);
   const closeView = useCallback(() => setViewingId(null), []);
+  const openCancel = useCallback((p: Purchase) => setCancelId(p.id), []);
+  const closeCancel = useCallback(() => setCancelId(null), []);
+  const openReturn = useCallback((p: Purchase) => setReturnForId(p.id), []);
+  const closeReturn = useCallback(() => setReturnForId(null), []);
+  const handleViewReturn = useCallback(
+    (r: PurchaseReturn) => setViewingReturnId(r.id),
+    [],
+  );
+  const closeReturnView = useCallback(() => setViewingReturnId(null), []);
 
   const handleSave = useCallback(
-    (p: Purchase): boolean => {
+    (p: Purchase, mode: "create" | "edit"): boolean => {
       try {
-        const packs = addPurchase(p);
-        setFormOpen(false);
-        toast.success(`Purchase ${p.invoiceNo} saved`, {
-          description: `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
-        });
+        if (mode === "edit") {
+          updatePurchase(p);
+          toast.success(`Invoice ${p.invoiceNo} updated (rev ${p.revision})`, {
+            description: "Stock was re-posted to match the corrected invoice",
+          });
+        } else {
+          const packs = addPurchase(p);
+          toast.success(`Purchase ${p.invoiceNo} saved`, {
+            description: `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
+          });
+        }
+        setForm({ open: false, editingId: null });
         return true;
       } catch (err) {
-        const known = err instanceof StockError || err instanceof PurchaseError;
-        toast.error(known ? err.message : "Could not save purchase");
+        toast.error(errorMessage(err, "Could not save purchase"));
         return false;
       }
     },
-    [addPurchase],
+    [addPurchase, updatePurchase],
+  );
+
+  const handleCancel = useCallback(
+    (id: string, reason: string) => {
+      try {
+        cancelPurchase(id, reason);
+        setCancelId(null);
+        toast.success("Invoice cancelled", {
+          description: "Its stock was removed from inventory",
+        });
+      } catch (err) {
+        toast.error(errorMessage(err, "Could not cancel the invoice"));
+      }
+    },
+    [cancelPurchase],
+  );
+
+  const handleCreateReturn = useCallback(
+    (input: PurchaseReturnInput): boolean => {
+      try {
+        const ret = createReturn(input);
+        setReturnForId(null);
+        toast.success(`Debit note ${ret.returnNo} created`, {
+          description: `${ret.totalQty} packs · ${inrFromPaise(ret.totalPaise)} credit`,
+        });
+        return true;
+      } catch (err) {
+        toast.error(errorMessage(err, "Could not create the return"));
+        return false;
+      }
+    },
+    [createReturn],
   );
 
   const handleRecordPayment = useCallback(
@@ -135,19 +261,16 @@ export default function PurchasesPage() {
         recordPayment(id, amountPaise);
         toast.success(`Payment of ₹${formatPaise(amountPaise)} recorded`);
       } catch (err) {
-        toast.error(
-          err instanceof PurchaseError
-            ? err.message
-            : "Could not record payment",
-        );
+        toast.error(errorMessage(err, "Could not record payment"));
       }
     },
     [recordPayment],
   );
 
-  // Look up by id so the dialog always shows the latest version
-  const viewing = viewingId
-    ? (purchases.find((p) => p.id === viewingId) ?? null)
+  const viewing = viewingId ? (byId.get(viewingId) ?? null) : null;
+  const editing = form.editingId ? (byId.get(form.editingId) ?? null) : null;
+  const viewingReturn = viewingReturnId
+    ? (returns.find((r) => r.id === viewingReturnId) ?? null)
     : null;
 
   return (
@@ -155,11 +278,11 @@ export default function PurchasesPage() {
       <PageHeader
         icon={Truck}
         title="Purchases"
-        subtitle="Supplier invoices · stock inward · payments"
+        subtitle="Supplier invoices · returns · payments"
         actions={
           <Button
             type="button"
-            onClick={openForm}
+            onClick={openNew}
             className="h-9 rounded-lg text-[12px] gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -178,13 +301,13 @@ export default function PurchasesPage() {
         <StatCard
           icon={IndianRupee}
           label={`Purchased · last ${RECENT_DAYS} days`}
-          value={`₹${formatPaise(stats.recentTotal)}`}
+          value={inrFromPaise(stats.recentTotal)}
           iconClass="bg-emerald-500/10 text-emerald-600"
         />
         <StatCard
           icon={Wallet}
           label="Outstanding to suppliers"
-          value={`₹${formatPaise(stats.outstanding)}`}
+          value={inrFromPaise(stats.outstanding)}
           iconClass="bg-orange-500/10 text-orange-600"
         />
         <StatCard
@@ -196,44 +319,82 @@ export default function PurchasesPage() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0 min-w-0">
+        <SegmentedTabs
+          tabs={tabs}
+          value={tab}
+          onChange={setTab}
+          ariaLabel="Purchases view"
+        />
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search invoice, supplier, GSTIN, medicine, batch..."
+          placeholder={
+            tab === "invoices"
+              ? "Search invoice, supplier, GSTIN, medicine, batch..."
+              : "Search debit note, supplier, invoice, medicine..."
+          }
         />
-        <FilterChips
-          options={filterOptions}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          ariaLabel="Filter by payment status"
-        />
+        {tab === "invoices" ? (
+          <FilterChips
+            options={filterOptions}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            ariaLabel="Filter by payment status"
+          />
+        ) : null}
       </div>
 
       <p className="text-[10px] text-muted-foreground shrink-0">
-        Showing {filtered.length} of {purchases.length} invoices
+        {tab === "invoices"
+          ? `Showing ${filteredPurchases.length} of ${purchases.length} invoices`
+          : `Showing ${filteredReturns.length} of ${returns.length} debit notes`}
       </p>
 
-      <PurchaseTable
-        items={filtered}
-        statusById={statusById}
-        onView={handleView}
+      {tab === "invoices" ? (
+        <PurchaseTable
+          items={filteredPurchases}
+          statusById={statusById}
+          onView={handleView}
+        />
+      ) : (
+        <ReturnTable items={filteredReturns} onView={handleViewReturn} />
+      )}
+
+      {/* Dialogs — order matters: later ones stack on top */}
+      <PurchaseDetailsDialog
+        purchase={viewing}
+        status={viewing ? (statusById.get(viewing.id) ?? null) : null}
+        onClose={closeView}
+        onRecordPayment={handleRecordPayment}
+        onEdit={openEdit}
+        onCancel={openCancel}
+        onReturn={openReturn}
+        onViewReturn={handleViewReturn}
       />
 
       <PurchaseFormDialog
-        open={formOpen}
-        suppliers={mockSuppliers}
+        open={form.open}
+        editing={editing}
+        suppliers={suppliers}
         medicines={medicines}
         existingPurchases={purchases}
         onClose={closeForm}
         onSave={handleSave}
       />
 
-      <PurchaseDetailsDialog
-        purchase={viewing}
-        status={viewing ? (statusById.get(viewing.id) ?? null) : null}
-        onClose={closeView}
-        onRecordPayment={handleRecordPayment}
+      <CancelPurchaseDialog
+        purchase={cancelId ? (byId.get(cancelId) ?? null) : null}
+        onClose={closeCancel}
+        onConfirm={handleCancel}
       />
+
+      <PurchaseReturnDialog
+        purchase={returnForId ? (byId.get(returnForId) ?? null) : null}
+        onClose={closeReturn}
+        onSubmit={handleCreateReturn}
+      />
+
+      <ReturnDetailsDialog ret={viewingReturn} onClose={closeReturnView} />
     </div>
   );
 }

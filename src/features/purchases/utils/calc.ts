@@ -112,14 +112,27 @@ export function calcTotals(lines: readonly LineAmountInput[]): PurchaseTotals {
   };
 }
 
+/** What we still owe on this invoice (0 for cancelled invoices) */
 export function getDuePaise(p: Purchase): Paise {
-  return Math.max(0, p.totals.netPaise - p.paidPaise);
+  if (p.status === "cancelled") return 0;
+  return Math.max(0, p.totals.netPaise - p.paidPaise - p.returnedPaise);
+}
+
+/**
+ * Paid + returned beyond the invoice total — the supplier owes us this
+ * (adjusted against future bills or refunded).
+ */
+export function getCreditPaise(p: Purchase): Paise {
+  if (p.status === "cancelled") return p.paidPaise;
+  return Math.max(0, p.paidPaise + p.returnedPaise - p.totals.netPaise);
 }
 
 export function getPaymentStatus(p: Purchase, today: Date): PaymentStatus {
+  if (p.status === "cancelled") return "cancelled";
   const due = getDuePaise(p);
   if (due === 0) return "paid";
   const dueDate = parseISODate(p.dueDate);
   if (dueDate && diffInDays(today, dueDate) > 0) return "overdue";
+  // "Partial" means money was paid; a return alone only lowers the balance
   return p.paidPaise > 0 ? "partial" : "due";
 }

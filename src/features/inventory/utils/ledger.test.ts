@@ -3,7 +3,10 @@ import type { StockBatch, StockReceipt } from "../types";
 import {
   StockError,
   applyAdjustment,
+  applyIssue,
   applyReceipt,
+  applyReversal,
+  checkReversal,
   summarizeStock,
 } from "./ledger";
 
@@ -170,5 +173,59 @@ describe("summarizeStock", () => {
       nearestExpiry: "12/26",
       batchCount: 2,
     });
+  });
+});
+
+describe("applyReversal / applyIssue", () => {
+  const at = new Date("2026-10-02T09:00:00Z");
+
+  it("undoes a receipt and removes a batch that only that receipt created", () => {
+    const r = applyReceipt(
+      [batch()],
+      receipt([{ batchNo: "NEW1" }, {}]),
+      KNOWN,
+    );
+    const rev = applyReversal(r.batches, r.movements, "pur_1", "Cancelled", at);
+    expect(rev.batches.map((b) => b.batchNo)).toEqual(["DL001"]);
+    expect(rev.batches[0].qtyStrip).toBe(10); // back to the original 10
+    expect(rev.removedBatchIds).toHaveLength(1);
+  });
+
+  it("refuses to reverse when the stock is no longer there", () => {
+    const r = applyReceipt([], receipt([{ batchNo: "NEW1", packs: 5 }]), KNOWN);
+    const sold = r.batches.map((b) => ({ ...b, qtyStrip: 2 }));
+    expect(checkReversal(sold, r.movements, "pur_1")).toHaveLength(1);
+    expect(() => applyReversal(sold, r.movements, "pur_1", "x", at)).toThrow(
+      /only 2 of 5/,
+    );
+  });
+
+  it("issues from specific batches and never overdraws", () => {
+    const out = applyIssue([batch()], {
+      refId: "ret_1",
+      type: "purchase_return",
+      note: "Return",
+      at,
+      lines: [{ batchId: "b1", unit: "STP", packs: 4 }],
+    });
+    expect(out.batches[0].qtyStrip).toBe(6);
+    expect(out.movements[0]).toMatchObject({
+      type: "purchase_return",
+      qtyStripDelta: -4,
+    });
+
+    expect(() =>
+      applyIssue([batch()], {
+        refId: "ret_2",
+        type: "purchase_return",
+        note: "Return",
+        at,
+        // two lines for one batch must be summed before checking
+        lines: [
+          { batchId: "b1", unit: "STP", packs: 6 },
+          { batchId: "b1", unit: "STP", packs: 6 },
+        ],
+      }),
+    ).toThrow(/only 10/);
   });
 });

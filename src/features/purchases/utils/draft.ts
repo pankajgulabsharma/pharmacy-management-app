@@ -74,7 +74,8 @@ export function getDueDate(invoiceDate: string, creditDays: number): string {
 
 function draftLineToLine(d: PurchaseLineDraft): PurchaseLine {
   return {
-    id: newId("pl"),
+    // The draft key is the line id, so lines keep their id across edits
+    id: d.key,
     medicineId: d.medicineId,
     medicineName: d.medicineName,
     brand: d.brand,
@@ -105,19 +106,75 @@ export function draftToPurchase(
   const lines = draft.lines.map(draftLineToLine);
   const totals = calcTotals(lines);
   const paid = parseRupees(draft.paid) ?? 0;
+  const iso = now.toISOString();
 
   return {
     id: newId("pur"),
+    status: "active",
+    stockPosted: true,
     supplierId: supplier.id,
     supplierName: supplier.name,
     supplierGstin: supplier.gstin,
     invoiceNo: cleanCode(draft.invoiceNo, PURCHASE_LIMITS.invoiceNoMax),
     invoiceDate: draft.invoiceDate,
     dueDate: getDueDate(draft.invoiceDate, supplier.creditDays),
-    createdAt: now.toISOString(),
+    createdAt: iso,
+    updatedAt: iso,
+    revision: 1,
     lines,
     notes: cleanText(draft.notes, PURCHASE_LIMITS.notesMax),
     paidPaise: Math.min(paid, totals.netPaise),
+    returnedPaise: 0,
     totals,
+  };
+}
+
+/**
+ * Applies an edited draft to an existing invoice. Identity, payments and
+ * history (id, createdAt, paid, returns) are kept; revision goes up by 1.
+ */
+export function draftToEditedPurchase(
+  draft: PurchaseDraft,
+  supplier: Supplier,
+  existing: Purchase,
+  now: Date,
+): Purchase {
+  const fresh = draftToPurchase(draft, supplier, now);
+  return {
+    ...fresh,
+    id: existing.id,
+    createdAt: existing.createdAt,
+    stockPosted: existing.stockPosted,
+    paidPaise: existing.paidPaise,
+    returnedPaise: existing.returnedPaise,
+    revision: existing.revision + 1,
+  };
+}
+
+/** Saved invoice → editable draft (exact inverse of draftToPurchase) */
+export function purchaseToDraft(p: Purchase): PurchaseDraft {
+  return {
+    supplierId: p.supplierId,
+    invoiceNo: p.invoiceNo,
+    invoiceDate: p.invoiceDate,
+    notes: p.notes,
+    paid: "",
+    lines: p.lines.map((l): PurchaseLineDraft => ({
+      key: l.id,
+      medicineId: l.medicineId,
+      medicineName: l.medicineName,
+      brand: l.brand,
+      hsn: l.hsn,
+      unit: l.unit,
+      unitsPerStrip: l.unitsPerStrip,
+      batchNo: l.batchNo,
+      expiry: l.expiry,
+      qty: String(l.qty),
+      freeQty: l.freeQty > 0 ? String(l.freeQty) : "",
+      rate: paiseToInput(l.ratePaise),
+      mrp: paiseToInput(l.mrpPaise),
+      discountPercent: l.discountPercent > 0 ? String(l.discountPercent) : "",
+      gstPercent: l.gstPercent,
+    })),
   };
 }

@@ -96,11 +96,13 @@ type Context = {
   existing: readonly Purchase[];
   today: Date;
   netPaise: Paise;
+  /** When editing: the invoice being edited (excluded from duplicate check) */
+  editing?: Purchase | null;
 };
 
 export function validatePurchaseDraft(
   draft: PurchaseDraft,
-  { suppliers, existing, today, netPaise }: Context,
+  { suppliers, existing, today, netPaise, editing = null }: Context,
 ): PurchaseErrors {
   const header: HeaderErrors = {};
   const lines: Record<string, LineErrors> = {};
@@ -120,7 +122,10 @@ export function validatePurchaseDraft(
     const needle = invoiceNo.toUpperCase();
     const duplicate = existing.some(
       (p) =>
-        p.supplierId === supplier.id && p.invoiceNo.toUpperCase() === needle,
+        p.id !== editing?.id &&
+        p.status !== "cancelled" &&
+        p.supplierId === supplier.id &&
+        p.invoiceNo.toUpperCase() === needle,
     );
     if (duplicate) header.invoiceNo = "Already entered for this supplier";
   }
@@ -136,7 +141,11 @@ export function validatePurchaseDraft(
   }
 
   /* Paid amount */
-  if (draft.paid.trim() !== "") {
+  if (editing && netPaise < editing.paidPaise + editing.returnedPaise) {
+    header.lines =
+      "New total is less than what is already paid/returned on this invoice";
+  }
+  if (!editing && draft.paid.trim() !== "") {
     const paid = parseRupees(draft.paid);
     if (paid === null) header.paid = "Enter a valid amount";
     else if (paid > netPaise) header.paid = "More than invoice total";

@@ -19,6 +19,12 @@ type Props = {
   dueDate: string;
   creditDays: number | null;
   onPaidChange: (value: string) => void;
+  /**
+   * Editing an existing invoice: payments are recorded separately, so
+   * show what is already paid instead of the "Paid now" input.
+   */
+  lockedPaidPaise?: number;
+  returnedPaise?: number;
 };
 
 /**
@@ -32,10 +38,15 @@ export const PurchaseTotalsPanel = memo(function PurchaseTotalsPanel({
   dueDate,
   creditDays,
   onPaidChange,
+  lockedPaidPaise,
+  returnedPaise = 0,
 }: Props) {
   const paidRef = useRef<HTMLInputElement>(null);
-  const paidPaise = Math.min(parseRupees(paid) ?? 0, totals.netPaise);
-  const balancePaise = Math.max(0, totals.netPaise - paidPaise);
+  const locked = lockedPaidPaise !== undefined;
+  const paidPaise = locked
+    ? lockedPaidPaise
+    : Math.min(parseRupees(paid) ?? 0, totals.netPaise);
+  const balancePaise = Math.max(0, totals.netPaise - paidPaise - returnedPaise);
 
   return (
     <>
@@ -81,48 +92,75 @@ export const PurchaseTotalsPanel = memo(function PurchaseTotalsPanel({
           </span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="purchase-paid"
-            className="text-[11px] font-medium text-foreground"
-          >
-            Paid now (₹)
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              onPaidChange(paiseToInput(totals.netPaise));
-              focusAtEnd(paidRef.current);
-            }}
-            disabled={totals.netPaise === 0}
-            className="text-[10px] font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline"
-          >
-            Pay full
-          </button>
-        </div>
-        <div className="p-0.5">
-          <input
-            id="purchase-paid"
-            ref={paidRef}
-            value={paid}
-            onChange={(e) => {
-              if (isMoneyInput(e.target.value)) onPaidChange(e.target.value);
-            }}
-            placeholder="0.00"
-            inputMode="decimal"
-            aria-invalid={Boolean(paidError)}
-            className={cn(
-              fieldClass,
-              "tabular-nums",
-              paidError && invalidFieldClass,
-            )}
-          />
-        </div>
-        {paidError ? (
-          <p className="text-[10px] text-red-500" role="alert">
-            {paidError}
-          </p>
-        ) : null}
+        {locked ? (
+          <div className="space-y-1">
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground">Already paid</span>
+              <span className="tabular-nums text-foreground">
+                {inrFromPaise(paidPaise)}
+              </span>
+            </div>
+            {returnedPaise > 0 ? (
+              <div className="flex items-baseline justify-between">
+                <span className="text-muted-foreground">
+                  Returned (debit notes)
+                </span>
+                <span className="tabular-nums text-foreground">
+                  {inrFromPaise(returnedPaise)}
+                </span>
+              </div>
+            ) : null}
+            <p className="text-[10px] text-muted-foreground">
+              Payments are recorded from the invoice's View screen.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="purchase-paid"
+                className="text-[11px] font-medium text-foreground"
+              >
+                Paid now (₹)
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  onPaidChange(paiseToInput(totals.netPaise));
+                  focusAtEnd(paidRef.current);
+                }}
+                disabled={totals.netPaise === 0}
+                className="text-[10px] font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+              >
+                Pay full
+              </button>
+            </div>
+            <div className="p-0.5">
+              <input
+                id="purchase-paid"
+                ref={paidRef}
+                value={paid}
+                onChange={(e) => {
+                  if (isMoneyInput(e.target.value))
+                    onPaidChange(e.target.value);
+                }}
+                placeholder="0.00"
+                inputMode="decimal"
+                aria-invalid={Boolean(paidError)}
+                className={cn(
+                  fieldClass,
+                  "tabular-nums",
+                  paidError && invalidFieldClass,
+                )}
+              />
+            </div>
+            {paidError ? (
+              <p className="text-[10px] text-red-500" role="alert">
+                {paidError}
+              </p>
+            ) : null}
+          </>
+        )}
 
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-muted-foreground truncate">

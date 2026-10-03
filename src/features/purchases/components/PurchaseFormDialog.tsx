@@ -29,6 +29,8 @@ import {
 } from "../types";
 import { calcTotals } from "../utils/calc";
 import {
+  draftToEditedPurchase,
+  purchaseToDraft,
   createEmptyDraft,
   createLineFromMedicine,
   draftLineToAmountInput,
@@ -53,24 +55,29 @@ type Props = {
   suppliers: readonly Supplier[];
   medicines: readonly MedicineWithStock[];
   existingPurchases: readonly Purchase[];
+  /** When set, the form edits this invoice instead of creating a new one */
+  editing?: Purchase | null;
   onClose: () => void;
   /** Return false if saving failed, so the form can be submitted again */
-  onSave: (purchase: Purchase) => boolean;
+  onSave: (purchase: Purchase, mode: "create" | "edit") => boolean;
 };
 
 /**
- * Mounts the form only while open, so every "New purchase" starts with a
- * fresh draft — no reset effects needed.
+ * Mounts the form only while open (keyed by the invoice being edited), so
+ * every open starts from a fresh draft — no reset effects needed.
  */
-export function PurchaseFormDialog({ open, ...rest }: Props) {
+export function PurchaseFormDialog({ open, editing = null, ...rest }: Props) {
   if (!open) return null;
-  return <PurchaseForm {...rest} />;
+  return (
+    <PurchaseForm key={editing?.id ?? "new"} editing={editing} {...rest} />
+  );
 }
 
 function PurchaseForm({
-  suppliers,
+  suppliers: allSuppliers,
   medicines,
   existingPurchases,
+  editing = null,
   onClose,
   onSave,
 }: Omit<Props, "open">) {
@@ -80,8 +87,20 @@ function PurchaseForm({
   const savingRef = useRef(false);
 
   const [today] = useState(() => new Date());
-  const [draft, setDraft] = useState<PurchaseDraft>(() =>
-    createEmptyDraft(today),
+  // Snapshot of the starting point — used to detect unsaved changes
+  const [initial] = useState<PurchaseDraft>(() =>
+    editing ? purchaseToDraft(editing) : createEmptyDraft(today),
+  );
+  const [draft, setDraft] = useState<PurchaseDraft>(initial);
+  const isEdit = editing !== null;
+
+  // Only active suppliers can be chosen (the edited invoice's own supplier stays available)
+  const suppliers = useMemo(
+    () =>
+      allSuppliers.filter(
+        (s) => s.status === "active" || s.id === editing?.supplierId,
+      ),
+    [allSuppliers, editing?.supplierId],
   );
   const [showErrors, setShowErrors] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -111,9 +130,18 @@ function PurchaseForm({
             existing: existingPurchases,
             today,
             netPaise: totals.netPaise,
+            editing,
           })
         : NO_ERRORS,
-    [showErrors, draft, suppliers, existingPurchases, today, totals.netPaise],
+    [
+      showErrors,
+      draft,
+      suppliers,
+      existingPurchases,
+      today,
+      totals.netPaise,
+      editing,
+    ],
   );
 
   /* ---------------- handlers (stable) ---------------- */
@@ -161,12 +189,15 @@ function PurchaseForm({
   );
 
   const requestClose = useCallback(() => {
-    if (isDraftDirty(draft) && !confirmDiscard) {
+    const dirty = isEdit
+      ? JSON.stringify(draft) !== JSON.stringify(initial)
+      : isDraftDirty(draft);
+    if (dirty && !confirmDiscard) {
       setConfirmDiscard(true);
       return;
     }
     onClose();
-  }, [draft, confirmDiscard, onClose]);
+  }, [draft, initial, isEdit, confirmDiscard, onClose]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -177,6 +208,7 @@ function PurchaseForm({
       existing: existingPurchases,
       today,
       netPaise: totals.netPaise,
+      editing,
     });
     setShowErrors(true);
 
@@ -191,7 +223,10 @@ function PurchaseForm({
     }
 
     savingRef.current = true;
-    const saved = onSave(draftToPurchase(draft, supplier, new Date()));
+    const now = new Date();
+    const saved = editing
+      ? onSave(draftToEditedPurchase(draft, supplier, editing, now), "edit")
+      : onSave(draftToPurchase(draft, supplier, now), "create");
     if (!saved) savingRef.current = false;
   };
 
@@ -220,10 +255,14 @@ function PurchaseForm({
           </div>
           <div className="min-w-0">
             <h2 id={titleId} className="text-sm font-semibold">
-              New purchase
+              {editing
+                ? `Edit purchase · ${editing.invoiceNo}`
+                : "New purchase"}
             </h2>
             <p className="text-[10px] text-muted-foreground truncate">
-              Enter the supplier's invoice · Ctrl + S to save
+              {editing
+                ? `Revision ${editing.revision} → ${editing.revision + 1} · stock will be re-posted · Ctrl + S to save`
+                : "Enter the supplier's invoice · Ctrl + S to save"}
             </p>
           </div>
         </div>
@@ -362,6 +401,8 @@ function PurchaseForm({
             dueDate={dueDate}
             creditDays={supplier?.creditDays ?? null}
             onPaidChange={onPaidChange}
+            lockedPaidPaise={editing ? editing.paidPaise : undefined}
+            returnedPaise={editing?.returnedPaise ?? 0}
           />
         </div>
 
@@ -372,12 +413,16 @@ function PurchaseForm({
               className="text-[11px] text-orange-600 dark:text-orange-400"
               role="alert"
             >
-              Discard this purchase? Everything entered will be lost.
+              {isEdit
+                ? "Discard your changes? The invoice stays as it was."
+                : "Discard this purchase? Everything entered will be lost."}
             </p>
           ) : (
             <p className="text-[11px] text-muted-foreground">
-              Stock will be added for {totals.totalQty + totals.totalFreeQty}{" "}
-              packs
+              {isEdit
+                ? "Stock will be re-posted as"
+                : "Stock will be added for"}{" "}
+              {totals.totalQty + totals.totalFreeQty} packs
             </p>
           )}
 
@@ -411,7 +456,7 @@ function PurchaseForm({
                   Cancel
                 </Button>
                 <Button type="submit" className="h-9 rounded-lg text-[12px]">
-                  Save purchase
+                  {isEdit ? "Save changes" : "Save purchase"}
                   {totals.netPaise > 0
                     ? ` · ₹${formatPaise(totals.netPaise)}`
                     : ""}

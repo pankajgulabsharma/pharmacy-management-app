@@ -28,7 +28,17 @@ export type StockBatch = {
   receivedAt: string;
 };
 
-export type StockMovementType = "opening" | "purchase" | "adjustment";
+export type StockMovementType =
+  /** Initial quantity when the app started tracking the batch */
+  | "opening"
+  /** Goods received against a purchase invoice */
+  | "purchase"
+  /** Purchase cancelled or edited — its earlier receipt is undone */
+  | "purchase_reversal"
+  /** Goods sent back to the supplier (debit note) */
+  | "purchase_return"
+  /** Physical count / damage / disposal correction */
+  | "adjustment";
 
 /**
  * Append-only audit log: every change to a batch's quantity is recorded
@@ -73,6 +83,26 @@ export type StockReceiptLine = {
   mrp: number;
   /** Landed cost per pack, rupees */
   costPerPack: number;
+};
+
+/**
+ * Neutral "goods going out" input (purchase returns now; sales later).
+ * Takes stock from specific batches — never from "any batch".
+ */
+export type StockIssue = {
+  /** Unique id of the source document */
+  refId: string;
+  type: Extract<StockMovementType, "purchase_return">;
+  note: string;
+  at: Date;
+  lines: StockIssueLine[];
+};
+
+export type StockIssueLine = {
+  batchId: string;
+  unit: PackUnit;
+  /** Packs to remove (loose units for LSE medicines) */
+  packs: number;
 };
 
 /* ------------------------------------------------------------------ */

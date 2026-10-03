@@ -11,6 +11,7 @@ import { compareExpiry, isValidExpiry } from "@/lib/expiry";
 import type { MedicineStock, PackUnit } from "@/features/medicines/types";
 import type {
   StockBatch,
+  StockIssue,
   StockMovement,
   StockReceipt,
   StockReceiptLine,
@@ -50,7 +51,7 @@ export function normalizeBatchNo(batchNo: string) {
 }
 
 /** Same medicine + same batch number + same expiry = same physical batch */
-function batchKey(medicineId: string, batchNo: string, expiry: string) {
+export function batchKey(medicineId: string, batchNo: string, expiry: string) {
   return `${medicineId}|${normalizeBatchNo(batchNo)}|${expiry.trim()}`;
 }
 
@@ -259,4 +260,196 @@ export function summarizeStock(
     map.set(b.medicineId, s);
   }
   return map;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reversal (cancel / edit a purchase) and issue (returns, sales)      */
+/* ------------------------------------------------------------------ */
+
+export type ReversalShortfall = {
+  batchId: string;
+  batchNo: string;
+  needed: number;
+  available: number;
+};
+
+/**
+ * Net quantity that each batch still holds from one source document,
+ * worked out from the movement log (the log is the source of truth).
+ */
+export function netByBatchForRef(
+  movements: readonly StockMovement[],
+  refId: string,
+): Map<string, { strip: number; loose: number }> {
+  const net = new Map<string, { strip: number; loose: number }>();
+  for (const m of movements) {
+    if (m.refId !== refId) continue;
+    const n = net.get(m.batchId) ?? { strip: 0, loose: 0 };
+    n.strip += m.qtyStripDelta;
+    n.loose += m.qtyLooseDelta;
+    net.set(m.batchId, n);
+  }
+  return net;
+}
+
+/**
+ * Can the stock added by `refId` still be taken back out?
+ * It can't if part of it has been sold, returned or adjusted away.
+ */
+export function checkReversal(
+  batches: readonly StockBatch[],
+  movements: readonly StockMovement[],
+  refId: string,
+): ReversalShortfall[] {
+  const byId = new Map(batches.map((b) => [b.id, b]));
+  const shortfalls: ReversalShortfall[] = [];
+  for (const [batchId, n] of netByBatchForRef(movements, refId)) {
+    if (n.strip <= 0 && n.loose <= 0) continue;
+    const b = byId.get(batchId);
+    const availStrip = b?.qtyStrip ?? 0;
+    const availLoose = b?.qtyLoose ?? 0;
+    if (availStrip < n.strip || availLoose < n.loose) {
+      shortfalls.push({
+        batchId,
+        batchNo: b?.batchNo ?? "?",
+        needed: n.strip + n.loose,
+        available:
+          Math.min(availStrip, n.strip) + Math.min(availLoose, n.loose),
+      });
+    }
+  }
+  return shortfalls;
+}
+
+/**
+ * Takes back everything a source document added (purchase cancel/edit).
+ * A batch that only ever held this document's stock is removed entirely,
+ * so a cancelled purchase leaves no empty rows behind.
+ * All-or-nothing: throws without changing anything if stock is short.
+ */
+export function applyReversal(
+  batches: readonly StockBatch[],
+  movements: readonly StockMovement[],
+  refId: string,
+  note: string,
+  at: Date,
+): {
+  batches: StockBatch[];
+  movements: StockMovement[];
+  removedBatchIds: string[];
+} {
+  const shortfalls = checkReversal(batches, movements, refId);
+  if (shortfalls.length > 0) {
+    const s = shortfalls[0];
+    throw new StockError(
+      `Batch ${s.batchNo}: only ${s.available} of ${s.needed} still in stock — part of it is already sold, returned or adjusted`,
+    );
+  }
+
+  const net = netByBatchForRef(movements, refId);
+  const iso = at.toISOString();
+  const out: StockMovement[] = [];
+  const touchedOnlyByRef = new Set<string>();
+
+  for (const batchId of net.keys()) {
+    const others = movements.some(
+      (m) => m.batchId === batchId && m.refId !== refId,
+    );
+    if (!others) touchedOnlyByRef.add(batchId);
+  }
+
+  const next: StockBatch[] = [];
+  const removedBatchIds: string[] = [];
+  for (const b of batches) {
+    const n = net.get(b.id);
+    if (!n || (n.strip <= 0 && n.loose <= 0)) {
+      next.push(b);
+      continue;
+    }
+    out.push({
+      id: newId("mv"),
+      type: "purchase_reversal",
+      batchId: b.id,
+      medicineId: b.medicineId,
+      qtyStripDelta: -n.strip,
+      qtyLooseDelta: -n.loose,
+      at: iso,
+      refId,
+      note,
+    });
+    const updated = {
+      ...b,
+      qtyStrip: b.qtyStrip - n.strip,
+      qtyLoose: b.qtyLoose - n.loose,
+    };
+    const empty = updated.qtyStrip === 0 && updated.qtyLoose === 0;
+    if (empty && touchedOnlyByRef.has(b.id)) removedBatchIds.push(b.id);
+    else next.push(updated);
+  }
+
+  return { batches: next, movements: out, removedBatchIds };
+}
+
+/**
+ * Removes stock from specific batches (returns to supplier; sales later).
+ * All-or-nothing: every line is checked before anything changes.
+ */
+export function applyIssue(
+  batches: readonly StockBatch[],
+  issue: StockIssue,
+): { batches: StockBatch[]; movements: StockMovement[] } {
+  if (issue.lines.length === 0) throw new StockError("Nothing to issue");
+  if (issue.lines.length > STOCK_LIMITS.maxReceiptLines) {
+    throw new StockError("Too many lines");
+  }
+
+  // Sum per batch first, so two lines for the same batch can't overdraw it
+  const want = new Map<string, { strip: number; loose: number }>();
+  for (const [i, l] of issue.lines.entries()) {
+    if (!isWholeQty(l.packs) || l.packs === 0) {
+      throw new StockError(
+        `Line ${i + 1}: quantity must be a whole number above 0`,
+      );
+    }
+    const w = want.get(l.batchId) ?? { strip: 0, loose: 0 };
+    if (l.unit === "LSE") w.loose += l.packs;
+    else w.strip += l.packs;
+    want.set(l.batchId, w);
+  }
+
+  const byId = new Map(batches.map((b) => [b.id, b]));
+  for (const [batchId, w] of want) {
+    const b = byId.get(batchId);
+    if (!b) throw new StockError("Batch not found");
+    if (b.qtyStrip < w.strip || b.qtyLoose < w.loose) {
+      throw new StockError(
+        `Batch ${b.batchNo}: only ${w.loose ? b.qtyLoose : b.qtyStrip} in stock`,
+      );
+    }
+  }
+
+  const at = issue.at.toISOString();
+  const movements: StockMovement[] = [];
+  const next = batches.map((b) => {
+    const w = want.get(b.id);
+    if (!w) return b;
+    movements.push({
+      id: newId("mv"),
+      type: issue.type,
+      batchId: b.id,
+      medicineId: b.medicineId,
+      qtyStripDelta: -w.strip,
+      qtyLooseDelta: -w.loose,
+      at,
+      refId: issue.refId,
+      note: issue.note,
+    });
+    return {
+      ...b,
+      qtyStrip: b.qtyStrip - w.strip,
+      qtyLoose: b.qtyLoose - w.loose,
+    };
+  });
+
+  return { batches: next, movements };
 }

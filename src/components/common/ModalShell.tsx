@@ -4,6 +4,12 @@ import { cn } from "@/lib/utils";
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
+/**
+ * Open modals, innermost last. Only the topmost one reacts to Esc / Tab,
+ * so a dialog opened from another dialog closes on its own.
+ */
+const modalStack: symbol[] = [];
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -20,6 +26,7 @@ type Props = {
  * - Esc and backdrop click call onClose
  * - focus moves inside on open ([data-autofocus] first) and is trapped
  * - focus returns to the previously focused element on close
+ * - stacking-safe: only the topmost modal handles keys
  */
 export function ModalShell({
   open,
@@ -39,6 +46,8 @@ export function ModalShell({
 
   useEffect(() => {
     if (!open) return;
+    const token = Symbol("modal");
+    modalStack.push(token);
     const panel = panelRef.current;
     const previouslyFocused =
       document.activeElement instanceof HTMLElement
@@ -51,6 +60,7 @@ export function ModalShell({
     initial?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (modalStack[modalStack.length - 1] !== token) return;
       if (e.key === "Escape") {
         e.preventDefault();
         onCloseRef.current();
@@ -75,6 +85,8 @@ export function ModalShell({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      const i = modalStack.indexOf(token);
+      if (i >= 0) modalStack.splice(i, 1);
       previouslyFocused?.focus();
     };
   }, [open]);
