@@ -4,14 +4,14 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
 import { ExpiryText, type ExpiryState } from "@/components/common/ExpiryText";
-import type { Medicine } from "../types";
+import type { MedicineWithStock } from "../types";
 import { CATEGORY_LABELS, canSellLoose, formatPackLabel } from "../types";
 import { isExpired, isExpiringSoon } from "@/features/inventory/utils/stock";
 
 type Props = {
-  items: Medicine[];
-  onEdit: (m: Medicine) => void;
-  onDelete: (m: Medicine) => void;
+  items: MedicineWithStock[];
+  onEdit: (m: MedicineWithStock) => void;
+  onDelete: (m: MedicineWithStock) => void;
 };
 
 export function MedicineTable({ items, onEdit, onDelete }: Props) {

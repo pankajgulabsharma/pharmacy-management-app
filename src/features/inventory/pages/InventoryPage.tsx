@@ -16,7 +16,9 @@ import {
   type FilterChipOption,
 } from "@/components/common/FilterChips";
 import { canSellLoose } from "@/features/medicines/types";
-import { mockInventory } from "../data/mockInventory";
+import { useInventoryStore } from "../store/useInventoryStore";
+import { useInventoryRows } from "../hooks/useInventoryRows";
+import { StockError } from "../utils/ledger";
 import type {
   InventoryBatch,
   InventoryStatusFilter,
@@ -45,7 +47,9 @@ const MATCHERS: Record<
 };
 
 export default function InventoryPage() {
-  const [items, setItems] = useState<InventoryBatch[]>(mockInventory);
+  // Batches joined with the medicine master (single source of truth)
+  const items = useInventoryRows();
+  const adjustStock = useInventoryStore((s) => s.adjust);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<InventoryStatusFilter>("all");
@@ -97,23 +101,29 @@ export default function InventoryPage() {
 
   const handleAdjustSave = useCallback(
     (id: string, values: StockAdjustValues) => {
-      setItems((prev) =>
-        prev.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                qtyStrip: Number(values.qtyStrip) || 0,
-                qtyLoose: canSellLoose(b.unit, b.allowLoose)
-                  ? Number(values.qtyLoose) || 0
-                  : 0,
-              }
-            : b,
-        ),
-      );
-      setAdjustTarget(null);
-      toast.success(`Stock updated (${values.reason})`);
+      const target = items.find((b) => b.id === id);
+      const looseOk = target
+        ? canSellLoose(target.unit, target.allowLoose)
+        : false;
+      try {
+        const changed = adjustStock(
+          id,
+          {
+            qtyStrip: Number(values.qtyStrip) || 0,
+            qtyLoose: looseOk ? Number(values.qtyLoose) || 0 : 0,
+          },
+          values.reason,
+        );
+        setAdjustTarget(null);
+        if (changed) toast.success(`Stock updated (${values.reason})`);
+        else toast.info("No change in quantity");
+      } catch (err) {
+        toast.error(
+          err instanceof StockError ? err.message : "Could not update stock",
+        );
+      }
     },
-    [],
+    [items, adjustStock],
   );
 
   return (

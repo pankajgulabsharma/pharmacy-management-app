@@ -9,14 +9,17 @@ import {
 import { Plus, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fieldClass } from "@/components/common/formStyles";
-import { type Medicine, formatPackLabel } from "@/features/medicines/types";
+import {
+  type MedicineWithStock,
+  formatPackLabel,
+} from "@/features/medicines/types";
 import { medicineMatchesQuery } from "@/features/medicines/utils/search";
 
 const MAX_RESULTS = 8;
 
 type Props = {
-  medicines: readonly Medicine[];
-  onPick: (m: Medicine) => void;
+  medicines: readonly MedicineWithStock[];
+  onPick: (m: MedicineWithStock) => void;
   disabled?: boolean;
 };
 
@@ -38,7 +41,7 @@ export const MedicinePicker = memo(function MedicinePicker({
   const results = useMemo(() => {
     const q = deferredQuery.trim();
     if (!q) return [];
-    const out: Medicine[] = [];
+    const out: MedicineWithStock[] = [];
     for (const m of medicines) {
       if (m.status !== "active") continue;
       if (medicineMatchesQuery(m, q)) {
@@ -53,7 +56,7 @@ export const MedicinePicker = memo(function MedicinePicker({
   const activeIndex = Math.min(active, Math.max(0, results.length - 1));
   const open = query.trim() !== "";
 
-  const pick = (m: Medicine) => {
+  const pick = (m: MedicineWithStock) => {
     onPick(m);
     setQuery("");
     setActive(0);

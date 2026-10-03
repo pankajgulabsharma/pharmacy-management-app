@@ -2,7 +2,7 @@ import { useId, useRef, useState } from "react";
 import { Download, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
-import type { Medicine } from "../types";
+import type { MedicineInput } from "../types";
 import {
   buildSampleCsv,
   parseMedicineCsv,
@@ -12,12 +12,7 @@ import {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onImport: (
-    rows: Omit<
-      Medicine,
-      "id" | "stockStrip" | "stockLoose" | "nearestExpiry"
-    >[],
-  ) => void;
+  onImport: (rows: MedicineInput[]) => void;
 };
 
 /** Guard rails so a wrong/huge file can't freeze the browser */

@@ -1,5 +1,5 @@
 import type {
-  Medicine,
+  MedicineInput,
   MedicineCategory,
   PackUnit,
   MedicineStatus,
@@ -86,10 +86,7 @@ export function buildSampleCsv(): string {
 export type CsvRowResult =
   | {
       ok: true;
-      data: Omit<
-        Medicine,
-        "id" | "stockStrip" | "stockLoose" | "nearestExpiry"
-      >;
+      data: MedicineInput;
     }
   | { ok: false; row: number; message: string };
 

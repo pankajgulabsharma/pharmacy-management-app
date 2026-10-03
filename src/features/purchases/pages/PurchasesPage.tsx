@@ -18,9 +18,10 @@ import {
 } from "@/components/common/FilterChips";
 import { diffInDays, parseISODate, startOfDay } from "@/lib/date";
 import { formatPaise, type Paise } from "@/lib/money";
-import { mockMedicines } from "@/features/medicines/data/mockMedicines";
+import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
+import { StockError } from "@/features/inventory/utils/ledger";
 import { mockSuppliers } from "../data/mockSuppliers";
-import { mockPurchases } from "../data/mockPurchases";
+import { PurchaseError, usePurchaseStore } from "../store/usePurchaseStore";
 import type { PaymentStatus, Purchase, PurchaseStatusFilter } from "../types";
 import { getDuePaise, getPaymentStatus } from "../utils/calc";
 import { purchaseMatchesQuery } from "../utils/search";
@@ -32,8 +33,11 @@ import { PurchaseDetailsDialog } from "../components/PurchaseDetailsDialog";
 const RECENT_DAYS = 30;
 
 export default function PurchasesPage() {
-  // TODO(api): replace mock state with a purchases store / API query
-  const [purchases, setPurchases] = useState<Purchase[]>(mockPurchases);
+  const purchases = usePurchaseStore((s) => s.purchases);
+  const addPurchase = usePurchaseStore((s) => s.addPurchase);
+  const recordPayment = usePurchaseStore((s) => s.recordPayment);
+  // Medicines with live stock for the item picker
+  const medicines = useMedicinesWithStock();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -107,27 +111,39 @@ export default function PurchasesPage() {
   const handleView = useCallback((p: Purchase) => setViewingId(p.id), []);
   const closeView = useCallback(() => setViewingId(null), []);
 
-  const handleSave = useCallback((p: Purchase) => {
-    setPurchases((prev) => [p, ...prev]);
-    setFormOpen(false);
-    toast.success(`Purchase ${p.invoiceNo} saved`, {
-      description: `${p.totals.lineCount} items · ₹${formatPaise(p.totals.netPaise)}`,
-    });
-  }, []);
+  const handleSave = useCallback(
+    (p: Purchase): boolean => {
+      try {
+        const packs = addPurchase(p);
+        setFormOpen(false);
+        toast.success(`Purchase ${p.invoiceNo} saved`, {
+          description: `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
+        });
+        return true;
+      } catch (err) {
+        const known = err instanceof StockError || err instanceof PurchaseError;
+        toast.error(known ? err.message : "Could not save purchase");
+        return false;
+      }
+    },
+    [addPurchase],
+  );
 
-  const handleRecordPayment = useCallback((id: string, amountPaise: Paise) => {
-    setPurchases((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              paidPaise: Math.min(p.totals.netPaise, p.paidPaise + amountPaise),
-            }
-          : p,
-      ),
-    );
-    toast.success(`Payment of ₹${formatPaise(amountPaise)} recorded`);
-  }, []);
+  const handleRecordPayment = useCallback(
+    (id: string, amountPaise: Paise) => {
+      try {
+        recordPayment(id, amountPaise);
+        toast.success(`Payment of ₹${formatPaise(amountPaise)} recorded`);
+      } catch (err) {
+        toast.error(
+          err instanceof PurchaseError
+            ? err.message
+            : "Could not record payment",
+        );
+      }
+    },
+    [recordPayment],
+  );
 
   // Look up by id so the dialog always shows the latest version
   const viewing = viewingId
@@ -206,7 +222,7 @@ export default function PurchasesPage() {
       <PurchaseFormDialog
         open={formOpen}
         suppliers={mockSuppliers}
-        medicines={mockMedicines}
+        medicines={medicines}
         existingPurchases={purchases}
         onClose={closeForm}
         onSave={handleSave}

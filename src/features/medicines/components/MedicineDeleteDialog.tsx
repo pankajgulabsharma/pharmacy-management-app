@@ -2,11 +2,11 @@ import { useId } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 import { ModalShell } from "@/components/common/ModalShell";
 import { Button } from "@/components/ui/button";
-import type { Medicine } from "../types";
+import type { MedicineWithStock } from "../types";
 
 type Props = {
   open: boolean;
-  medicine: Medicine | null;
+  medicine: MedicineWithStock | null;
   onClose: () => void;
   onConfirm: (id: string) => void;
 };
@@ -66,7 +66,7 @@ export function MedicineDeleteDialog({
             <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" />
             <div className="text-[12px] text-foreground leading-snug">
               <p className="font-medium text-orange-700 dark:text-orange-400">
-                Stock still available
+                Can't delete — stock still available
               </p>
               <p className="text-muted-foreground mt-0.5">
                 Current stock:{" "}
@@ -76,6 +76,12 @@ export function MedicineDeleteDialog({
                     ? ` + ${medicine.stockLoose} LSE`
                     : ""}
                 </span>
+              </p>
+              <p className="text-muted-foreground mt-1">
+                Deleting it would leave {medicine.batchCount} batch
+                {medicine.batchCount === 1 ? "" : "es"} without a product. Set
+                the medicine to <b>Inactive</b> instead, or sell / adjust the
+                stock to zero first.
               </p>
             </div>
           </div>
@@ -94,7 +100,8 @@ export function MedicineDeleteDialog({
         </Button>
         <Button
           type="button"
-          className="h-9 rounded-lg text-[12px] bg-red-600 hover:bg-red-700 text-white"
+          className="h-9 rounded-lg text-[12px] bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+          disabled={hasStock}
           onClick={() => onConfirm(medicine.id)}
         >
           Delete permanently

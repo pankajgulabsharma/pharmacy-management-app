@@ -37,6 +37,28 @@ export function monthsToExpiry(value: string, now = new Date()): number | null {
   return (p.year - now.getFullYear()) * 12 + (p.month - (now.getMonth() + 1));
 }
 
+/** Not yet expired, but expires within `days` from now */
+export function isExpiringWithin(
+  value: string,
+  days: number,
+  now = new Date(),
+): boolean {
+  const end = expiryEndDate(value);
+  if (!end || end < now) return false;
+  // Inclusive of the whole last day of the window
+  const limit = new Date(now);
+  limit.setDate(limit.getDate() + days);
+  limit.setHours(23, 59, 59, 999);
+  return end <= limit;
+}
+
+/** Sort helper: earlier expiry first; invalid values go last */
+export function compareExpiry(a: string, b: string): number {
+  const ea = expiryEndDate(a)?.getTime() ?? Number.POSITIVE_INFINITY;
+  const eb = expiryEndDate(b)?.getTime() ?? Number.POSITIVE_INFINITY;
+  return ea - eb;
+}
+
 /** Formats while typing: "0827" → "08/27", keeps at most 4 digits */
 export function formatExpiryInput(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 4);

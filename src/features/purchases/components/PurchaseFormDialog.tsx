@@ -19,7 +19,7 @@ import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { toCodeInput } from "@/lib/sanitize";
 import { toISODate } from "@/lib/date";
 import { formatPaise } from "@/lib/money";
-import type { Medicine } from "@/features/medicines/types";
+import type { Medicine, MedicineWithStock } from "@/features/medicines/types";
 import {
   PURCHASE_LIMITS,
   type Purchase,
@@ -51,10 +51,11 @@ import { PurchaseTotalsPanel } from "./PurchaseTotalsPanel";
 type Props = {
   open: boolean;
   suppliers: readonly Supplier[];
-  medicines: readonly Medicine[];
+  medicines: readonly MedicineWithStock[];
   existingPurchases: readonly Purchase[];
   onClose: () => void;
-  onSave: (purchase: Purchase) => void;
+  /** Return false if saving failed, so the form can be submitted again */
+  onSave: (purchase: Purchase) => boolean;
 };
 
 /**
@@ -190,7 +191,8 @@ function PurchaseForm({
     }
 
     savingRef.current = true;
-    onSave(draftToPurchase(draft, supplier, new Date()));
+    const saved = onSave(draftToPurchase(draft, supplier, new Date()));
+    if (!saved) savingRef.current = false;
   };
 
   const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {

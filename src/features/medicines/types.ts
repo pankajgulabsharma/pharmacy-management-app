@@ -39,10 +39,35 @@ export type Medicine = {
   salePrice: number;
   minStock: number;
   status: MedicineStatus;
-  stockStrip: number;
-  stockLoose: number;
-  nearestExpiry: string | null;
 };
+
+/**
+ * Stock is NOT stored on the medicine. It is always derived from the
+ * inventory batches (see useMedicinesWithStock), so there is exactly one
+ * source of truth for "how much do we have".
+ */
+export type MedicineStock = {
+  /** Total packs across all batches (in the medicine's pack unit) */
+  stockStrip: number;
+  /** Total loose units across all batches */
+  stockLoose: number;
+  /** Earliest expiry among batches that still have stock ("MM/YY") */
+  nearestExpiry: string | null;
+  /** Number of batches that still have stock */
+  batchCount: number;
+};
+
+export type MedicineWithStock = Medicine & MedicineStock;
+
+export const EMPTY_STOCK: MedicineStock = {
+  stockStrip: 0,
+  stockLoose: 0,
+  nearestExpiry: null,
+  batchCount: 0,
+};
+
+/** Master fields a user can create/import (everything except the id) */
+export type MedicineInput = Omit<Medicine, "id">;
 
 export type MedicineFormValues = {
   name: string;

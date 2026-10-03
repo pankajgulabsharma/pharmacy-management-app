@@ -17,11 +17,15 @@ import {
   FilterChips,
   type FilterChipOption,
 } from "@/components/common/FilterChips";
-import { newId } from "@/lib/id";
-import { cleanCode, cleanText } from "@/lib/sanitize";
-import { mockMedicines } from "../data/mockMedicines";
-import type { Medicine, MedicineCategory, MedicineFormValues } from "../types";
+import type {
+  MedicineCategory,
+  MedicineFormValues,
+  MedicineInput,
+  MedicineWithStock,
+} from "../types";
 import { CATEGORY_LABELS } from "../types";
+import { useMedicineStore } from "../store/useMedicineStore";
+import { useMedicinesWithStock } from "../hooks/useMedicinesWithStock";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
@@ -30,10 +34,6 @@ import { medicineMatchesQuery } from "../utils/search";
 
 type StatusFilter = "all" | "active" | "inactive" | "low";
 type CategoryFilter = "all" | MedicineCategory;
-type ImportRow = Omit<
-  Medicine,
-  "id" | "stockStrip" | "stockLoose" | "nearestExpiry"
->;
 
 const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
   { value: "all", label: "All categories" },
@@ -43,23 +43,51 @@ const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
   })),
 ];
 
-function isOut(m: Medicine) {
+function isOut(m: MedicineWithStock) {
   return m.stockStrip === 0 && m.stockLoose === 0;
 }
 
-function isLowOrOut(m: Medicine) {
+function isLowOrOut(m: MedicineWithStock) {
   return isOut(m) || m.stockStrip < m.minStock;
 }
 
+/** Form strings → typed master input (the store sanitises again) */
+function formToInput(v: MedicineFormValues): MedicineInput {
+  return {
+    name: v.name,
+    salt: v.salt,
+    brand: v.brand,
+    category: v.category,
+    hsn: v.hsn,
+    barcode: v.barcode,
+    rack: v.rack,
+    unit: v.unit,
+    unitsPerStrip: Number(v.unitsPerStrip) || 1,
+    allowLoose: v.allowLoose,
+    mrp: Number(v.mrp) || 0,
+    salePrice: Number(v.salePrice) || 0,
+    minStock: Number(v.minStock) || 0,
+    status: v.status,
+  };
+}
+
 export default function MedicinesPage() {
-  const [items, setItems] = useState<Medicine[]>(mockMedicines);
+  // Master data + live stock from inventory (single source of truth)
+  const items = useMedicinesWithStock();
+  const addMedicine = useMedicineStore((s) => s.addMedicine);
+  const updateMedicine = useMedicineStore((s) => s.updateMedicine);
+  const removeMedicine = useMedicineStore((s) => s.removeMedicine);
+  const importMedicines = useMedicineStore((s) => s.importMedicines);
+
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [editing, setEditing] = useState<Medicine | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Medicine | null>(null);
+  const [editing, setEditing] = useState<MedicineWithStock | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MedicineWithStock | null>(
+    null,
+  );
 
   // Filtering runs at lower priority so typing stays smooth on big lists
   const deferredQuery = useDeferredValue(query);
@@ -109,7 +137,7 @@ export default function MedicinesPage() {
     setDialogOpen(true);
   }, []);
 
-  const openEdit = useCallback((m: Medicine) => {
+  const openEdit = useCallback((m: MedicineWithStock) => {
     setEditing(m);
     setDialogOpen(true);
   }, []);
@@ -123,73 +151,40 @@ export default function MedicinesPage() {
   const closeImport = useCallback(() => setImportOpen(false), []);
   const closeDelete = useCallback(() => setDeleteTarget(null), []);
 
-  const deleteName = deleteTarget?.name;
   const handleDeleteConfirm = useCallback(
     (id: string) => {
-      setItems((prev) => prev.filter((m) => m.id !== id));
+      const target = items.find((m) => m.id === id);
+      // Same rule as the dialog — never orphan batches that hold stock
+      if (target && !isOut(target)) {
+        toast.error("This medicine still has stock and can't be deleted");
+        return;
+      }
+      removeMedicine(id);
       setDeleteTarget(null);
-      toast.success(
-        deleteName ? `"${deleteName}" deleted` : "Medicine deleted",
-      );
+      toast.success(target ? `"${target.name}" deleted` : "Medicine deleted");
     },
-    [deleteName],
+    [items, removeMedicine],
   );
 
   const handleSave = useCallback(
     (values: MedicineFormValues, editId: string | null) => {
-      const payload = {
-        name: cleanText(values.name, 120),
-        salt: cleanText(values.salt, 160),
-        brand: cleanText(values.brand, 80),
-        category: values.category,
-        hsn: values.hsn.trim(),
-        barcode: cleanCode(values.barcode, 32),
-        rack: cleanCode(values.rack, 16),
-        unit: values.unit,
-        unitsPerStrip: Number(values.unitsPerStrip) || 1,
-        allowLoose:
-          values.unit === "STP" || values.unit === "LSE"
-            ? values.allowLoose
-            : false,
-        mrp: Number(values.mrp) || 0,
-        salePrice: Number(values.salePrice) || 0,
-        minStock: Number(values.minStock) || 0,
-        status: values.status,
-      };
-
-      setItems((prev) => {
-        if (editId) {
-          return prev.map((m) => (m.id === editId ? { ...m, ...payload } : m));
-        }
-        const row: Medicine = {
-          id: newId("med"),
-          ...payload,
-          stockStrip: 0,
-          stockLoose: 0,
-          nearestExpiry: null,
-        };
-        return [row, ...prev];
-      });
+      const input = formToInput(values);
+      if (editId) updateMedicine(editId, input);
+      else addMedicine(input);
       setDialogOpen(false);
       setEditing(null);
       toast.success(editId ? "Medicine updated" : "Medicine added");
     },
-    [],
+    [addMedicine, updateMedicine],
   );
 
-  const handleImport = useCallback((rows: ImportRow[]) => {
-    setItems((prev) => [
-      ...rows.map((r) => ({
-        ...r,
-        id: newId("med"),
-        stockStrip: 0,
-        stockLoose: 0,
-        nearestExpiry: null,
-      })),
-      ...prev,
-    ]);
-    toast.success(`${rows.length} medicine(s) imported`);
-  }, []);
+  const handleImport = useCallback(
+    (rows: MedicineInput[]) => {
+      const count = importMedicines(rows);
+      toast.success(`${count} medicine(s) imported`);
+    },
+    [importMedicines],
+  );
 
   return (
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">

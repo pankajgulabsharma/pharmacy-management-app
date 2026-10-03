@@ -1,5 +1,10 @@
 import type { Medicine } from "../types";
 
+/**
+ * Medicine master (catalogue). Stock is not stored here — it is derived
+ * from inventory batches. TODO(api): load from the backend.
+ */
+
 export const mockMedicines: Medicine[] = [
   {
     id: "m1",
@@ -17,9 +22,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 42,
     minStock: 20,
     status: "active",
-    stockStrip: 120,
-    stockLoose: 10,
-    nearestExpiry: "02/11",
   },
   {
     id: "m2",
@@ -37,9 +39,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 27,
     minStock: 30,
     status: "active",
-    stockStrip: 200,
-    stockLoose: 5,
-    nearestExpiry: "08/26",
   },
   {
     id: "m3",
@@ -57,9 +56,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 105,
     minStock: 15,
     status: "active",
-    stockStrip: 40,
-    stockLoose: 2,
-    nearestExpiry: "11/26",
   },
   {
     id: "m4",
@@ -77,9 +73,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 198,
     minStock: 10,
     status: "active",
-    stockStrip: 28,
-    stockLoose: 0,
-    nearestExpiry: "07/27",
   },
   {
     id: "m5",
@@ -97,9 +90,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 126,
     minStock: 12,
     status: "active",
-    stockStrip: 34,
-    stockLoose: 0,
-    nearestExpiry: "05/27",
   },
   {
     id: "m6",
@@ -117,9 +107,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 48,
     minStock: 15,
     status: "active",
-    stockStrip: 40,
-    stockLoose: 0,
-    nearestExpiry: "09/27",
   },
   {
     id: "m7",
@@ -137,9 +124,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 88,
     minStock: 10,
     status: "active",
-    stockStrip: 22,
-    stockLoose: 0,
-    nearestExpiry: "04/28",
   },
   {
     id: "m8",
@@ -157,9 +141,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 99,
     minStock: 8,
     status: "active",
-    stockStrip: 18,
-    stockLoose: 0,
-    nearestExpiry: "11/27",
   },
   {
     id: "m9",
@@ -177,9 +158,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 165,
     minStock: 5,
     status: "active",
-    stockStrip: 9,
-    stockLoose: 0,
-    nearestExpiry: "01/27",
   },
   {
     id: "m10",
@@ -197,9 +175,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 82,
     minStock: 10,
     status: "active",
-    stockStrip: 25,
-    stockLoose: 0,
-    nearestExpiry: "06/27",
   },
   {
     id: "m11",
@@ -217,9 +192,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 125,
     minStock: 15,
     status: "active",
-    stockStrip: 50,
-    stockLoose: 3,
-    nearestExpiry: "12/27",
   },
   {
     id: "m12",
@@ -237,9 +209,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 220,
     minStock: 10,
     status: "active",
-    stockStrip: 0,
-    stockLoose: 0,
-    nearestExpiry: null,
   },
   {
     id: "m14",
@@ -257,9 +226,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 168,
     minStock: 8,
     status: "active",
-    stockStrip: 20,
-    stockLoose: 0,
-    nearestExpiry: "09/27",
   },
   {
     id: "m15",
@@ -277,9 +243,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 88,
     minStock: 10,
     status: "active",
-    stockStrip: 15,
-    stockLoose: 0,
-    nearestExpiry: "06/27",
   },
   {
     id: "m16",
@@ -297,9 +260,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 128,
     minStock: 6,
     status: "active",
-    stockStrip: 12,
-    stockLoose: 0,
-    nearestExpiry: "04/27",
   },
   {
     id: "m17",
@@ -317,9 +277,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 88,
     minStock: 8,
     status: "active",
-    stockStrip: 18,
-    stockLoose: 2,
-    nearestExpiry: "11/27",
   },
   {
     id: "m18",
@@ -337,9 +294,6 @@ export const mockMedicines: Medicine[] = [
     salePrice: 22,
     minStock: 20,
     status: "active",
-    stockStrip: 50,
-    stockLoose: 3,
-    nearestExpiry: "08/27",
   },
   {
     id: "m19",
@@ -357,8 +311,56 @@ export const mockMedicines: Medicine[] = [
     salePrice: 27,
     minStock: 15,
     status: "active",
-    stockStrip: 5,
-    stockLoose: 0,
-    nearestExpiry: "03/27",
+  },
+  {
+    id: "m20",
+    name: "Paracetamol 500mg Tablet (Box)",
+    salt: "Paracetamol",
+    brand: "Cipla",
+    category: "tablet_capsule",
+    hsn: "30049099",
+    barcode: "8901030500500",
+    rack: "A1",
+    unit: "BOX",
+    unitsPerStrip: 10,
+    allowLoose: false,
+    mrp: 300,
+    salePrice: 270,
+    minStock: 2,
+    status: "active",
+  },
+  {
+    id: "m30",
+    name: "Vitamin C Chewable",
+    salt: "Ascorbic Acid",
+    brand: "Local",
+    category: "tablet_capsule",
+    hsn: "21069099",
+    barcode: "8901030300300",
+    rack: "B2",
+    unit: "LSE",
+    unitsPerStrip: 1,
+    allowLoose: true,
+    mrp: 2,
+    salePrice: 1.5,
+    minStock: 20,
+    status: "active",
+  },
+  {
+    id: "m99",
+    name: "Surgical Spirit 100ml",
+    salt: "Ethanol",
+    brand: "Local",
+    category: "other",
+    hsn: "30049099",
+    barcode: "8901030990990",
+    rack: "OT-1",
+    unit: "BTL",
+    unitsPerStrip: 1,
+    allowLoose: false,
+    mrp: 45,
+    salePrice: 40,
+    minStock: 5,
+    status: "active",
   },
 ];
