@@ -1,3 +1,4 @@
+import { DEFAULT_GST_RATE, type GstRate } from "@/lib/gst";
 /** Dosage form / category */
 export type MedicineCategory =
   | "tablet_capsule"
@@ -38,6 +39,8 @@ export type Medicine = {
   mrp: number;
   salePrice: number;
   minStock: number;
+  /** GST slab for this product (by HSN). Retail price already includes it. */
+  gstPercent: GstRate;
   status: MedicineStatus;
 };
 
@@ -83,6 +86,7 @@ export type MedicineFormValues = {
   mrp: string;
   salePrice: string;
   minStock: string;
+  gstPercent: GstRate;
   status: MedicineStatus;
 };
 
@@ -190,6 +194,7 @@ export const emptyMedicineForm = (): MedicineFormValues => ({
   mrp: "",
   salePrice: "",
   minStock: "10",
+  gstPercent: DEFAULT_GST_RATE,
   status: "active",
 });
 
@@ -208,6 +213,7 @@ export function medicineToForm(m: Medicine): MedicineFormValues {
     mrp: String(m.mrp),
     salePrice: String(m.salePrice),
     minStock: String(m.minStock),
+    gstPercent: m.gstPercent,
     status: m.status,
   };
 }

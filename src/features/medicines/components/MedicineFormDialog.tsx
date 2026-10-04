@@ -7,6 +7,7 @@ import { FormField as Field } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { isMoneyInput } from "@/lib/money";
 import { isIntInput } from "@/lib/sanitize";
+import { GST_RATES, isGstRate } from "@/lib/gst";
 import type {
   Medicine,
   MedicineFormValues,
@@ -281,6 +282,22 @@ function MedicineForm({ medicine, onClose, onSave }: Omit<Props, "open">) {
               className={fieldClass}
               inputMode="numeric"
             />
+          </Field>
+          <Field label="GST % *" hint="Included in MRP">
+            <select
+              value={values.gstPercent}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (isGstRate(n)) setField("gstPercent")(n);
+              }}
+              className={fieldClass}
+            >
+              {GST_RATES.map((r) => (
+                <option key={r} value={r}>
+                  {r}%
+                </option>
+              ))}
+            </select>
           </Field>
           <div className="flex items-end pb-1">
             {(values.unit === "STP" || values.unit === "LSE") && (

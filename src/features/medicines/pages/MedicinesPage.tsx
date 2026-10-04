@@ -67,6 +67,7 @@ function formToInput(v: MedicineFormValues): MedicineInput {
     mrp: Number(v.mrp) || 0,
     salePrice: Number(v.salePrice) || 0,
     minStock: Number(v.minStock) || 0,
+    gstPercent: v.gstPercent,
     status: v.status,
   };
 }

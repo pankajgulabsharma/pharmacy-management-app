@@ -21,6 +21,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 48,
     salePrice: 42,
     minStock: 20,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -38,6 +39,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 30,
     salePrice: 27,
     minStock: 30,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -55,6 +57,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 120,
     salePrice: 105,
     minStock: 15,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -72,6 +75,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 220,
     salePrice: 198,
     minStock: 10,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -89,6 +93,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 140,
     salePrice: 126,
     minStock: 12,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -106,6 +111,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 55,
     salePrice: 48,
     minStock: 15,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -123,6 +129,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 95,
     salePrice: 88,
     minStock: 10,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -140,6 +147,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 110,
     salePrice: 99,
     minStock: 8,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -157,6 +165,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 180,
     salePrice: 165,
     minStock: 5,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -174,6 +183,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 95,
     salePrice: 82,
     minStock: 10,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -191,6 +201,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 140,
     salePrice: 125,
     minStock: 15,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -208,6 +219,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 245,
     salePrice: 220,
     minStock: 10,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -225,6 +237,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 185,
     salePrice: 168,
     minStock: 8,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -242,6 +255,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 95,
     salePrice: 88,
     minStock: 10,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -259,6 +273,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 140,
     salePrice: 128,
     minStock: 6,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -276,6 +291,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 95,
     salePrice: 88,
     minStock: 8,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -293,6 +309,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 25,
     salePrice: 22,
     minStock: 20,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -310,6 +327,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 30,
     salePrice: 27,
     minStock: 15,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -327,6 +345,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 300,
     salePrice: 270,
     minStock: 2,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -344,6 +363,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 2,
     salePrice: 1.5,
     minStock: 20,
+    gstPercent: 5,
     status: "active",
   },
   {
@@ -361,6 +381,7 @@ export const mockMedicines: Medicine[] = [
     mrp: 45,
     salePrice: 40,
     minStock: 5,
+    gstPercent: 18,
     status: "active",
   },
 ];

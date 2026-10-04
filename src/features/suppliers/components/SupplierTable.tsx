@@ -22,25 +22,34 @@ type Props = {
   onEdit: (s: SupplierWithSummary) => void;
 };
 
+/*
+ * Percentage widths (sum = 100%) share the space between all columns.
+ * Before, only "Supplier" had no width, so it swallowed all the spare
+ * room and left a big gap after the name.
+ */
+/**
+ * Widths fit their content; only "Supplier" has no width, so it takes all
+ * remaining space (see TableShell). No gaps between short values.
+ */
 const COLUMNS: TableColumn[] = [
   { key: "supplier", label: "Supplier" },
-  { key: "contact", label: "Contact", width: "w-[170px]" },
+  { key: "contact", label: "Contact", width: "w-[160px]" },
   { key: "terms", label: "Credit", width: "w-[76px]" },
-  { key: "invoices", label: "Invoices", width: "w-[120px]" },
+  { key: "invoices", label: "Invoices", width: "w-[128px]" },
   {
     key: "purchased",
     label: "Purchased (₹)",
-    width: "w-[120px]",
+    width: "w-[124px]",
     align: "text-right",
   },
   {
     key: "outstanding",
     label: "Outstanding (₹)",
-    width: "w-[130px]",
+    width: "w-[136px]",
     align: "text-right",
   },
-  { key: "status", label: "Status", width: "w-[88px]" },
-  { key: "actions", label: "", width: "w-[84px]", align: "text-center" },
+  { key: "status", label: "Status", width: "w-[92px]", align: "text-center" },
+  { key: "actions", label: "", width: "w-[80px]", align: "text-center" },
 ];
 
 const getKey = (s: SupplierWithSummary) => s.id;
@@ -178,7 +187,7 @@ const SupplierRow = memo(function SupplierRow({
         ) : null}
       </td>
 
-      <td className="px-3 py-2.5 align-middle">
+      <td className="px-3 py-2.5 align-middle text-center">
         <StatusBadge tone={s.status === "active" ? "success" : "neutral"}>
           {s.status === "active" ? "Active" : "Inactive"}
         </StatusBadge>

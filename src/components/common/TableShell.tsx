@@ -4,7 +4,10 @@ import { cn } from "@/lib/utils";
 export type TableColumn = {
   key: string;
   label: string;
-  /** Tailwind width class, e.g. "w-[104px]". Omit for the flexible column. */
+  /**
+   * Tailwind width class, e.g. "w-[104px]". Omit it on exactly one column
+   * (usually the name) — that column takes all the remaining width.
+   */
   width?: string;
   align?: "text-left" | "text-right" | "text-center";
 };
@@ -46,9 +49,15 @@ export function TableShell({
             minWidthClass,
           )}
         >
+          {/*
+            Fixed columns keep their exact width; the one column without a
+            width gets "w-full", so it absorbs ALL spare space. Without this
+            the browser spreads spare space over every column and small
+            columns (e.g. "Credit") end up with large empty gaps.
+          */}
           <colgroup>
             {columns.map((c) => (
-              <col key={c.key} className={c.width} />
+              <col key={c.key} className={c.width ?? "w-full"} />
             ))}
           </colgroup>
 

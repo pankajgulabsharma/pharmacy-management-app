@@ -3,6 +3,7 @@ import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { demoInventory } from "@/app/demo/seed";
 import type {
   StockBatch,
+  StockChange,
   StockIssue,
   StockMovement,
   StockReceipt,
@@ -10,6 +11,7 @@ import type {
 import {
   StockError,
   applyAdjustment,
+  applyChange,
   applyIssue,
   applyReceipt,
   applyReversal,
@@ -45,6 +47,9 @@ type InventoryState = {
 
   /** Remove stock from specific batches (purchase return). All-or-nothing. */
   issue: (issue: StockIssue) => void;
+
+  /** Exact per-batch deltas (sale / sales return). All-or-nothing. */
+  change: (change: StockChange) => void;
 
   /** Set a batch to a counted quantity. Returns false when nothing changed. */
   adjust: (
@@ -134,6 +139,15 @@ export const useInventoryStore = create<InventoryState>()((set, get) => ({
   issue: (issue) => {
     const state = get();
     const r = applyIssue(state.batches, issue);
+    set({
+      batches: r.batches,
+      movements: [...r.movements.reverse(), ...state.movements],
+    });
+  },
+
+  change: (change) => {
+    const state = get();
+    const r = applyChange(state.batches, change);
     set({
       batches: r.batches,
       movements: [...r.movements.reverse(), ...state.movements],

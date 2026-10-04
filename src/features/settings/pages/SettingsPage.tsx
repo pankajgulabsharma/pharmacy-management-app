@@ -1,0 +1,107 @@
+import { useState } from "react";
+import {
+  Building2,
+  Database,
+  Palette,
+  Receipt,
+  Settings as SettingsIcon,
+  Stethoscope,
+  Warehouse,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/PageHeader";
+import {
+  AppearanceSection,
+  BillingSection,
+  DataSection,
+  InventorySection,
+  ListsSection,
+  ShopProfileSection,
+} from "../components/SettingsSections";
+
+type SectionId =
+  "shop" | "billing" | "inventory" | "lists" | "appearance" | "data";
+
+const SECTIONS: {
+  id: SectionId;
+  label: string;
+  icon: LucideIcon;
+  Component: () => React.JSX.Element;
+}[] = [
+  {
+    id: "shop",
+    label: "Shop profile",
+    icon: Building2,
+    Component: ShopProfileSection,
+  },
+  { id: "billing", label: "Billing", icon: Receipt, Component: BillingSection },
+  {
+    id: "inventory",
+    label: "Stock & expiry",
+    icon: Warehouse,
+    Component: InventorySection,
+  },
+  {
+    id: "lists",
+    label: "Doctors & counters",
+    icon: Stethoscope,
+    Component: ListsSection,
+  },
+  {
+    id: "appearance",
+    label: "Appearance",
+    icon: Palette,
+    Component: AppearanceSection,
+  },
+  { id: "data", label: "Data", icon: Database, Component: DataSection },
+];
+
+export default function SettingsPage() {
+  const [active, setActive] = useState<SectionId>("shop");
+  const section = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
+  const Active = section.Component;
+
+  return (
+    <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">
+      <PageHeader
+        icon={SettingsIcon}
+        title="Settings"
+        subtitle="Shop profile · billing · stock · lists · appearance"
+      />
+
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">
+        <nav
+          aria-label="Settings sections"
+          className="rounded-xl border border-border bg-card p-1.5 h-fit"
+        >
+          <ul className="space-y-0.5">
+            {SECTIONS.map(({ id, label, icon: Icon }) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  onClick={() => setActive(id)}
+                  aria-current={active === id ? "page" : undefined}
+                  className={cn(
+                    "w-full h-9 px-2.5 rounded-lg text-[12px] inline-flex items-center gap-2 transition-colors",
+                    active === id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="min-h-0 overflow-y-auto pr-0.5">
+          {/* key: each section starts with fresh form state */}
+          <Active key={active} />
+        </div>
+      </div>
+    </div>
+  );
+}

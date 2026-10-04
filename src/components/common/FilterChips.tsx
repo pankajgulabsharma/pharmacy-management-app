@@ -12,6 +12,8 @@ type Props<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   ariaLabel: string;
+  /** false = always one line (use where the row has room for it) */
+  wrap?: boolean;
 };
 
 function FilterChipsInner<T extends string>({
@@ -19,12 +21,16 @@ function FilterChipsInner<T extends string>({
   value,
   onChange,
   ariaLabel,
+  wrap = true,
 }: Props<T>) {
   return (
     <div
       role="group"
       aria-label={ariaLabel}
-      className="flex items-center gap-1 shrink-0 flex-wrap justify-end"
+      className={cn(
+        "flex items-center gap-1 shrink-0",
+        wrap ? "flex-wrap justify-end" : "flex-nowrap",
+      )}
     >
       {options.map((o) => {
         const active = o.id === value;

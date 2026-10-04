@@ -58,6 +58,13 @@ export function inrFromPaise(p: Paise): string {
   return `${p < 0 ? "− " : ""}₹${formatPaise(Math.abs(p))}`;
 }
 
+const inrWhole = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+
+/** Whole rupees for summaries and sentences: 326475 → "₹3,265" */
+export function inrRounded(p: Paise): string {
+  return `₹${inrWhole.format(Math.round(p / 100))}`;
+}
+
 /** Signed amount for round-off style rows: "+ ₹0.34", "− ₹0.20", "₹0.00" */
 export function signedInrFromPaise(p: Paise): string {
   if (p === 0) return "₹0.00";

@@ -1,38 +1,42 @@
-import { useMemo, useState, useCallback } from "react";
+import { memo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { formatRupees, isMoneyInput } from "@/lib/money";
+import { focusAtEnd } from "@/lib/dom";
+import {
+  inrFromPaise,
+  isMoneyInput,
+  paiseToInput,
+  parseRupees,
+  signedInrFromPaise,
+} from "@/lib/money";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
-import type { BillLineItem, PaymentMethod } from "../types";
 import {
-  calcLineAmount,
-  calcLineDiscount,
-  calcLineGross,
-  roundOffToRupee,
+  PAYMENT_METHOD_LABELS,
+  type PaymentDraft,
+  type PaymentMethod,
+  type SaleTotals,
 } from "../types";
+import type { BillLineView } from "../hooks/useBillingData";
 
 type Props = {
   billNo: string;
-  items: BillLineItem[];
-  paymentMethod: PaymentMethod;
-  onPaymentMethodChange: (m: PaymentMethod) => void;
-  receivedAmount: string;
-  onReceivedAmountChange: (v: string) => void;
-  customerName?: string;
+  lines: BillLineView[];
+  totals: SaleTotals;
+  payment: PaymentDraft;
+  onPaymentChange: (p: PaymentDraft) => void;
+  customerName: string;
+  /** Why saving is blocked right now, or null */
+  blockReason: string | null;
+  saving: boolean;
+  onSave: (print: boolean) => void;
+  onHold: () => void;
 };
 
-const METHODS: { id: PaymentMethod; label: string }[] = [
-  { id: "cash", label: "Cash" },
-  { id: "upi", label: "UPI" },
-  { id: "card", label: "Card" },
-  { id: "wallet", label: "Wallet" },
-  { id: "udhaar", label: "Udhaar" },
-  { id: "split", label: "Split" },
-];
+const METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
 
 const PAY_INPUT = cn(
   "h-7 w-full rounded-md !text-[10px] leading-none",
@@ -44,88 +48,63 @@ const PAY_INPUT = cn(
   "focus-visible:bg-background",
 );
 
-const PREV_UDHAAR_DUE = 1240; // TODO: customer ledger API
+/** Previous udhaar balance — TODO(customers): from the customer ledger */
+const PREV_UDHAAR_DUE_PAISE = 124_000;
 
-/** Absolute value — signs are rendered separately in the summary rows */
-function formatINR(n: number) {
-  return formatRupees(Math.abs(n));
-}
-
-export function BillSummaryPanel({
+export const BillSummaryPanel = memo(function BillSummaryPanel({
   billNo,
-  items,
-  paymentMethod,
-  onPaymentMethodChange,
-  receivedAmount,
-  onReceivedAmountChange,
-  customerName = "Customer",
+  lines,
+  totals,
+  payment,
+  onPaymentChange,
+  customerName,
+  blockReason,
+  saving,
+  onSave,
+  onHold,
 }: Props) {
   const { t } = useTranslation();
-  const [splitCash, setSplitCash] = useState("");
-  const [splitUpi, setSplitUpi] = useState("");
-  const [splitCard, setSplitCard] = useState("");
+  const receivedRef = useRef<HTMLInputElement>(null);
+  const net = totals.netPaise;
 
-  const totals = useMemo(() => {
-    let subtotal = 0;
-    let discount = 0;
-    let afterDiscount = 0;
-    for (const item of items) {
-      subtotal += calcLineGross(item);
-      discount += calcLineDiscount(item);
-      afterDiscount += calcLineAmount(item);
-    }
-    const gst = afterDiscount * 0.12;
-    const { rounded, roundOff } = roundOffToRupee(afterDiscount + gst);
-    return { subtotal, discount, gst, roundOff, total: rounded };
-  }, [items]);
+  const set = (patch: Partial<PaymentDraft>) =>
+    onPaymentChange({ ...payment, ...patch });
+  const setSplit = (key: keyof PaymentDraft["split"], v: string) => {
+    if (isMoneyInput(v)) set({ split: { ...payment.split, [key]: v } });
+  };
 
-  const received = Number.parseFloat(receivedAmount);
-  const changeDue =
-    paymentMethod === "cash" && received > 0
-      ? Math.max(0, received - totals.total)
-      : 0;
-
-  const splitSum =
-    (Number.parseFloat(splitCash) || 0) +
-    (Number.parseFloat(splitUpi) || 0) +
-    (Number.parseFloat(splitCard) || 0);
-  const splitRemaining = Math.max(0, totals.total - splitSum);
-
-  const canSave =
-    items.length > 0 &&
-    (paymentMethod !== "cash" && paymentMethod !== "split"
-      ? true
-      : paymentMethod === "cash"
-        ? !Number.isNaN(received) && received >= totals.total
-        : splitSum >= totals.total - 0.01);
-
-  const displayName = customerName.trim() || "Customer";
-  const dueAfterBill = PREV_UDHAAR_DUE + totals.total;
-
-  const onAmountChange = useCallback(
-    (value: string) => {
-      if (isMoneyInput(value)) onReceivedAmountChange(value);
-    },
-    [onReceivedAmountChange],
+  const received = parseRupees(payment.received) ?? 0;
+  const changeDue = Math.max(0, received - net);
+  const splitSum = (["cash", "upi", "card"] as const).reduce(
+    (s, k) => s + (parseRupees(payment.split[k]) ?? 0),
+    0,
   );
+  const splitLeft = net - splitSum;
+  const displayName = customerName.trim() || "Customer";
+  const canSave = !blockReason && !saving;
 
   return (
     <div className="h-full flex flex-col gap-2 overflow-hidden">
-      {/* Summary ~52% */}
+      {/* Summary */}
       <div className="bg-card border border-border rounded-lg p-2.5 flex-[52] min-h-0 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-border/60 shrink-0">
           <h3 className="text-[11px] font-semibold text-foreground">
             {t("billing.billSummary")}
           </h3>
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] text-muted-foreground">{billNo}</span>
+            <span
+              className="text-[9px] text-muted-foreground font-mono"
+              title="Number this bill will get"
+            >
+              {billNo}
+            </span>
             <StatusBadge tone="caution" size="xs">
               {t("billing.draft")}
             </StatusBadge>
           </div>
         </div>
 
-        {items.length === 0 ? (
+        {lines.length === 0 ? (
           <EmptyState
             icon={FileText}
             title={t("billing.noItems")}
@@ -136,191 +115,213 @@ export function BillSummaryPanel({
         ) : (
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto space-y-1 mb-1.5 min-h-0">
-              {items.map((item) => (
+              {lines.map(({ line, medicine, amounts, error }) => (
                 <div
-                  key={item.lineId}
+                  key={line.lineId}
                   className="flex items-start justify-between gap-2 text-[10px]"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {item.medicine.name}
+                    <p
+                      className={cn(
+                        "font-medium truncate",
+                        error ? "text-red-600" : "text-foreground",
+                      )}
+                    >
+                      {medicine?.name ?? "Unknown"}
                     </p>
                     <p className="text-[9px] text-muted-foreground">
-                      {item.qtyStrip} STP
-                      {item.qtyLoose > 0 ? ` + ${item.qtyLoose} LSE` : ""}
-                      {item.discountPercent > 0
-                        ? ` · ${item.discountPercent}% off`
+                      {[
+                        line.qtyStrip
+                          ? `${line.qtyStrip} ${medicine?.unit ?? ""}`
+                          : "",
+                        line.qtyLoose ? `${line.qtyLoose} LSE` : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" + ")}
+                      {line.discountPercent > 0
+                        ? ` · ${line.discountPercent}% off`
                         : ""}
                     </p>
                   </div>
                   <span className="tabular-nums font-medium shrink-0">
-                    ₹{calcLineAmount(item).toFixed(2)}
+                    {inrFromPaise(amounts.amountPaise)}
                   </span>
                 </div>
               ))}
             </div>
 
             <div className="border-t border-border pt-1.5 space-y-0.5 text-[10px] shrink-0">
-              <Row label="Subtotal" value={`₹${formatINR(totals.subtotal)}`} />
+              <Row label="Subtotal" value={inrFromPaise(totals.grossPaise)} />
+              {totals.discountPaise > 0 ? (
+                <Row
+                  label="Discount"
+                  value={inrFromPaise(-totals.discountPaise)}
+                  valueClass="text-emerald-600 dark:text-emerald-400"
+                />
+              ) : null}
               <Row
-                label="Discount"
-                value={`−₹${formatINR(totals.discount)}`}
-                valueClass="text-emerald-600 dark:text-emerald-400"
+                label="GST included (CGST + SGST)"
+                value={`${inrFromPaise(totals.cgstPaise)} + ${inrFromPaise(totals.sgstPaise)}`}
+                valueClass="text-muted-foreground"
               />
-              <Row label="GST (12%)" value={`₹${formatINR(totals.gst)}`} />
               <Row
-                label="Round Off"
-                value={`${totals.roundOff >= 0 ? "+" : "−"}₹${formatINR(totals.roundOff)}`}
+                label="Round off"
+                value={signedInrFromPaise(totals.roundOffPaise)}
               />
               <div className="flex justify-between text-[12px] font-bold text-primary pt-0.5">
                 <span>Total</span>
-                <span className="tabular-nums">₹{formatINR(totals.total)}</span>
+                <span className="tabular-nums">{inrFromPaise(net)}</span>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Payment ~48% */}
+      {/* Payment */}
       <div className="bg-card border border-border rounded-lg p-2.5 flex-[48] min-h-0 flex flex-col overflow-hidden">
         <h3 className="text-[11px] font-semibold text-foreground shrink-0 mb-1.5">
           {t("billing.paymentMethod")}
         </h3>
-
-        <div className="grid grid-cols-3 gap-1 shrink-0 mb-1.5">
+        <div
+          className="grid grid-cols-3 gap-1 shrink-0 mb-1.5"
+          role="radiogroup"
+          aria-label="Payment method"
+        >
           {METHODS.map((m) => (
             <button
-              key={m.id}
+              key={m}
               type="button"
-              onClick={() => onPaymentMethodChange(m.id)}
+              role="radio"
+              aria-checked={payment.method === m}
+              onClick={() => set({ method: m })}
               className={cn(
                 "rounded-md border px-1 py-1.5 text-[9px] font-medium transition-colors",
-                paymentMethod === m.id
+                payment.method === m
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-muted-foreground hover:bg-muted",
               )}
             >
-              {m.label}
+              {PAYMENT_METHOD_LABELS[m]}
             </button>
           ))}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto mb-1.5 p-0.5">
-          {paymentMethod === "cash" && (
+          {payment.method === "cash" && (
             <div className="space-y-1">
-              <label className="text-[9px] text-muted-foreground block">
-                Received (₹)
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="bill-received"
+                  className="text-[9px] text-muted-foreground"
+                >
+                  Received (₹)
+                </label>
+                <button
+                  type="button"
+                  disabled={net === 0}
+                  onClick={() => {
+                    set({ received: paiseToInput(net) });
+                    focusAtEnd(receivedRef.current);
+                  }}
+                  className="text-[9px] font-medium text-primary hover:underline disabled:opacity-50"
+                >
+                  Exact amount
+                </button>
+              </div>
               <Input
-                value={receivedAmount}
-                onChange={(e) => onAmountChange(e.target.value)}
+                id="bill-received"
+                ref={receivedRef}
+                value={payment.received}
+                onChange={(e) => {
+                  if (isMoneyInput(e.target.value))
+                    set({ received: e.target.value });
+                }}
                 placeholder="0.00"
                 className={PAY_INPUT}
                 inputMode="decimal"
               />
               <div className="flex justify-between text-[10px]">
-                <span className="text-muted-foreground">Change</span>
+                <span className="text-muted-foreground">Change to return</span>
                 <span className="font-semibold tabular-nums">
-                  ₹{formatINR(changeDue)}
+                  {inrFromPaise(changeDue)}
                 </span>
               </div>
             </div>
           )}
 
-          {paymentMethod === "upi" && (
+          {(payment.method === "upi" || payment.method === "card") && (
             <div className="space-y-1">
               <p className="text-[9px] text-muted-foreground">
-                Pay{" "}
+                {payment.method === "upi" ? "Collect" : "Charge"}{" "}
                 <span className="font-semibold text-foreground">
-                  ₹{formatINR(totals.total)}
+                  {inrFromPaise(net)}
                 </span>{" "}
-                via UPI
+                via {PAYMENT_METHOD_LABELS[payment.method]}
               </p>
               <Input
-                value={receivedAmount}
-                onChange={(e) => onReceivedAmountChange(e.target.value)}
-                placeholder="UTR (optional)"
+                value={payment.reference}
+                maxLength={40}
+                onChange={(e) => set({ reference: e.target.value })}
+                placeholder={
+                  payment.method === "upi"
+                    ? "UTR / ref no. (optional)"
+                    : "Approval code (optional)"
+                }
                 className={PAY_INPUT}
               />
             </div>
           )}
 
-          {paymentMethod === "card" && (
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground">
-                Card{" "}
-                <span className="font-semibold text-foreground">
-                  ₹{formatINR(totals.total)}
-                </span>
-              </p>
-              <Input
-                value={receivedAmount}
-                onChange={(e) => onReceivedAmountChange(e.target.value)}
-                placeholder="Approval code"
-                className={PAY_INPUT}
-              />
-            </div>
-          )}
-
-          {paymentMethod === "wallet" && (
+          {payment.method === "wallet" && (
             <p className="text-[9px] text-muted-foreground pt-1">
               Wallet debit{" "}
               <span className="font-semibold text-foreground">
-                ₹{formatINR(totals.total)}
+                {inrFromPaise(net)}
               </span>
             </p>
           )}
 
-          {paymentMethod === "udhaar" && (
+          {payment.method === "udhaar" && (
             <div className="space-y-1.5 rounded-md border border-red-500/20 bg-red-50/50 dark:bg-red-950/20 p-2">
               <p className="text-[10px] text-foreground leading-snug">
                 <span className="font-semibold text-red-600">
-                  ₹{formatINR(totals.total)}
+                  {inrFromPaise(net)}
                 </span>{" "}
-                is added to <span className="font-medium">{displayName}</span>{" "}
+                is added to <span className="font-medium">{displayName}</span>'s
                 udhaar
               </p>
               <p className="text-[10px] text-muted-foreground leading-snug">
                 Due after this bill{" "}
                 <span className="font-semibold text-foreground">
-                  ₹{formatINR(dueAfterBill)}
+                  {inrFromPaise(PREV_UDHAAR_DUE_PAISE + net)}
                 </span>
               </p>
             </div>
           )}
 
-          {paymentMethod === "split" && (
+          {payment.method === "split" && (
             <div className="space-y-1">
               <p className="text-[9px] text-muted-foreground">
-                Left{" "}
+                {splitLeft >= 0 ? "Left" : "Over by"}{" "}
                 <span
                   className={cn(
                     "font-semibold",
-                    splitRemaining > 0.01
-                      ? "text-orange-600"
-                      : "text-emerald-600",
+                    splitLeft === 0 ? "text-emerald-600" : "text-orange-600",
                   )}
                 >
-                  ₹{formatINR(splitRemaining)}
+                  {inrFromPaise(Math.abs(splitLeft))}
                 </span>
               </p>
-              {(
-                [
-                  ["Cash", splitCash, setSplitCash],
-                  ["UPI", splitUpi, setSplitUpi],
-                  ["Card", splitCard, setSplitCard],
-                ] as const
-              ).map(([label, val, setVal]) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-muted-foreground w-8 shrink-0">
-                    {label}
+              {(["cash", "upi", "card"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1.5">
+                  <span className="text-[9px] text-muted-foreground w-8 shrink-0 capitalize">
+                    {k}
                   </span>
                   <Input
-                    value={val}
-                    onChange={(e) => {
-                      if (isMoneyInput(e.target.value)) setVal(e.target.value);
-                    }}
+                    value={payment.split[k]}
+                    onChange={(e) => setSplit(k, e.target.value)}
                     placeholder="0"
+                    aria-label={`Split ${k} amount`}
                     className={PAY_INPUT}
                     inputMode="decimal"
                   />
@@ -331,18 +332,30 @@ export function BillSummaryPanel({
         </div>
 
         <div className="space-y-1.5 shrink-0">
+          {blockReason && lines.length > 0 ? (
+            <p
+              className="text-[9px] text-orange-600 dark:text-orange-400 leading-tight"
+              role="status"
+            >
+              {blockReason}
+            </p>
+          ) : null}
           <Button
             type="button"
             disabled={!canSave}
+            onClick={() => onSave(true)}
+            title="F9"
             className="w-full h-8 rounded-md text-[11px] bg-primary text-primary-foreground disabled:opacity-50"
           >
             {t("billing.savePrint")}
-            {items.length > 0 ? ` · ₹${formatINR(totals.total)}` : ""}
+            {lines.length > 0 ? ` · ${inrFromPaise(net)}` : ""}
           </Button>
           <div className="grid grid-cols-2 gap-1">
             <Button
               type="button"
               variant="outline"
+              disabled={lines.length === 0 || saving}
+              onClick={onHold}
               className="h-7 rounded-md text-[9px] border-border"
             >
               {t("billing.holdBill")}
@@ -350,6 +363,8 @@ export function BillSummaryPanel({
             <Button
               type="button"
               variant="outline"
+              disabled={!canSave}
+              onClick={() => onSave(false)}
               className="h-7 rounded-md text-[9px] border-border"
             >
               {t("billing.saveNoPrint")}
@@ -359,7 +374,7 @@ export function BillSummaryPanel({
       </div>
     </div>
   );
-}
+});
 
 function Row({
   label,
@@ -371,7 +386,7 @@ function Row({
   valueClass?: string;
 }) {
   return (
-    <div className="flex justify-between">
+    <div className="flex justify-between gap-2">
       <span className="text-muted-foreground">{label}</span>
       <span className={cn("tabular-nums", valueClass)}>{value}</span>
     </div>

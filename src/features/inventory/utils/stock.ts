@@ -1,8 +1,6 @@
 import { isExpiringWithin, isExpiryPast } from "@/lib/expiry";
+import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore";
 import type { InventoryBatch } from "../types";
-
-/** Batches expiring within this window are flagged "Expiring soon" */
-export const EXPIRING_SOON_DAYS = 90;
 
 /**
  * Expiry is "MM/YY" (as printed on packs) and is valid until the last day
@@ -14,7 +12,8 @@ export function isExpired(expiry: string, now = new Date()): boolean {
 
 export function isExpiringSoon(
   expiry: string,
-  days = EXPIRING_SOON_DAYS,
+  /** Defaults to Settings → Inventory → "Expiring soon" window */
+  days = getExpiringSoonDays(),
   now = new Date(),
 ): boolean {
   return isExpiringWithin(expiry, days, now);

@@ -72,3 +72,30 @@ body,
 
   --color-destructive: #f87171;
 }
+
+/* ------------------------------------------------------------------ */
+/* Printing: only the element marked .print-area is printed (bills)    */
+/* ------------------------------------------------------------------ */
+@media print {
+  @page {
+    margin: 6mm;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 80mm; /* thermal roll; also fine on A4 */
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}

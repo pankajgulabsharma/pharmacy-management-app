@@ -1,3 +1,4 @@
+import { DEFAULT_GST_RATE, isGstRate } from "@/lib/gst";
 import type {
   MedicineInput,
   MedicineCategory,
@@ -20,6 +21,7 @@ export const MEDICINE_CSV_HEADERS = [
   "mrp",
   "sale_price",
   "min_stock",
+  "gst",
   "status",
 ] as const;
 
@@ -75,10 +77,10 @@ function parseCsvLine(line: string): string[] {
 export function buildSampleCsv(): string {
   const header = MEDICINE_CSV_HEADERS.join(",");
   const rows = [
-    "Sample Para 500,Paracetamol,Cipla,tablet_capsule,30049099,8901000000001,A1,STP,10,true,30,27,20,active",
-    "Sample Syrup 100ml,Ambroxol,Dr Reddy,syrup_suspension,30049099,8901000000002,E1,BTL,1,false,95,88,10,active",
-    "Sample Para Box,Paracetamol,Cipla,tablet_capsule,30049099,8901000000003,A1,BOX,10,false,300,270,2,active",
-    "Sample Eye Drops,CMC,Allergan,drops,30049099,8901000000004,DR-1,BTL,1,false,185,168,8,active",
+    "Sample Para 500,Paracetamol,Cipla,tablet_capsule,30049099,8901000000001,A1,STP,10,true,30,27,20,5,active",
+    "Sample Syrup 100ml,Ambroxol,Dr Reddy,syrup_suspension,30049099,8901000000002,E1,BTL,1,false,95,88,10,5,active",
+    "Sample Para Box,Paracetamol,Cipla,tablet_capsule,30049099,8901000000003,A1,BOX,10,false,300,270,2,5,active",
+    "Sample Eye Drops,CMC,Allergan,drops,30049099,8901000000004,DR-1,BTL,1,false,185,168,8,5,active",
   ];
   return [header, ...rows].join("\n");
 }
@@ -180,6 +182,16 @@ export function parseMedicineCsv(text: string): CsvRowResult[] {
       statusRaw === "inactive" ? "inactive" : "active";
 
     const minStock = Number(get("min_stock") || "10");
+    // Optional column — older files without it get the default slab
+    const gstRaw = Number(get("gst") || DEFAULT_GST_RATE);
+    if (!isGstRate(gstRaw)) {
+      results.push({
+        ok: false,
+        row: i + 1,
+        message: "gst must be 0, 5, 12 or 18",
+      });
+      continue;
+    }
     const hsn = get("hsn");
     if (hsn && !/^\d{4,8}$/.test(hsn)) {
       results.push({ ok: false, row: i + 1, message: "invalid hsn" });
@@ -202,6 +214,7 @@ export function parseMedicineCsv(text: string): CsvRowResult[] {
         mrp,
         salePrice,
         minStock: Number.isNaN(minStock) ? 10 : minStock,
+        gstPercent: gstRaw,
         status,
       },
     });

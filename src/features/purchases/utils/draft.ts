@@ -4,7 +4,6 @@ import { newId } from "@/lib/id";
 import { paiseToInput, parseRupees, rupeesToPaise } from "@/lib/money";
 import { cleanCode, cleanText, toNumberOrZero } from "@/lib/sanitize";
 import {
-  DEFAULT_GST_RATE,
   PURCHASE_LIMITS,
   type Purchase,
   type PurchaseDraft,
@@ -42,7 +41,7 @@ export function createLineFromMedicine(m: Medicine): PurchaseLineDraft {
     rate: "",
     mrp: m.mrp > 0 ? paiseToInput(rupeesToPaise(m.mrp)) : "",
     discountPercent: "",
-    gstPercent: DEFAULT_GST_RATE,
+    gstPercent: m.gstPercent,
   };
 }
 

@@ -9,6 +9,7 @@ import {
   invalidFieldClass,
 } from "@/components/common/formStyles";
 import { formatPackLabel } from "@/features/medicines/types";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { formatExpiryInput, monthsToExpiry } from "@/lib/expiry";
 import { formatPaise, isMoneyInput } from "@/lib/money";
 import { isIntInput, isPercentInput, toCodeInput } from "@/lib/sanitize";
@@ -131,12 +132,15 @@ const LineRow = memo(
       [line],
     );
 
+    const shortExpiryMonths = useSettingsStore(
+      (st) => st.inventory.purchaseShortExpiryMonths,
+    );
     const months = monthsToExpiry(line.expiry, today);
     const shortExpiry =
       !errors.expiry &&
       months !== null &&
       months >= 0 &&
-      months < PURCHASE_LIMITS.shortExpiryMonths;
+      months < shortExpiryMonths;
 
     const k = line.key;
 

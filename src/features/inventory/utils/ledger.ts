@@ -11,6 +11,7 @@ import { compareExpiry, isValidExpiry } from "@/lib/expiry";
 import type { MedicineStock, PackUnit } from "@/features/medicines/types";
 import type {
   StockBatch,
+  StockChange,
   StockIssue,
   StockMovement,
   StockReceipt,
@@ -448,6 +449,76 @@ export function applyIssue(
       ...b,
       qtyStrip: b.qtyStrip - w.strip,
       qtyLoose: b.qtyLoose - w.loose,
+    };
+  });
+
+  return { batches: next, movements };
+}
+
+/**
+ * Applies exact per-batch deltas (sales / sales returns).
+ * All-or-nothing: every line is checked first, deltas for the same batch
+ * are summed, and no batch may ever go below zero.
+ */
+export function applyChange(
+  batches: readonly StockBatch[],
+  change: StockChange,
+): { batches: StockBatch[]; movements: StockMovement[] } {
+  if (change.lines.length === 0) throw new StockError("Nothing to change");
+  if (change.lines.length > STOCK_LIMITS.maxReceiptLines) {
+    throw new StockError("Too many lines");
+  }
+
+  const sum = new Map<string, { strip: number; loose: number }>();
+  for (const [i, l] of change.lines.entries()) {
+    if (
+      !Number.isInteger(l.qtyStripDelta) ||
+      !Number.isInteger(l.qtyLooseDelta)
+    ) {
+      throw new StockError(`Line ${i + 1}: quantities must be whole numbers`);
+    }
+    if (l.qtyStripDelta === 0 && l.qtyLooseDelta === 0) continue;
+    const s = sum.get(l.batchId) ?? { strip: 0, loose: 0 };
+    s.strip += l.qtyStripDelta;
+    s.loose += l.qtyLooseDelta;
+    sum.set(l.batchId, s);
+  }
+  if (sum.size === 0) throw new StockError("Nothing to change");
+
+  const byId = new Map(batches.map((b) => [b.id, b]));
+  for (const [batchId, s] of sum) {
+    const b = byId.get(batchId);
+    if (!b) throw new StockError("Batch not found");
+    const strip = b.qtyStrip + s.strip;
+    const loose = b.qtyLoose + s.loose;
+    if (strip < 0 || loose < 0) {
+      throw new StockError(`Batch ${b.batchNo}: not enough stock`);
+    }
+    if (strip > STOCK_LIMITS.maxQty || loose > STOCK_LIMITS.maxQty) {
+      throw new StockError(`Batch ${b.batchNo}: stock limit exceeded`);
+    }
+  }
+
+  const at = change.at.toISOString();
+  const movements: StockMovement[] = [];
+  const next = batches.map((b) => {
+    const s = sum.get(b.id);
+    if (!s) return b;
+    movements.push({
+      id: newId("mv"),
+      type: change.type,
+      batchId: b.id,
+      medicineId: b.medicineId,
+      qtyStripDelta: s.strip,
+      qtyLooseDelta: s.loose,
+      at,
+      refId: change.refId,
+      note: change.note,
+    });
+    return {
+      ...b,
+      qtyStrip: b.qtyStrip + s.strip,
+      qtyLoose: b.qtyLoose + s.loose,
     };
   });
 

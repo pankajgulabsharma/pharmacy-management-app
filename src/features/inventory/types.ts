@@ -37,6 +37,10 @@ export type StockMovementType =
   | "purchase_reversal"
   /** Goods sent back to the supplier (debit note) */
   | "purchase_return"
+  /** Sold to a customer (billing) */
+  | "sale"
+  /** Customer brought medicine back (sales return) */
+  | "sale_return"
   /** Physical count / damage / disposal correction */
   | "adjustment";
 
@@ -103,6 +107,26 @@ export type StockIssueLine = {
   unit: PackUnit;
   /** Packs to remove (loose units for LSE medicines) */
   packs: number;
+};
+
+/**
+ * Exact per-batch change (sales, sales returns). Unlike a receipt or an
+ * issue, it can move strips and loose units at the same time — e.g.
+ * selling 3 tablets from a batch with no loose stock breaks one strip:
+ * { qtyStripDelta: -1, qtyLooseDelta: +7 } for a 10-tablet strip.
+ */
+export type StockChange = {
+  refId: string;
+  type: Extract<StockMovementType, "sale" | "sale_return">;
+  note: string;
+  at: Date;
+  lines: StockChangeLine[];
+};
+
+export type StockChangeLine = {
+  batchId: string;
+  qtyStripDelta: number;
+  qtyLooseDelta: number;
 };
 
 /* ------------------------------------------------------------------ */

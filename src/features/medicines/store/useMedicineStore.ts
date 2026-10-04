@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { newId } from "@/lib/id";
+import { DEFAULT_GST_RATE, isGstRate } from "@/lib/gst";
 import { cleanCode, cleanText } from "@/lib/sanitize";
 import { mockMedicines } from "../data/mockMedicines";
 import type { Medicine, MedicineInput } from "../types";
@@ -45,6 +46,9 @@ function sanitize(input: MedicineInput): MedicineInput {
     // Selling above MRP is illegal in India — cap it
     salePrice: Math.min(clampNumber(input.salePrice, 0, 1_000_000, 0), mrp),
     minStock: Math.trunc(clampNumber(input.minStock, 0, 1_000_000, 0)),
+    gstPercent: isGstRate(input.gstPercent)
+      ? input.gstPercent
+      : DEFAULT_GST_RATE,
     status: input.status === "inactive" ? "inactive" : "active",
   };
 }

@@ -1,51 +1,75 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Minus, Plus, Trash2 } from "lucide-react";
-import type { BillLineItem } from "../types";
-import { calcLineAmount, getLooseUnitPrice } from "../types";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { QtyStepper } from "@/components/common/QtyStepper";
 import { formatPackLabel } from "@/features/medicines/types";
+import { formatPaise } from "@/lib/money";
+import { DISCOUNT_OPTIONS } from "../types";
+import type { BillLineView } from "../hooks/useBillingData";
+import { sellsLoose, unitsPerPack } from "../utils/allocate";
+import { BatchExpiry } from "./BatchExpiry";
 
 type Props = {
-  items: BillLineItem[];
+  lines: BillLineView[];
+  /**
+   * Line that was just added or increased. `key` changes on every add, so
+   * adding the same medicine twice still brings its row into view.
+   */
+  focus: { lineId: string; key: number } | null;
   onChangeQty: (lineId: string, qtyStrip: number, qtyLoose: number) => void;
   onChangeDiscount: (lineId: string, discountPercent: number) => void;
   onRemove: (lineId: string) => void;
 };
 
+/** How long the just-added row stays highlighted */
+const FLASH_MS = 1200;
+
 export function BillItemsTable({
-  items,
+  lines,
+  focus,
   onChangeQty,
   onChangeDiscount,
   onRemove,
 }: Props) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const prevCountRef = useRef(0);
+  const [flashId, setFlashId] = useState<string | null>(null);
 
-  const lastLineId = items[items.length - 1]?.lineId;
-
+  /*
+   * Bring the just-added line into view. This also runs on mount: the
+   * table is replaced by search results while searching and is mounted
+   * again when an item is picked — that is exactly when we must scroll.
+   */
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) {
-      prevCountRef.current = items.length;
-      return;
-    }
+    if (!focus) return;
+    const frame = requestAnimationFrame(() => {
+      const row = scrollRef.current?.querySelector<HTMLElement>(
+        `[data-line-id="${CSS.escape(focus.lineId)}"]`,
+      );
+      row?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      setFlashId(focus.lineId);
+    });
+    const timer = window.setTimeout(() => setFlashId(null), FLASH_MS);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [focus]);
 
-    if (items.length > prevCountRef.current) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          el.scrollTo({
-            top: el.scrollHeight,
-            behavior: "smooth",
-          });
-        });
-      });
-    }
+  if (lines.length === 0) return null;
 
-    prevCountRef.current = items.length;
-  }, [items.length, lastLineId]);
-
-  if (items.length === 0) return null;
+  const headers: [string, string][] = [
+    ["#", "text-left"],
+    [t("billing.medicineName"), "text-left"],
+    ["Batch / Expiry", "text-left"],
+    ["Qty", "text-left"],
+    [t("billing.mrp"), "text-right"],
+    ["Sale (₹)", "text-right"],
+    ["Disc %", "text-right"],
+    [t("billing.amount"), "text-right"],
+    ["", ""],
+  ];
 
   return (
     <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
@@ -53,22 +77,13 @@ export function BillItemsTable({
         <table className="w-full text-[11px] border-collapse">
           <thead className="sticky top-0 z-10">
             <tr>
-              {(
-                [
-                  ["#", "text-left", ""],
-                  [t("billing.medicineName"), "text-left", ""],
-                  [t("billing.batchExpiry"), "text-left", ""],
-                  ["Qty", "text-left", "whitespace-nowrap"],
-                  [t("billing.mrp"), "text-right", ""],
-                  ["Sale (₹)", "text-right", ""],
-                  ["Disc %", "text-right", ""],
-                  [t("billing.amount"), "text-right", ""],
-                  ["", "", ""],
-                ] as const
-              ).map(([label, align, extra], i) => (
+              {headers.map(([label, align], i) => (
                 <th
                   key={i}
-                  className={`px-2.5 py-2 text-[10px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground ${align} ${extra}`}
+                  className={cn(
+                    "px-2.5 py-2 text-[10px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground whitespace-nowrap",
+                    align,
+                  )}
                 >
                   {label}
                 </th>
@@ -76,174 +91,225 @@ export function BillItemsTable({
             </tr>
           </thead>
           <tbody>
-            {items.map((item, index) => {
-              const m = item.medicine;
-              const ups = m.unitsPerStrip > 0 ? m.unitsPerStrip : 1;
-              const packUnit = m.unit ?? "STP";
-              const showLoose =
-                (m.allowLoose ?? packUnit === "STP") &&
-                (packUnit === "STP" || packUnit === "LSE");
-              const lsePrice = getLooseUnitPrice(m);
-              const amount = calcLineAmount(item);
-
-              return (
-                <tr
-                  key={item.lineId}
-                  className="border-b border-border/50 last:border-0 hover:bg-muted/30 bg-card"
-                >
-                  <td className="px-2.5 py-2 text-muted-foreground bg-card">
-                    {index + 1}
-                  </td>
-
-                  <td className="px-2.5 py-2 bg-card">
-                    <p className="font-medium text-foreground leading-tight">
-                      {m.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {m.brand}, HSN {m.hsn}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {m.rack}
-                    </p>
-                  </td>
-
-                  <td className="px-2.5 py-2 bg-card">
-                    <p className="font-medium leading-tight">{m.batch}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Exp {m.expiry}
-                    </p>
-                  </td>
-
-                  <td className="px-2.5 py-2 bg-card max-w-[150px]">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[9px] text-muted-foreground w-8 shrink-0">
-                          {packUnit}
-                        </span>
-                        <button
-                          type="button"
-                          className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-muted disabled:opacity-40"
-                          disabled={item.qtyStrip <= 0}
-                          onClick={() =>
-                            onChangeQty(
-                              item.lineId,
-                              Math.max(0, item.qtyStrip - 1),
-                              item.qtyLoose,
-                            )
-                          }
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-6 text-center tabular-nums font-medium">
-                          {item.qtyStrip}
-                        </span>
-                        <button
-                          type="button"
-                          className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-muted"
-                          onClick={() =>
-                            onChangeQty(
-                              item.lineId,
-                              item.qtyStrip + 1,
-                              item.qtyLoose,
-                            )
-                          }
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                      {showLoose && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] text-muted-foreground w-8 shrink-0">
-                            LSE
-                          </span>
-                          <button
-                            type="button"
-                            className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-muted disabled:opacity-40"
-                            disabled={item.qtyLoose <= 0}
-                            onClick={() =>
-                              onChangeQty(
-                                item.lineId,
-                                item.qtyStrip,
-                                Math.max(0, item.qtyLoose - 1),
-                              )
-                            }
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-6 text-center tabular-nums font-medium">
-                            {item.qtyLoose}
-                          </span>
-                          <button
-                            type="button"
-                            className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-muted"
-                            onClick={() =>
-                              onChangeQty(
-                                item.lineId,
-                                item.qtyStrip,
-                                item.qtyLoose + 1,
-                              )
-                            }
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
-
-                      <p className="text-[9px] text-muted-foreground leading-tight">
-                        {formatPackLabel(packUnit, ups)}
-                        {showLoose ? ` · 1 LSE = ₹${lsePrice.toFixed(2)}` : ""}
-                      </p>
-                    </div>
-                  </td>
-
-                  <td className="px-2.5 py-2 text-right tabular-nums bg-card">
-                    {m.mrp.toFixed(2)}
-                  </td>
-
-                  <td className="px-2.5 py-2 text-right tabular-nums bg-card">
-                    {m.salePrice.toFixed(2)}
-                  </td>
-
-                  <td className="px-2 py-2 text-right bg-card">
-                    <select
-                      value={item.discountPercent}
-                      onChange={(e) =>
-                        onChangeDiscount(
-                          item.lineId,
-                          Number(e.target.value) || 0,
-                        )
-                      }
-                      className="h-7 rounded-md border border-border/50 bg-muted/40 px-1.5 text-[11px] outline-none focus:ring-1 focus:ring-ring"
-                    >
-                      {[0, 5, 10, 15, 20].map((d) => (
-                        <option key={d} value={d}>
-                          {d}%
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="px-2.5 py-2 text-right font-semibold tabular-nums text-primary bg-card">
-                    ₹{amount.toFixed(2)}
-                  </td>
-
-                  <td className="px-2 py-2 bg-card">
-                    <button
-                      type="button"
-                      onClick={() => onRemove(item.lineId)}
-                      className="p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+            {lines.map((view, index) => (
+              <BillRow
+                key={view.line.lineId}
+                view={view}
+                index={index}
+                flash={flashId === view.line.lineId}
+                onChangeQty={onChangeQty}
+                onChangeDiscount={onChangeDiscount}
+                onRemove={onRemove}
+              />
+            ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+/** Every cell vertically centred, whatever the row height */
+const ROW_BASE = "border-b border-border/50 last:border-0 [&>td]:align-middle";
+
+const BillRow = memo(function BillRow({
+  view,
+  index,
+  flash,
+  onChangeQty,
+  onChangeDiscount,
+  onRemove,
+}: {
+  view: BillLineView;
+  index: number;
+  flash: boolean;
+  onChangeQty: Props["onChangeQty"];
+  onChangeDiscount: Props["onChangeDiscount"];
+  onRemove: Props["onRemove"];
+}) {
+  const {
+    line,
+    medicine: m,
+    limits,
+    allocations,
+    amounts,
+    error,
+    shortExpiry,
+  } = view;
+  const name = m?.name ?? "Unknown medicine";
+
+  if (!m) {
+    return (
+      <tr
+        data-line-id={line.lineId}
+        className={cn(ROW_BASE, "bg-red-50/40 dark:bg-red-950/20")}
+      >
+        <td className="px-2.5 py-2 text-muted-foreground">{index + 1}</td>
+        <td className="px-2.5 py-2 text-red-600" colSpan={7}>
+          {error}
+        </td>
+        <td className="px-2 py-2">
+          <RemoveButton name={name} onClick={() => onRemove(line.lineId)} />
+        </td>
+      </tr>
+    );
+  }
+
+  const ups = unitsPerPack(m);
+  const lse = m.unit === "LSE";
+  const looseOk = lse || sellsLoose(m);
+  const first = allocations[0];
+  const ratePaise = first?.ratePaise ?? 0;
+  const split = allocations.length > 1;
+
+  return (
+    <tr
+      data-line-id={line.lineId}
+      className={cn(
+        ROW_BASE,
+        "hover:bg-muted/30 transition-colors duration-700",
+        error && "bg-red-50/40 dark:bg-red-950/20",
+        flash && "bg-primary/10",
+      )}
+    >
+      <td className="px-2.5 py-2 text-muted-foreground">{index + 1}</td>
+
+      <td className="px-2.5 py-2">
+        <p className="font-medium text-foreground leading-tight">{m.name}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          {m.brand} · HSN {m.hsn} · GST {m.gstPercent}%
+        </p>
+        {m.rack ? (
+          <p className="text-[10px] text-muted-foreground">Rack {m.rack}</p>
+        ) : null}
+        {error ? (
+          <p
+            className="mt-1 flex items-center gap-1 text-[10px] font-medium text-red-600"
+            role="alert"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            {error}
+          </p>
+        ) : null}
+      </td>
+
+      <td className="px-2.5 py-2">
+        {allocations.length === 0 ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <div className="space-y-1.5">
+            {allocations.map((a) => (
+              <BatchExpiry
+                key={a.batchId}
+                batchNo={a.batchNo}
+                expiry={a.expiry}
+                qty={
+                  split
+                    ? [
+                        a.qtyStrip ? `${a.qtyStrip} ${m.unit}` : "",
+                        a.qtyLoose ? `${a.qtyLoose} LSE` : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" + ")
+                    : undefined
+                }
+              />
+            ))}
+            {shortExpiry ? (
+              <p className="text-[9px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                Expires soon — tell the customer
+              </p>
+            ) : null}
+          </div>
+        )}
+      </td>
+
+      <td className="px-2.5 py-2">
+        <div className="flex flex-col gap-1">
+          {!lse ? (
+            <QtyStepper
+              value={line.qtyStrip}
+              max={limits.maxStrip}
+              unitLabel={m.unit}
+              label={`${m.unit} of ${m.name}`}
+              onChange={(v) => onChangeQty(line.lineId, v, line.qtyLoose)}
+            />
+          ) : null}
+          {looseOk ? (
+            <QtyStepper
+              value={line.qtyLoose}
+              max={limits.maxLoose}
+              unitLabel="LSE"
+              label={`Loose units of ${m.name}`}
+              onChange={(v) => onChangeQty(line.lineId, line.qtyStrip, v)}
+            />
+          ) : null}
+          {/* Always a single line */}
+          <p className="text-[9px] text-muted-foreground leading-tight whitespace-nowrap">
+            {formatPackLabel(m.unit, ups)}
+            {looseOk && !lse && ratePaise
+              ? ` · 1 LSE = ₹${formatPaise(ratePaise / ups)}`
+              : ""}
+          </p>
+        </div>
+      </td>
+
+      <td className="px-2.5 py-2 text-right tabular-nums text-muted-foreground">
+        {first ? formatPaise(first.mrpPaise) : "—"}
+      </td>
+      <td className="px-2.5 py-2 text-right tabular-nums">
+        {ratePaise ? formatPaise(ratePaise) : "—"}
+      </td>
+
+      <td className="px-2 py-2 text-right">
+        <select
+          value={line.discountPercent}
+          onChange={(e) =>
+            onChangeDiscount(line.lineId, Number(e.target.value) || 0)
+          }
+          aria-label={`Discount for ${m.name}`}
+          className="h-7 rounded-md border border-border/50 bg-muted/40 px-1.5 text-[11px] outline-none focus:ring-1 focus:ring-ring"
+        >
+          {DISCOUNT_OPTIONS.map((d) => (
+            <option key={d} value={d}>
+              {d}%
+            </option>
+          ))}
+        </select>
+      </td>
+
+      <td className="px-2.5 py-2 text-right font-semibold tabular-nums text-primary">
+        ₹{formatPaise(amounts.amountPaise)}
+        {amounts.discountPaise > 0 ? (
+          <p className="text-[9px] font-normal text-emerald-600 dark:text-emerald-400">
+            −₹{formatPaise(amounts.discountPaise)}
+          </p>
+        ) : null}
+      </td>
+
+      <td className="px-2 py-2">
+        <RemoveButton name={m.name} onClick={() => onRemove(line.lineId)} />
+      </td>
+    </tr>
+  );
+});
+
+function RemoveButton({
+  name,
+  onClick,
+}: {
+  name: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="p-1.5 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+      aria-label={`Remove ${name}`}
+      title="Remove"
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </button>
   );
 }

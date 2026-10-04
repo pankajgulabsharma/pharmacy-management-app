@@ -14,6 +14,7 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { formatRupees } from "@/lib/money";
+import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore";
 import type { InventoryBatch } from "../types";
 import {
   CATEGORY_LABELS,
@@ -169,7 +170,8 @@ export function InventoryTable({ items, onAdjust }: Props) {
 
   // Single pass: row views + footer totals
   const { rows, totalValue, attentionCount } = useMemo(() => {
-    const day = new Date().toDateString();
+    // Row status depends on the date AND the "expiring soon" setting
+    const day = `${new Date().toDateString()}|${getExpiringSoonDays()}`;
     const views: RowView[] = [];
     let total = 0;
     let attention = 0;

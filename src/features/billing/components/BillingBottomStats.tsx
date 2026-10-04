@@ -5,21 +5,39 @@ import {
   ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
+import { useMemo } from "react";
 import { StatusBadge, type BadgeTone } from "@/components/common/StatusBadge";
-import { recentSalesMock, type SaleStatus } from "../data/mockBillingData";
+import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
+import { formatRupees, inrFromPaise } from "@/lib/money";
+import { isSameDay } from "@/lib/date";
+import { useSalesStore } from "../store/useSalesStore";
+import type { Sale } from "../types";
 import { cn } from "@/lib/utils";
 
-const STATUS_TONE: Record<SaleStatus, BadgeTone> = {
-  Paid: "success",
-  Pending: "warning",
-  Hold: "caution",
-  Udhaar: "danger",
+type RowStatus = "paid" | "udhaar" | "returned";
+
+const STATUS_META: Record<RowStatus, { label: string; tone: BadgeTone }> = {
+  paid: { label: "Paid", tone: "success" },
+  udhaar: { label: "Udhaar", tone: "danger" },
+  returned: { label: "Returned", tone: "caution" },
 };
 
-function statusLabel(status: SaleStatus, t: (k: string) => string) {
-  if (status === "Paid") return t("billing.paid");
-  if (status === "Pending") return t("billing.pending");
-  return status;
+function rowStatus(s: Sale): RowStatus {
+  if (s.returnedPaise > 0) return "returned";
+  return s.status;
+}
+
+/** "↑ 12%" / "↓ 5%" vs yesterday; "—" when there is nothing to compare */
+function trend(
+  today: number,
+  yesterday: number,
+): { text: string; up: boolean } {
+  if (yesterday <= 0) return { text: today > 0 ? "New today" : "—", up: true };
+  const pct = Math.round(((today - yesterday) / yesterday) * 100);
+  return {
+    text: `${pct >= 0 ? "↑" : "↓"} ${Math.abs(pct)}% vs yesterday`,
+    up: pct >= 0,
+  };
 }
 
 /** Gradient KPI card used only on the billing screen */
@@ -27,12 +45,14 @@ function TrendCard({
   label,
   value,
   change,
+  up,
   icon: Icon,
   accent,
 }: {
   label: string;
   value: string;
   change: string;
+  up: boolean;
   icon: LucideIcon;
   accent: { card: string; label: string; icon: string };
 }) {
@@ -47,7 +67,12 @@ function TrendCard({
         <div>
           <p className={cn("text-[10px] font-medium", accent.label)}>{label}</p>
           <p className="text-base font-bold text-foreground mt-1">{value}</p>
-          <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <p
+            className={cn(
+              "text-[10px] font-medium mt-0.5",
+              up ? "text-emerald-600 dark:text-emerald-400" : "text-red-500",
+            )}
+          >
             {change}
           </p>
         </div>
@@ -82,9 +107,49 @@ const ACCENTS = {
   },
 } as const;
 
-export function BillingBottomStats() {
+export function BillingBottomStats({ onViewAll }: { onViewAll?: () => void }) {
   const { t } = useTranslation();
-  const rows = recentSalesMock.slice(0, 5);
+  const sales = useSalesStore((st) => st.sales);
+  const purchases = usePurchaseStore((st) => st.purchases);
+
+  const stats = useMemo(() => {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    let todaySales = 0;
+    let ydaySales = 0;
+    let todayBills = 0;
+    let ydayBills = 0;
+    for (const s of sales) {
+      const d = new Date(s.createdAt);
+      const net = s.totals.netPaise - s.returnedPaise;
+      if (isSameDay(d, now)) {
+        todaySales += net;
+        todayBills++;
+      } else if (isSameDay(d, yesterday)) {
+        ydaySales += net;
+        ydayBills++;
+      }
+    }
+    let todayPurchase = 0;
+    let ydayPurchase = 0;
+    for (const p of purchases) {
+      if (p.status === "cancelled") continue;
+      const d = new Date(`${p.invoiceDate}T00:00:00`);
+      if (isSameDay(d, now)) todayPurchase += p.totals.netPaise;
+      else if (isSameDay(d, yesterday)) ydayPurchase += p.totals.netPaise;
+    }
+    return {
+      todaySales,
+      todayBills,
+      todayPurchase,
+      salesTrend: trend(todaySales, ydaySales),
+      billsTrend: trend(todayBills, ydayBills),
+      purchaseTrend: trend(todayPurchase, ydayPurchase),
+    };
+  }, [sales, purchases]);
+
+  const rows = sales.slice(0, 5);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 shrink-0">
@@ -92,22 +157,25 @@ export function BillingBottomStats() {
       <div className="grid grid-cols-3 gap-2.5">
         <TrendCard
           label={t("billing.totalSales")}
-          value="₹8,750"
-          change="↑ 12%"
+          value={`₹${formatRupees(stats.todaySales / 100).replace(/\.00$/, "")}`}
+          change={stats.salesTrend.text}
+          up={stats.salesTrend.up}
           icon={IndianRupee}
           accent={ACCENTS.primary}
         />
         <TrendCard
           label={t("billing.totalBills")}
-          value="156"
-          change="↑ 12%"
+          value={String(stats.todayBills)}
+          change={stats.billsTrend.text}
+          up={stats.billsTrend.up}
           icon={Receipt}
           accent={ACCENTS.violet}
         />
         <TrendCard
           label={t("billing.todayPurchase")}
-          value="₹8,750"
-          change="↑ 8%"
+          value={`₹${formatRupees(stats.todayPurchase / 100).replace(/\.00$/, "")}`}
+          change={stats.purchaseTrend.text}
+          up={stats.purchaseTrend.up}
           icon={ShoppingCart}
           accent={ACCENTS.orange}
         />
@@ -119,12 +187,15 @@ export function BillingBottomStats() {
           <h3 className="text-xs font-semibold text-foreground">
             {t("billing.recentSales")}
           </h3>
-          <button
-            type="button"
-            className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
-          >
-            {t("common.viewAll")}
-          </button>
+          {onViewAll ? (
+            <button
+              type="button"
+              onClick={onViewAll}
+              className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              {t("common.viewAll")}
+            </button>
+          ) : null}
         </div>
 
         <div className="overflow-y-auto max-h-[96px]">
@@ -149,30 +220,38 @@ export function BillingBottomStats() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="px-2 py-1.5 font-medium text-foreground">
-                    {s.billNo}
-                  </td>
-                  <td className="px-2 py-1.5 text-foreground truncate max-w-[90px]">
-                    {s.customer}
-                  </td>
-                  <td className="px-2 py-1.5 text-muted-foreground whitespace-nowrap">
-                    {s.date}
-                  </td>
-                  <td className="px-2 py-1.5 text-foreground tabular-nums">
-                    ₹{s.amount}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <StatusBadge tone={STATUS_TONE[s.status]} size="xs">
-                      {statusLabel(s.status, t)}
-                    </StatusBadge>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((s) => {
+                const meta = STATUS_META[rowStatus(s)];
+                return (
+                  <tr
+                    key={s.id}
+                    className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="px-2 py-1.5 font-medium text-foreground font-mono">
+                      {s.billNo}
+                    </td>
+                    <td className="px-2 py-1.5 text-foreground truncate max-w-[90px]">
+                      {s.customerName}
+                    </td>
+                    <td className="px-2 py-1.5 text-muted-foreground whitespace-nowrap">
+                      {new Date(s.createdAt).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-2 py-1.5 text-foreground tabular-nums">
+                      {inrFromPaise(s.totals.netPaise)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <StatusBadge tone={meta.tone} size="xs">
+                        {meta.label}
+                      </StatusBadge>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

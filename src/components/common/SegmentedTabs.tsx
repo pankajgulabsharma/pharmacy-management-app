@@ -38,10 +38,11 @@ function SegmentedTabsInner<T extends string>({
             aria-selected={active}
             onClick={() => onChange(id)}
             className={cn(
-              "h-8 px-3 rounded-md text-[11px] font-medium inline-flex items-center gap-1.5 transition-colors",
+              "h-[30px] px-3 rounded-md text-[11px] font-medium inline-flex items-center gap-1.5 transition-colors",
               active
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+                ? // Same solid blue as a selected filter chip — obvious at a glance
+                  "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-card hover:text-foreground",
             )}
           >
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
@@ -50,7 +51,7 @@ function SegmentedTabsInner<T extends string>({
               <span
                 className={cn(
                   "tabular-nums rounded px-1 text-[10px]",
-                  active ? "bg-primary/10 text-primary" : "bg-muted",
+                  active ? "bg-white/20 text-primary-foreground" : "bg-muted",
                 )}
               >
                 {count}

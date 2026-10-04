@@ -6,13 +6,8 @@ import type { Paise } from "@/lib/money";
 /* Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-/**
- * GST slabs selectable on a purchase line. Most medicines moved to 5%
- * in the Sept 2025 GST revision — verify each HSN with your CA.
- */
-export const GST_RATES = [0, 5, 12, 18] as const;
-export type GstRate = (typeof GST_RATES)[number];
-export const DEFAULT_GST_RATE: GstRate = 5;
+export { GST_RATES, DEFAULT_GST_RATE, type GstRate } from "@/lib/gst";
+import type { GstRate } from "@/lib/gst";
 
 export const PURCHASE_LIMITS = {
   invoiceNoMax: 30,
@@ -24,8 +19,6 @@ export const PURCHASE_LIMITS = {
   maxRatePaise: 10_000_000,
   /** Invoice must not be older than this */
   maxInvoiceAgeDays: 365,
-  /** Batches expiring within this many months are flagged (not blocked) */
-  shortExpiryMonths: 6,
 } as const;
 
 /* ------------------------------------------------------------------ */
