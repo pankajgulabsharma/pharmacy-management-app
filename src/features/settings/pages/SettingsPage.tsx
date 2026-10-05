@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { KEYS } from "@/app/shortcuts/registry";
 import {
   AppearanceSection,
   BillingSection,
@@ -60,6 +62,16 @@ const SECTIONS: {
 export default function SettingsPage() {
   const [active, setActive] = useState<SectionId>("shop");
   const section = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
+
+  // Keyboard: [ ] previous / next section
+  const step = (d: number) => {
+    const i = SECTIONS.findIndex((x) => x.id === active);
+    setActive(SECTIONS[(i + d + SECTIONS.length) % SECTIONS.length].id);
+  };
+  useHotkeys([
+    { keys: KEYS.prevTab, handler: () => step(-1) },
+    { keys: KEYS.nextTab, handler: () => step(1) },
+  ]);
   const Active = section.Component;
 
   return (

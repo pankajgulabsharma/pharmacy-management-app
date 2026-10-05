@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { PanelLeft, Bell, Calendar } from "lucide-react";
+import { Bell, Calendar, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUIStore } from "@/stores/useUIStore";
+import { KEYS } from "@/app/shortcuts/registry";
+import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { SearchInput } from "@/components/common/SearchInput";
 import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
 
@@ -10,7 +12,9 @@ const IS_MAC =
 const SHORTCUT_LABEL = IS_MAC ? "⌘K" : "Ctrl K";
 
 export function Header() {
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const toggleHint = formatCombo(preferredCombo(KEYS.toggleSidebar)).join("+");
   // TODO(search): wire this to a global search (medicines, invoices, suppliers)
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -37,15 +41,20 @@ export function Header() {
 
   return (
     <header className="h-14 shrink-0 border-b border-border bg-card px-4 flex items-center gap-3">
-      {/* Sidebar toggle */}
+      {/* The ONE sidebar control */}
       <button
         type="button"
         onClick={toggleSidebar}
-        className="h-9 w-9 shrink-0 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        aria-label="Toggle sidebar"
-        title="Toggle sidebar"
+        aria-expanded={sidebarOpen}
+        aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        title={`${sidebarOpen ? "Collapse" : "Expand"} sidebar (${toggleHint})`}
+        className="h-9 w-9 shrink-0 rounded-lg border border-border bg-background flex items-center justify-center text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <PanelLeft className="h-4 w-4" />
+        {sidebarOpen ? (
+          <PanelLeftClose className="h-4 w-4" />
+        ) : (
+          <PanelLeftOpen className="h-4 w-4" />
+        )}
       </button>
 
       {/* Search */}

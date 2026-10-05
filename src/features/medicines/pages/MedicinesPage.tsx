@@ -1,4 +1,10 @@
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AlertTriangle,
   Package,
@@ -12,6 +18,12 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SearchInput } from "@/components/common/SearchInput";
+import { KeyHints } from "@/components/common/KeyHints";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useListNavigation } from "@/hooks/useListNavigation";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { KEYS } from "@/app/shortcuts/registry";
+import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
   FilterChips,
@@ -80,10 +92,15 @@ export default function MedicinesPage() {
   const removeMedicine = useMedicineStore((s) => s.removeMedicine);
   const importMedicines = useMedicineStore((s) => s.importMedicines);
 
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  // Dashboard links like /medicines?q=dolo or /medicines?new=1
+  const intent = useUrlIntent();
+  const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    oneOf(intent.status, ["all", "active", "inactive", "low"] as const, "all"),
+  );
+  const searchRef = useRef<HTMLInputElement>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(intent.new === "1");
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<MedicineWithStock | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MedicineWithStock | null>(
@@ -107,6 +124,15 @@ export default function MedicinesPage() {
     return { total: items.length, active, inactive, low, out };
   }, [items]);
 
+  // Batch numbers per medicine, so typing a batch (e.g. OT3981M) finds it
+  const batches = useInventoryStore((s) => s.batches);
+  const batchText = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of batches)
+      map.set(b.medicineId, `${map.get(b.medicineId) ?? ""} ${b.batchNo}`);
+    return map;
+  }, [batches]);
+
   const filtered = useMemo(
     () =>
       items.filter((m) => {
@@ -116,9 +142,13 @@ export default function MedicinesPage() {
         if (statusFilter === "low" && !isLowOrOut(m)) return false;
         if (categoryFilter !== "all" && m.category !== categoryFilter)
           return false;
-        return medicineMatchesQuery(m, deferredQuery);
+        const q = deferredQuery.trim().toUpperCase();
+        return (
+          medicineMatchesQuery(m, deferredQuery) ||
+          (q.length >= 3 && (batchText.get(m.id) ?? "").includes(q))
+        );
       }),
-    [items, deferredQuery, statusFilter, categoryFilter],
+    [items, deferredQuery, statusFilter, categoryFilter, batchText],
   );
 
   const filterOptions = useMemo<FilterChipOption<StatusFilter>[]>(
@@ -187,6 +217,27 @@ export default function MedicinesPage() {
     [importMedicines],
   );
 
+  // Keyboard: ↑↓ select · Enter/E edit · N new · Delete · / search
+  const nav = useListNavigation({
+    items: filtered,
+    getKey: (m: MedicineWithStock) => m.id,
+    onOpen: openEdit,
+  });
+  useHotkeys([
+    { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
+    { keys: KEYS.create, handler: openAdd },
+    {
+      keys: KEYS.edit,
+      enabled: nav.selected !== null,
+      handler: () => nav.selected && openEdit(nav.selected),
+    },
+    {
+      keys: KEYS.remove,
+      enabled: nav.selected !== null,
+      handler: () => nav.selected && setDeleteTarget(nav.selected),
+    },
+  ]);
+
   return (
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">
       <PageHeader
@@ -247,7 +298,8 @@ export default function MedicinesPage() {
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search name, salt, brand, category..."
+          placeholder="Search name, salt, brand, batch no..."
+          inputRef={searchRef}
         />
         <FilterSelect
           value={categoryFilter}
@@ -263,14 +315,27 @@ export default function MedicinesPage() {
         />
       </div>
 
-      <p className="text-[10px] text-muted-foreground shrink-0">
-        Showing {filtered.length} of {items.length}
-      </p>
+      <div className="flex items-center justify-between gap-3 shrink-0">
+        <p className="text-[10px] text-muted-foreground">
+          Showing {filtered.length} of {items.length}
+        </p>
+        <KeyHints
+          hints={[
+            { keys: "/", label: "Search" },
+            { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
+            { keys: "Enter", label: "Edit" },
+            { keys: "N", label: "New" },
+            { keys: "Delete", label: "Delete" },
+          ]}
+        />
+      </div>
 
       <MedicineTable
         items={filtered}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
+        selectedId={nav.selectedKey}
+        onSelect={nav.select}
       />
 
       <MedicineFormDialog

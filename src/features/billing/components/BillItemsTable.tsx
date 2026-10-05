@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QtyStepper } from "@/components/common/QtyStepper";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
+import { scrollRowIntoView } from "@/lib/dom";
 import { formatPackLabel } from "@/features/medicines/types";
 import { formatPaise } from "@/lib/money";
 import { DISCOUNT_OPTIONS } from "../types";
@@ -20,6 +22,11 @@ type Props = {
   onChangeQty: (lineId: string, qtyStrip: number, qtyLoose: number) => void;
   onChangeDiscount: (lineId: string, discountPercent: number) => void;
   onRemove: (lineId: string) => void;
+  /** Keyboard-selected line (↑ ↓ when the search box is empty) */
+  selectedLineId: string | null;
+  onSelectLine: (lineId: string) => void;
+  /** Click on a batch → its stock history */
+  onBatchHistory: (batchId: string) => void;
 };
 
 /** How long the just-added row stays highlighted */
@@ -31,6 +38,9 @@ export function BillItemsTable({
   onChangeQty,
   onChangeDiscount,
   onRemove,
+  selectedLineId,
+  onSelectLine,
+  onBatchHistory,
 }: Props) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,7 +57,7 @@ export function BillItemsTable({
       const row = scrollRef.current?.querySelector<HTMLElement>(
         `[data-line-id="${CSS.escape(focus.lineId)}"]`,
       );
-      row?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      scrollRowIntoView(row ?? null);
       setFlashId(focus.lineId);
     });
     const timer = window.setTimeout(() => setFlashId(null), FLASH_MS);
@@ -97,6 +107,9 @@ export function BillItemsTable({
                 view={view}
                 index={index}
                 flash={flashId === view.line.lineId}
+                selected={selectedLineId === view.line.lineId}
+                onSelectLine={onSelectLine}
+                onBatchHistory={onBatchHistory}
                 onChangeQty={onChangeQty}
                 onChangeDiscount={onChangeDiscount}
                 onRemove={onRemove}
@@ -116,6 +129,9 @@ const BillRow = memo(function BillRow({
   view,
   index,
   flash,
+  selected,
+  onSelectLine,
+  onBatchHistory,
   onChangeQty,
   onChangeDiscount,
   onRemove,
@@ -123,6 +139,9 @@ const BillRow = memo(function BillRow({
   view: BillLineView;
   index: number;
   flash: boolean;
+  selected: boolean;
+  onSelectLine: Props["onSelectLine"];
+  onBatchHistory: Props["onBatchHistory"];
   onChangeQty: Props["onChangeQty"];
   onChangeDiscount: Props["onChangeDiscount"];
   onRemove: Props["onRemove"];
@@ -165,11 +184,14 @@ const BillRow = memo(function BillRow({
   return (
     <tr
       data-line-id={line.lineId}
+      aria-selected={selected}
+      onClick={() => onSelectLine(line.lineId)}
       className={cn(
         ROW_BASE,
         "hover:bg-muted/30 transition-colors duration-700",
         error && "bg-red-50/40 dark:bg-red-950/20",
         flash && "bg-primary/10",
+        selected && SELECTED_ROW,
       )}
     >
       <td className="px-2.5 py-2 text-muted-foreground">{index + 1}</td>
@@ -203,6 +225,7 @@ const BillRow = memo(function BillRow({
                 key={a.batchId}
                 batchNo={a.batchNo}
                 expiry={a.expiry}
+                onClick={() => onBatchHistory(a.batchId)}
                 qty={
                   split
                     ? [
@@ -230,6 +253,7 @@ const BillRow = memo(function BillRow({
             <QtyStepper
               value={line.qtyStrip}
               max={limits.maxStrip}
+              min={looseOk && line.qtyLoose > 0 ? 0 : 1}
               unitLabel={m.unit}
               label={`${m.unit} of ${m.name}`}
               onChange={(v) => onChangeQty(line.lineId, v, line.qtyLoose)}
@@ -239,6 +263,7 @@ const BillRow = memo(function BillRow({
             <QtyStepper
               value={line.qtyLoose}
               max={limits.maxLoose}
+              min={lse || line.qtyStrip === 0 ? 1 : 0}
               unitLabel="LSE"
               label={`Loose units of ${m.name}`}
               onChange={(v) => onChangeQty(line.lineId, line.qtyStrip, v)}

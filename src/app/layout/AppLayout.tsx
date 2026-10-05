@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { GlobalShortcuts } from "@/app/shortcuts/GlobalShortcuts";
 
 export function AppLayout() {
   return (
@@ -11,6 +12,7 @@ export function AppLayout() {
         <main className="flex-1 min-h-0 overflow-hidden">
           <Outlet />
         </main>
+        <GlobalShortcuts />
       </div>
     </div>
   );

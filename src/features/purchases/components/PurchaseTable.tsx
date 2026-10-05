@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect } from "react";
 import { Eye, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -12,6 +12,7 @@ import {
 } from "@/components/common/TableShell";
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { formatISODate } from "@/lib/date";
 import { formatPaise } from "@/lib/money";
 import {
@@ -25,6 +26,9 @@ type Props = {
   items: Purchase[];
   statusById: ReadonlyMap<string, PaymentStatus>;
   onView: (p: Purchase) => void;
+  /** Keyboard / click selection */
+  selectedId?: string | null;
+  onSelect?: (x: Purchase) => void;
 };
 
 const COLUMNS: TableColumn[] = [
@@ -78,14 +82,35 @@ function getRowView(p: Purchase): RowView {
 
 const getKey = (p: Purchase) => p.id;
 
-export function PurchaseTable({ items, statusById, onView }: Props) {
+export function PurchaseTable({
+  items,
+  statusById,
+  onView,
+  selectedId = null,
+  onSelect,
+}: Props) {
   // Stable callback so memoized rows don't re-render on parent renders
   const handleView = useStableCallback(onView);
 
   const rows = useMemo(() => items.map(getRowView), [items]);
 
-  const { scrollRef, virtualRows, paddingTop, paddingBottom, measureElement } =
-    useVirtualRows({ items, getKey });
+  const {
+    scrollRef,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+    measureElement,
+    scrollToIndex,
+  } = useVirtualRows({ items, getKey });
+  const handleSelect = useStableCallback((x: Purchase) => onSelect?.(x));
+  const scrollTo = useStableCallback(scrollToIndex);
+
+  // Keep the keyboard-selected row on screen
+  useEffect(() => {
+    if (!selectedId) return;
+    const i = items.findIndex((x) => x.id === selectedId);
+    if (i >= 0) scrollTo(i);
+  }, [selectedId, items, scrollTo]);
 
   if (items.length === 0) {
     return (
@@ -111,6 +136,8 @@ export function PurchaseTable({ items, statusById, onView }: Props) {
             view={rows[vr.index]}
             status={statusById.get(p.id) ?? "due"}
             measureRef={measureElement}
+            selected={p.id === selectedId}
+            onSelect={handleSelect}
             onView={handleView}
           />
         );
@@ -128,6 +155,8 @@ type RowProps = {
   status: PaymentStatus;
   measureRef: (el: Element | null) => void;
   onView: (p: Purchase) => void;
+  selected: boolean;
+  onSelect: (x: Purchase) => void;
 };
 
 const PurchaseRow = memo(function PurchaseRow({
@@ -137,17 +166,22 @@ const PurchaseRow = memo(function PurchaseRow({
   status,
   measureRef,
   onView,
+  selected,
+  onSelect,
 }: RowProps) {
   const meta = PAYMENT_STATUS_META[status];
 
   return (
     <tr
+      onClick={() => onSelect(p)}
+      aria-selected={selected}
       ref={measureRef}
       data-index={index}
       onDoubleClick={() => onView(p)}
       className={cn(
         "border-b border-border/60 last:border-0 hover:bg-muted/40",
         index % 2 === 1 && "bg-muted/20",
+        selected && SELECTED_ROW,
         p.status === "cancelled" && "opacity-60",
       )}
     >

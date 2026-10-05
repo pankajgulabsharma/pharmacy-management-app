@@ -1,4 +1,10 @@
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AlertTriangle,
   CalendarClock,
@@ -11,6 +17,12 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SearchInput } from "@/components/common/SearchInput";
+import { KeyHints } from "@/components/common/KeyHints";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useListNavigation } from "@/hooks/useListNavigation";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { KEYS } from "@/app/shortcuts/registry";
+import { BatchHistoryDialog } from "../components/BatchHistoryDialog";
 import {
   FilterChips,
   type FilterChipOption,
@@ -50,10 +62,19 @@ export default function InventoryPage() {
   // Batches joined with the medicine master (single source of truth)
   const items = useInventoryRows();
   const adjustStock = useInventoryStore((s) => s.adjust);
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<InventoryStatusFilter>("all");
+  // Dashboard links like /inventory?status=low&q=dolo
+  const intent = useUrlIntent();
+  const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
+  const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>(
+    oneOf(
+      intent.status,
+      ["all", "in_stock", "low", "out", "expiring", "expired"] as const,
+      "all",
+    ),
+  );
   const [adjustTarget, setAdjustTarget] = useState<InventoryBatch | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Filtering runs at lower priority so typing stays smooth on big lists
   const deferredQuery = useDeferredValue(query);
@@ -84,6 +105,30 @@ export default function InventoryPage() {
       (b) => (!match || match(b)) && inventoryMatchesQuery(b, deferredQuery),
     );
   }, [items, deferredQuery, statusFilter]);
+
+  // Keyboard: ↑↓ select · Enter adjust · H history · / search
+  const nav = useListNavigation({
+    items: filtered,
+    getKey: (b: InventoryBatch) => b.id,
+    onOpen: setAdjustTarget,
+  });
+  useHotkeys([
+    { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
+    {
+      keys: KEYS.history,
+      enabled: nav.selected !== null,
+      handler: () => nav.selected && setHistoryId(nav.selected.id),
+    },
+    {
+      keys: KEYS.edit,
+      enabled: nav.selected !== null,
+      handler: () => nav.selected && setAdjustTarget(nav.selected),
+    },
+  ]);
+  const openHistory = useCallback(
+    (b: InventoryBatch) => setHistoryId(b.id),
+    [],
+  );
 
   const filterOptions = useMemo<FilterChipOption<InventoryStatusFilter>[]>(
     () => [
@@ -172,6 +217,7 @@ export default function InventoryPage() {
           value={query}
           onChange={setQuery}
           placeholder="Search medicine, batch, rack, brand..."
+          inputRef={searchRef}
         />
         <FilterChips
           options={filterOptions}
@@ -181,11 +227,32 @@ export default function InventoryPage() {
         />
       </div>
 
-      <p className="text-[10px] text-muted-foreground shrink-0">
-        Showing {filtered.length} of {items.length} batches
-      </p>
+      <div className="flex items-center justify-between gap-3 shrink-0">
+        <p className="text-[10px] text-muted-foreground">
+          Showing {filtered.length} of {items.length} batches
+        </p>
+        <KeyHints
+          hints={[
+            { keys: "/", label: "Search" },
+            { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
+            { keys: "Enter", label: "Adjust" },
+            { keys: "H", label: "History" },
+          ]}
+        />
+      </div>
 
-      <InventoryTable items={filtered} onAdjust={setAdjustTarget} />
+      <InventoryTable
+        items={filtered}
+        onAdjust={setAdjustTarget}
+        onHistory={openHistory}
+        selectedId={nav.selectedKey}
+        onSelect={nav.select}
+      />
+
+      <BatchHistoryDialog
+        batchId={historyId}
+        onClose={() => setHistoryId(null)}
+      />
 
       <StockAdjustDialog
         open={Boolean(adjustTarget)}

@@ -1,4 +1,7 @@
+import { useEffect, useRef } from "react";
 import { Pencil as PencilIcon, PillBottle, Trash2 } from "lucide-react";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
+import { scrollRowIntoView } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -12,9 +15,30 @@ type Props = {
   items: MedicineWithStock[];
   onEdit: (m: MedicineWithStock) => void;
   onDelete: (m: MedicineWithStock) => void;
+  /** Keyboard / click selection */
+  selectedId?: string | null;
+  onSelect?: (m: MedicineWithStock) => void;
 };
 
-export function MedicineTable({ items, onEdit, onDelete }: Props) {
+export function MedicineTable({
+  items,
+  onEdit,
+  onDelete,
+  selectedId = null,
+  onSelect,
+}: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Keep the keyboard-selected row on screen
+  useEffect(() => {
+    if (!selectedId) return;
+    scrollRowIntoView(
+      scrollRef.current?.querySelector<HTMLElement>(
+        `[data-row-id="${CSS.escape(selectedId)}"]`,
+      ) ?? null,
+    );
+  }, [selectedId]);
+
   if (items.length === 0) {
     return (
       <EmptyState
@@ -27,7 +51,7 @@ export function MedicineTable({ items, onEdit, onDelete }: Props) {
 
   return (
     <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
-      <div className="flex-1 overflow-auto">
+      <div ref={scrollRef} className="flex-1 overflow-auto">
         <table className="w-full text-[11px] border-collapse">
           <thead className="sticky top-0 z-10">
             <tr>
@@ -72,7 +96,14 @@ export function MedicineTable({ items, onEdit, onDelete }: Props) {
               return (
                 <tr
                   key={m.id}
-                  className="border-b border-border/50 last:border-0 bg-card hover:bg-muted/30"
+                  data-row-id={m.id}
+                  aria-selected={m.id === selectedId}
+                  onClick={() => onSelect?.(m)}
+                  onDoubleClick={() => onEdit(m)}
+                  className={cn(
+                    "border-b border-border/50 last:border-0 bg-card hover:bg-muted/30",
+                    m.id === selectedId && SELECTED_ROW,
+                  )}
                 >
                   <td className="px-3 py-2.5">
                     <p className="font-medium text-foreground leading-tight">

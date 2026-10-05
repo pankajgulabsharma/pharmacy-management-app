@@ -265,6 +265,18 @@ describe("buildSale", () => {
     ).toThrow(SaleError);
   });
 
+  it("one-key cash bill: nothing typed means the exact amount", () => {
+    const { sale } = buildSale(
+      input({ payment: cash("") }),
+      meds,
+      BATCHES,
+      "INV-0001",
+      NOW,
+    );
+    expect(sale.payment).toMatchObject({ method: "cash", changePaise: 0 });
+    expect(sale.payment.receivedPaise).toBe(sale.totals.netPaise);
+  });
+
   it("split payments must add up exactly", () => {
     const split = (cashV: string, upi: string): PaymentDraft => ({
       ...EMPTY_PAYMENT,

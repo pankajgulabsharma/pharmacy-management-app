@@ -99,3 +99,12 @@ body,
     border: 0 !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Tables with a sticky header: when a row is scrolled into view by the */
+/* keyboard, keep it BELOW the header instead of hidden under it.       */
+/* ------------------------------------------------------------------ */
+tbody tr {
+  scroll-margin-top: 2.5rem; /* sticky header (h-9) + a little air */
+  scroll-margin-bottom: 0.25rem;
+}

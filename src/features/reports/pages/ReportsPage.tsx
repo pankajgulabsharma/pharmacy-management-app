@@ -10,6 +10,10 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Kbd } from "@/components/common/Kbd";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { KEYS } from "@/app/shortcuts/registry";
 import {
   SegmentedTabs,
   type SegmentedTab,
@@ -60,9 +64,19 @@ export default function ReportsPage() {
   const medicines = useMedicineStore((s) => s.medicines);
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
 
-  const [tab, setTab] = useState<Tab>("sales");
+  // Dashboard links like /reports?tab=sales&period=today
+  const intent = useUrlIntent();
+  const [tab, setTab] = useState<Tab>(
+    oneOf(intent.tab, ["sales", "purchases", "gst", "stock"] as const, "sales"),
+  );
   // 7 days: enough to see a trend without a mostly-empty chart
-  const [preset, setPreset] = useState<PeriodPreset>("7d");
+  const [preset, setPreset] = useState<PeriodPreset>(
+    oneOf(
+      intent.period,
+      ["today", "yesterday", "7d", "30d", "90d", "month", "lastMonth"] as const,
+      "7d",
+    ),
+  );
   const [today] = useState(() => toISODate(new Date()));
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
@@ -114,6 +128,17 @@ export default function ReportsPage() {
     });
   };
 
+  // Keyboard: [ ] previous / next report · Alt+E export
+  const step = (d: number) => {
+    const i = TABS.findIndex((t) => t.id === tab);
+    setTab(TABS[(i + d + TABS.length) % TABS.length].id);
+  };
+  useHotkeys([
+    { keys: KEYS.prevTab, handler: () => step(-1) },
+    { keys: KEYS.nextTab, handler: () => step(1) },
+    { keys: KEYS.exportReport, handler: () => exportCsv() },
+  ]);
+
   return (
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">
       <PageHeader
@@ -143,6 +168,7 @@ export default function ReportsPage() {
             >
               <Download className="h-3.5 w-3.5" />
               Export CSV
+              <Kbd keys={KEYS.exportReport} className="ml-1" />
             </Button>
           </>
         }

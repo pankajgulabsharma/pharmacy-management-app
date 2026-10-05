@@ -6,6 +6,8 @@ type Props = {
   value: number;
   /** Upper limit (e.g. stock); + is disabled at the limit */
   max: number;
+  /** Lowest allowed value (e.g. 1 so a bill line never drops to 0) */
+  min?: number;
   onChange: (value: number) => void;
   /** Accessible name, e.g. "Strips of Dolo 650" */
   label: string;
@@ -18,13 +20,14 @@ type Props = {
 export const QtyStepper = memo(function QtyStepper({
   value,
   max,
+  min = 0,
   onChange,
   label,
   unitLabel,
   disabled,
 }: Props) {
   const set = (n: number) =>
-    onChange(Math.max(0, Math.min(max, Math.trunc(n))));
+    onChange(Math.max(min, Math.min(max, Math.trunc(n))));
   return (
     <div className="flex items-center gap-1">
       {unitLabel ? (
@@ -34,7 +37,12 @@ export const QtyStepper = memo(function QtyStepper({
       ) : null}
       <button
         type="button"
-        disabled={disabled || value <= 0}
+        disabled={disabled || value <= min}
+        title={
+          value <= min && min > 0
+            ? "Minimum reached — use Delete to remove the line"
+            : undefined
+        }
         onClick={() => set(value - 1)}
         aria-label={`Decrease ${label}`}
         className="h-6 w-6 rounded border border-border flex items-center justify-center hover:bg-muted disabled:opacity-40"
@@ -49,7 +57,7 @@ export const QtyStepper = memo(function QtyStepper({
         onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "").slice(0, 5);
-          set(digits === "" ? 0 : Number(digits));
+          set(digits === "" ? min : Number(digits));
         }}
         className={cn(
           "h-6 w-9 rounded border border-border/60 bg-background text-center text-[11px] tabular-nums font-medium",

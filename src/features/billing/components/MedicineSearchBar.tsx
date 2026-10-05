@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, ScanBarcode, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -7,15 +8,27 @@ type Props = {
   query: string;
   onQueryChange: (v: string) => void;
   onClear: () => void;
+  /** F2 focuses this */
+  inputRef?: Ref<HTMLInputElement>;
 };
 
-export function MedicineSearchBar({ query, onQueryChange, onClear }: Props) {
+export function MedicineSearchBar({
+  query,
+  onQueryChange,
+  onClear,
+  inputRef,
+}: Props) {
   const { t } = useTranslation();
 
   return (
     <div className="relative shrink-0 p-0.5">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
       <Input
+        ref={inputRef}
+        type="text"
+        inputMode="search"
+        autoComplete="off"
+        spellCheck={false}
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder={t("billing.searchPlaceholder")}
@@ -29,8 +42,6 @@ export function MedicineSearchBar({ query, onQueryChange, onClear }: Props) {
           "focus-visible:ring-ring focus-visible:border-border",
           "focus-visible:bg-background",
         )}
-        autoComplete="off"
-        spellCheck={false}
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
         {query ? (

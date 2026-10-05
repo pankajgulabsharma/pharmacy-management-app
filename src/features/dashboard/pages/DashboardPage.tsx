@@ -8,21 +8,21 @@ import { QuickActions } from "../components/QuickActions";
 import { LowStockAlerts } from "../components/LowStockAlerts";
 import { AlertsPanel } from "../components/AlertsPanel";
 import { getGreetingName, getTimeBasedGreetingKey } from "@/lib/greeting";
+import { useDashboardData } from "../hooks/useDashboardData";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
   const name = getGreetingName();
+  // One computation for every widget (same numbers as Reports)
+  const d = useDashboardData();
 
   return (
-    <div className="h-full w-full p-3 overflow-hidden box-border">
-      <div className="h-full grid grid-cols-12 gap-3">
-        <div
-          className="col-span-9 h-full grid gap-2.5 overflow-hidden min-h-0"
-          style={{
-            gridTemplateRows:
-              "auto auto minmax(0, 1.35fr) minmax(0, 1.15fr) auto",
-          }}
-        >
+    // Wide screens (≥1280px): one fixed screen, nothing scrolls.
+    // Smaller screens: the page scrolls and the side column moves below,
+    // so no widget gets squeezed or cut.
+    <div className="h-full w-full p-3 overflow-y-auto xl:overflow-hidden box-border">
+      <div className="xl:h-full grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <div className="xl:col-span-9 xl:h-full grid grid-cols-1 gap-2.5 xl:overflow-hidden min-h-0 min-w-0 xl:grid-rows-[auto_auto_minmax(0,1.35fr)_minmax(0,1.15fr)_auto]">
           <div className="flex items-center justify-between shrink-0">
             <h1 className="text-base font-bold text-foreground leading-tight">
               👋 {t(getTimeBasedGreetingKey())}, {name}
@@ -37,35 +37,35 @@ export default function DashboardPage() {
           </div>
 
           <div className="shrink-0">
-            <StatsCards />
+            <StatsCards d={d} />
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5 min-h-0 overflow-hidden">
+          <div className="grid grid-cols-3 gap-2.5 min-h-0 overflow-hidden h-[300px] xl:h-auto">
             <div className="col-span-2 h-full min-h-0 overflow-hidden">
-              <SalesOverview />
+              <SalesOverview d={d} />
             </div>
             <div className="h-full min-h-0 overflow-hidden">
-              <QuickStats />
+              <QuickStats d={d} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 min-h-0 overflow-hidden">
+          <div className="grid grid-cols-2 gap-2.5 min-h-0 overflow-hidden h-[280px] xl:h-auto">
             <div className="h-full min-h-0 overflow-hidden">
-              <RecentSales />
+              <RecentSales d={d} />
             </div>
             <div className="h-full min-h-0 overflow-hidden">
-              <TopSellingMedicines />
+              <TopSellingMedicines d={d} />
             </div>
           </div>
 
           <div className="shrink-0">
-            <LowStockAlerts />
+            <LowStockAlerts d={d} />
           </div>
         </div>
 
-        <div className="col-span-3 h-full flex flex-col gap-2.5 min-h-0 overflow-hidden">
+        <div className="xl:col-span-3 xl:h-full grid grid-cols-2 xl:flex xl:flex-col gap-2.5 min-h-0 min-w-0 xl:overflow-hidden">
           <div className="shrink-0">
-            <AlertsPanel />
+            <AlertsPanel d={d} />
           </div>
           <div className="shrink-0">
             <QuickActions />

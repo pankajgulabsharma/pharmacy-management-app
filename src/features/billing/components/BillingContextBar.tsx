@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   customerName: string;
   onCustomerChange: (v: string) => void;
+  /** F3 focuses this */
+  customerRef?: React.Ref<HTMLInputElement>;
   onClearCustomer: () => void;
   prescribedBy: string;
   onPrescribedByChange: (v: string) => void;
@@ -29,6 +31,7 @@ const fieldStyle = cn(
 export function BillingContextBar({
   customerName,
   onCustomerChange,
+  customerRef,
   onClearCustomer,
   prescribedBy,
   onPrescribedByChange,
@@ -51,9 +54,10 @@ export function BillingContextBar({
         </label>
         <div className="relative">
           <Input
+            ref={customerRef}
             value={customerName}
+            placeholder="Walk-in customer (F3)"
             onChange={(e) => onCustomerChange(e.target.value)}
-            placeholder="Enter Customer Name"
             className={cn(fieldStyle, "pl-3 pr-8")}
             autoComplete="off"
           />

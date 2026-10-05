@@ -1,5 +1,5 @@
-import { memo, useMemo } from "react";
-import { PackageSearch, SlidersHorizontal } from "lucide-react";
+import { memo, useMemo, useEffect } from "react";
+import { History, PackageSearch, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge, type BadgeTone } from "@/components/common/StatusBadge";
@@ -13,6 +13,7 @@ import {
 } from "@/components/common/TableShell";
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { formatRupees } from "@/lib/money";
 import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore";
 import type { InventoryBatch } from "../types";
@@ -31,6 +32,11 @@ import {
 type Props = {
   items: InventoryBatch[];
   onAdjust: (b: InventoryBatch) => void;
+  /** Open the batch's stock history */
+  onHistory: (b: InventoryBatch) => void;
+  /** Keyboard / click selection */
+  selectedId?: string | null;
+  onSelect?: (i: InventoryBatch) => void;
 };
 
 /* ------------------------------------------------------------------ */
@@ -70,7 +76,7 @@ const COLUMNS: TableColumn[] = [
   },
   { key: "sale", label: "Sale (₹)", width: "w-[92px]", align: "text-right" },
   { key: "status", label: "Status", width: "w-[112px]" },
-  { key: "actions", label: "", width: "w-[56px]", align: "text-center" },
+  { key: "actions", label: "", width: "w-[80px]", align: "text-center" },
 ];
 
 /** Stock colour: red when out, orange when low, green otherwise */
@@ -165,7 +171,14 @@ const getKey = (b: InventoryBatch) => b.id;
 /* Table                                                              */
 /* ------------------------------------------------------------------ */
 
-export function InventoryTable({ items, onAdjust }: Props) {
+export function InventoryTable({
+  items,
+  onAdjust,
+  onHistory,
+  selectedId = null,
+  onSelect,
+}: Props) {
+  const handleHistory = useStableCallback(onHistory);
   const handleAdjust = useStableCallback(onAdjust);
 
   // Single pass: row views + footer totals
@@ -184,8 +197,24 @@ export function InventoryTable({ items, onAdjust }: Props) {
     return { rows: views, totalValue: total, attentionCount: attention };
   }, [items]);
 
-  const { scrollRef, virtualRows, paddingTop, paddingBottom, measureElement } =
-    useVirtualRows({ items, getKey });
+  const {
+    scrollRef,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+    measureElement,
+    scrollToIndex,
+  } = useVirtualRows({ items, getKey });
+  const handleSelect = useStableCallback((x: InventoryBatch) => onSelect?.(x));
+
+  const scrollTo = useStableCallback(scrollToIndex);
+
+  // Keep the keyboard-selected row on screen
+  useEffect(() => {
+    if (!selectedId) return;
+    const i = items.findIndex((x) => x.id === selectedId);
+    if (i >= 0) scrollTo(i);
+  }, [selectedId, items, scrollTo]);
 
   if (rows.length === 0) {
     return (
@@ -233,7 +262,10 @@ export function InventoryTable({ items, onAdjust }: Props) {
           view={rows[vr.index]}
           index={vr.index}
           measureRef={measureElement}
+          selected={rows[vr.index].batch.id === selectedId}
+          onSelect={handleSelect}
           onAdjust={handleAdjust}
+          onHistory={handleHistory}
         />
       ))}
 
@@ -251,6 +283,9 @@ type RowProps = {
   index: number;
   measureRef: (el: Element | null) => void;
   onAdjust: (b: InventoryBatch) => void;
+  onHistory: (b: InventoryBatch) => void;
+  selected: boolean;
+  onSelect: (x: InventoryBatch) => void;
 };
 
 const InventoryRow = memo(function InventoryRow({
@@ -258,17 +293,23 @@ const InventoryRow = memo(function InventoryRow({
   index,
   measureRef,
   onAdjust,
+  onHistory,
+  selected,
+  onSelect,
 }: RowProps) {
   const { batch: b, status: statusKey, expiring } = view;
   const status = STATUS[statusKey];
 
   return (
     <tr
+      onClick={() => onSelect(b)}
+      aria-selected={selected}
       ref={measureRef}
       data-index={index}
       className={cn(
         "border-b border-border/60 last:border-0 hover:bg-muted/40",
         index % 2 === 1 && "bg-muted/20",
+        selected && SELECTED_ROW,
         status.row,
       )}
     >
@@ -364,12 +405,20 @@ const InventoryRow = memo(function InventoryRow({
 
       {/* Actions */}
       <td className="px-2 py-2.5 align-middle text-center">
-        <RowActionButton
-          icon={SlidersHorizontal}
-          label={`Adjust stock for ${b.medicineName} (${b.batchNo})`}
-          title="Adjust stock"
-          onClick={() => onAdjust(b)}
-        />
+        <div className="inline-flex items-center gap-0.5">
+          <RowActionButton
+            icon={History}
+            label={`Stock history of ${b.medicineName} (${b.batchNo})`}
+            title="Batch history (H)"
+            onClick={() => onHistory(b)}
+          />
+          <RowActionButton
+            icon={SlidersHorizontal}
+            label={`Adjust stock for ${b.medicineName} (${b.batchNo})`}
+            title="Adjust stock (Enter)"
+            onClick={() => onAdjust(b)}
+          />
+        </div>
       </td>
     </tr>
   );

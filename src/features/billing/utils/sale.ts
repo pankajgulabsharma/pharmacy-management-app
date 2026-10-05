@@ -120,8 +120,10 @@ export function validatePayment(
 ): string | null {
   switch (p.method) {
     case "cash": {
+      // Nothing typed = customer paid the exact amount (one-key billing)
+      if (p.received.trim() === "") return null;
       const received = money(p.received);
-      if (received < 0) return "Enter the cash received";
+      if (received < 0) return "Enter a valid cash amount";
       if (received < netPaise) return "Received is less than the total";
       return null;
     }
@@ -153,7 +155,8 @@ export function validatePayment(
 function toSalePayment(p: PaymentDraft, netPaise: Paise): SalePayment {
   const reference = cleanText(p.reference, BILLING_LIMITS.referenceMax);
   if (p.method === "cash") {
-    const receivedPaise = money(p.received);
+    const receivedPaise =
+      p.received.trim() === "" ? netPaise : money(p.received);
     return {
       method: "cash",
       receivedPaise,

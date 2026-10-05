@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { Eye, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CodeChip } from "@/components/common/CodeChip";
@@ -12,6 +12,7 @@ import {
 } from "@/components/common/TableShell";
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { formatISODate } from "@/lib/date";
 import { formatPaise } from "@/lib/money";
 import { RETURN_REASONS, type PurchaseReturn } from "../types";
@@ -19,6 +20,9 @@ import { RETURN_REASONS, type PurchaseReturn } from "../types";
 type Props = {
   items: PurchaseReturn[];
   onView: (r: PurchaseReturn) => void;
+  /** Keyboard / click selection */
+  selectedId?: string | null;
+  onSelect?: (x: PurchaseReturn) => void;
 };
 
 const COLUMNS: TableColumn[] = [
@@ -40,10 +44,30 @@ const COLUMNS: TableColumn[] = [
 
 const getKey = (r: PurchaseReturn) => r.id;
 
-export function ReturnTable({ items, onView }: Props) {
+export function ReturnTable({
+  items,
+  onView,
+  selectedId = null,
+  onSelect,
+}: Props) {
   const handleView = useStableCallback(onView);
-  const { scrollRef, virtualRows, paddingTop, paddingBottom, measureElement } =
-    useVirtualRows({ items, getKey });
+  const {
+    scrollRef,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+    measureElement,
+    scrollToIndex,
+  } = useVirtualRows({ items, getKey });
+  const handleSelect = useStableCallback((x: PurchaseReturn) => onSelect?.(x));
+  const scrollTo = useStableCallback(scrollToIndex);
+
+  // Keep the keyboard-selected row on screen
+  useEffect(() => {
+    if (!selectedId) return;
+    const i = items.findIndex((x) => x.id === selectedId);
+    if (i >= 0) scrollTo(i);
+  }, [selectedId, items, scrollTo]);
 
   if (items.length === 0) {
     return (
@@ -68,6 +92,8 @@ export function ReturnTable({ items, onView }: Props) {
           index={vr.index}
           ret={items[vr.index]}
           measureRef={measureElement}
+          selected={items[vr.index].id === selectedId}
+          onSelect={handleSelect}
           onView={handleView}
         />
       ))}
@@ -81,20 +107,27 @@ const ReturnRow = memo(function ReturnRow({
   ret: r,
   measureRef,
   onView,
+  selected,
+  onSelect,
 }: {
   index: number;
   ret: PurchaseReturn;
   measureRef: (el: Element | null) => void;
   onView: (r: PurchaseReturn) => void;
+  selected: boolean;
+  onSelect: (x: PurchaseReturn) => void;
 }) {
   return (
     <tr
+      onClick={() => onSelect(r)}
+      aria-selected={selected}
       ref={measureRef}
       data-index={index}
       onDoubleClick={() => onView(r)}
       className={cn(
         "border-b border-border/60 last:border-0 hover:bg-muted/40",
         index % 2 === 1 && "bg-muted/20",
+        selected && SELECTED_ROW,
       )}
     >
       <td className="px-3 py-2.5 align-middle">

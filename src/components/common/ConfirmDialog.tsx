@@ -91,6 +91,7 @@ export function ConfirmDialog({
           type="button"
           disabled={confirmDisabled}
           onClick={onConfirm}
+          data-primary
           className={cn(
             "h-9 rounded-lg text-[12px] disabled:opacity-50",
             danger && "bg-red-600 hover:bg-red-700 text-white",

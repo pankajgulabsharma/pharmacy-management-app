@@ -1,8 +1,9 @@
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ScanBarcode, SearchX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
+import { scrollRowIntoView } from "@/lib/dom";
 import { CodeChip } from "@/components/common/CodeChip";
 import { BatchExpiry } from "./BatchExpiry";
 import { formatPaise } from "@/lib/money";
@@ -24,6 +25,16 @@ export function SearchResultsTable({
   onHoverIndex,
 }: Props) {
   const { t } = useTranslation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Arrow keys move the highlight — keep that row on screen
+  useEffect(() => {
+    scrollRowIntoView(
+      scrollRef.current?.querySelector<HTMLElement>(
+        `[data-index="${focusedIndex}"]`,
+      ) ?? null,
+    );
+  }, [focusedIndex, results]);
 
   if (!query.trim()) {
     return <EmptyState icon={ScanBarcode} title={t("billing.typeToSearch")} />;
@@ -49,7 +60,7 @@ export function SearchResultsTable({
 
   return (
     <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
-      <div className="flex-1 overflow-auto">
+      <div ref={scrollRef} className="flex-1 overflow-auto">
         <table
           className="w-full text-[11px] border-collapse"
           role="listbox"
@@ -116,6 +127,7 @@ const ResultRow = memo(function ResultRow({
     <tr
       role="option"
       aria-selected={active}
+      data-index={index}
       aria-disabled={!inStock}
       onMouseEnter={() => onHoverIndex(index)}
       onClick={() => inStock && onSelect(item)}

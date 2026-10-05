@@ -24,3 +24,29 @@ export function openNativePicker(el: HTMLInputElement): void {
     // Throws if not triggered by a user gesture or inside a cross-origin iframe
   }
 }
+
+/**
+ * Scrolls a table row fully into view inside its scrolling container,
+ * keeping it BELOW a sticky <thead>. (scrollIntoView + scroll-margin is
+ * unreliable on table rows across browsers, so we do the maths.)
+ */
+export function scrollRowIntoView(row: HTMLElement | null, gap = 4): void {
+  if (!row) return;
+  let box: HTMLElement | null = row.parentElement;
+  while (
+    box &&
+    !(
+      box.scrollHeight > box.clientHeight &&
+      /(auto|scroll)/.test(getComputedStyle(box).overflowY)
+    )
+  ) {
+    box = box.parentElement;
+  }
+  if (!box) return;
+  const head = box.querySelector("thead");
+  const c = box.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  const visibleTop = c.top + (head ? head.getBoundingClientRect().height : 0);
+  if (r.top < visibleTop) box.scrollTop -= visibleTop - r.top + gap;
+  else if (r.bottom > c.bottom) box.scrollTop += r.bottom - c.bottom + gap;
+}

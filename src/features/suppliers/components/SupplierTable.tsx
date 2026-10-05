@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { Eye, Pencil, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -12,6 +12,7 @@ import {
 } from "@/components/common/TableShell";
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
+import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { formatISODate } from "@/lib/date";
 import { formatPaise } from "@/lib/money";
 import type { SupplierWithSummary } from "../types";
@@ -20,6 +21,9 @@ type Props = {
   items: SupplierWithSummary[];
   onView: (s: SupplierWithSummary) => void;
   onEdit: (s: SupplierWithSummary) => void;
+  /** Keyboard / click selection */
+  selectedId?: string | null;
+  onSelect?: (x: SupplierWithSummary) => void;
 };
 
 /*
@@ -54,11 +58,34 @@ const COLUMNS: TableColumn[] = [
 
 const getKey = (s: SupplierWithSummary) => s.id;
 
-export function SupplierTable({ items, onView, onEdit }: Props) {
+export function SupplierTable({
+  items,
+  onView,
+  onEdit,
+  selectedId = null,
+  onSelect,
+}: Props) {
   const handleView = useStableCallback(onView);
   const handleEdit = useStableCallback(onEdit);
-  const { scrollRef, virtualRows, paddingTop, paddingBottom, measureElement } =
-    useVirtualRows({ items, getKey });
+  const {
+    scrollRef,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+    measureElement,
+    scrollToIndex,
+  } = useVirtualRows({ items, getKey });
+  const handleSelect = useStableCallback((x: SupplierWithSummary) =>
+    onSelect?.(x),
+  );
+  const scrollTo = useStableCallback(scrollToIndex);
+
+  // Keep the keyboard-selected row on screen
+  useEffect(() => {
+    if (!selectedId) return;
+    const i = items.findIndex((x) => x.id === selectedId);
+    if (i >= 0) scrollTo(i);
+  }, [selectedId, items, scrollTo]);
 
   if (items.length === 0) {
     return (
@@ -83,6 +110,8 @@ export function SupplierTable({ items, onView, onEdit }: Props) {
           index={vr.index}
           s={items[vr.index]}
           measureRef={measureElement}
+          selected={items[vr.index].id === selectedId}
+          onSelect={handleSelect}
           onView={handleView}
           onEdit={handleEdit}
         />
@@ -98,21 +127,28 @@ const SupplierRow = memo(function SupplierRow({
   measureRef,
   onView,
   onEdit,
+  selected,
+  onSelect,
 }: {
   index: number;
   s: SupplierWithSummary;
   measureRef: (el: Element | null) => void;
   onView: (s: SupplierWithSummary) => void;
   onEdit: (s: SupplierWithSummary) => void;
+  selected: boolean;
+  onSelect: (x: SupplierWithSummary) => void;
 }) {
   return (
     <tr
+      onClick={() => onSelect(s)}
+      aria-selected={selected}
       ref={measureRef}
       data-index={index}
       onDoubleClick={() => onView(s)}
       className={cn(
         "border-b border-border/60 last:border-0 hover:bg-muted/40",
         index % 2 === 1 && "bg-muted/20",
+        selected && SELECTED_ROW,
         s.status === "inactive" && "opacity-60",
       )}
     >

@@ -111,7 +111,13 @@ function buildDemo() {
     const first = returnable.find((r) => r.max > 0);
     if (!first) continue;
 
-    const at = new Date(purchase.createdAt);
+    // A day after the invoice (never in the future) so history reads in order
+    const at = new Date(
+      Math.min(
+        Date.now() - 60_000,
+        new Date(purchase.createdAt).getTime() + 86_400_000,
+      ),
+    );
     const { ret, issue } = buildPurchaseReturn(
       purchase,
       {

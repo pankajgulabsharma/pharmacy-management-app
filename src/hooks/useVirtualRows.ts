@@ -43,6 +43,11 @@ export function useVirtualRows<T>({
     estimateSize: () => estimateSize,
     overscan,
     scrollMargin: headerHeight,
+    // Rows scrolled to with the keyboard stop BELOW the sticky header,
+    // with a little air at the bottom too
+    // +6 px: the header's bottom border, plus a little air above the row
+    scrollPaddingStart: headerHeight + 6,
+    scrollPaddingEnd: 8,
     getItemKey: (index) => getKey(items[index]),
   });
 
@@ -61,5 +66,8 @@ export function useVirtualRows<T>({
     paddingTop,
     paddingBottom,
     measureElement: virtualizer.measureElement,
+    /** Bring a row into view (keyboard selection) */
+    scrollToIndex: (index: number) =>
+      virtualizer.scrollToIndex(index, { align: "auto" }),
   };
 }

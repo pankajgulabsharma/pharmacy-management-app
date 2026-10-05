@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { formatPaise } from "@/lib/money";
+import { ChartTooltipCard } from "@/components/common/ChartTooltipCard";
 
 export type DailyPoint = { date: string; amountPaise: number; count: number };
 
@@ -108,24 +109,27 @@ export function DailyChart({ data, countLabel, shadeSundays = false }: Props) {
                     )
                   : 0;
                 return (
-                  <div className="rounded-lg border border-border bg-popover px-2.5 py-1.5 text-[11px] shadow-md">
-                    <p className="font-medium">{fmtDay(p.date, true)}</p>
-                    <p className="tabular-nums">
-                      ₹{formatPaise(p.amountPaise)}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {p.count} {countLabel}
-                      {p.count === 1 ? "" : "s"}
-                    </p>
-                    <p
-                      className={
-                        diff >= 0 ? "text-emerald-600" : "text-red-500"
-                      }
-                    >
-                      {diff >= 0 ? "+" : ""}
-                      {diff}% vs average
-                    </p>
-                  </div>
+                  <ChartTooltipCard
+                    title={fmtDay(p.date, true)}
+                    subtitle={p.sunday ? "Sunday — usually quieter" : undefined}
+                    rows={[
+                      {
+                        color: "var(--color-primary)",
+                        label: "Amount",
+                        value: `₹${formatPaise(p.amountPaise)}`,
+                      },
+                      {
+                        color: "#f59e0b",
+                        label: countLabel === "bill" ? "Bills" : "Invoices",
+                        value: String(p.count),
+                        marker: "line",
+                      },
+                    ]}
+                    note={{
+                      text: `${diff >= 0 ? "+" : ""}${diff}% vs average day`,
+                      tone: diff >= 0 ? "good" : "bad",
+                    }}
+                  />
                 );
               }}
             />

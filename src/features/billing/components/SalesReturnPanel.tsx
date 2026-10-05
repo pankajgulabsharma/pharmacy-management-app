@@ -1,9 +1,14 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, PackageMinus, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SearchInput } from "@/components/common/SearchInput";
+import { KeyHints } from "@/components/common/KeyHints";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { SELECTED_ROW, useListNavigation } from "@/hooks/useListNavigation";
+import { KEYS } from "@/app/shortcuts/registry";
+import { scrollRowIntoView } from "@/lib/dom";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CodeChip } from "@/components/common/CodeChip";
 import { QtyStepper } from "@/components/common/QtyStepper";
@@ -28,6 +33,8 @@ import { StockError } from "@/features/inventory/utils/ledger";
 
 type Props = {
   onClose: () => void;
+  /** Open with this bill already picked (from "Recent bills") */
+  initialSaleId?: string | null;
 };
 
 const MAX_LIST = 50;
@@ -55,14 +62,16 @@ function matches(s: Sale, q: string) {
   );
 }
 
-export function SalesReturnPanel({ onClose }: Props) {
+export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
   const sales = useSalesStore((s) => s.sales);
   const saleReturns = useSalesStore((s) => s.saleReturns);
   const createSaleReturn = useSalesStore((s) => s.createSaleReturn);
 
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
-  const [saleId, setSaleId] = useState<string | null>(null);
+  const [saleId, setSaleId] = useState<string | null>(initialSaleId);
   const [qty, setQty] = useState<
     Record<string, { strip: number; loose: number }>
   >({});
@@ -146,6 +155,47 @@ export function SalesReturnPanel({ onClose }: Props) {
     }
   };
 
+  /* Keyboard: / search · ↑↓ + Enter pick bill · Ctrl+Enter save · Esc back */
+  const nav = useListNavigation({
+    items: list,
+    getKey: (x: Sale) => x.id,
+    onOpen: pickSale,
+    enabled: !sale,
+  });
+  useEffect(() => {
+    if (!nav.selectedKey) return;
+    scrollRowIntoView(
+      listRef.current?.querySelector<HTMLElement>(
+        `[data-row-id="${CSS.escape(nav.selectedKey)}"]`,
+      ) ?? null,
+    );
+  }, [nav.selectedKey]);
+  // Start with the cursor in the search box
+  useEffect(() => {
+    searchRef.current?.focus();
+  }, []);
+
+  useHotkeys([
+    {
+      keys: KEYS.focusSearch,
+      enabled: !sale,
+      handler: () => searchRef.current?.select(),
+    },
+    {
+      keys: KEYS.save,
+      allowInInputs: true,
+      enabled: Boolean(sale) && totals.any,
+      handler: handleSave,
+    },
+    {
+      keys: "Escape",
+      allowInInputs: true,
+      // Esc in a non-empty search box clears it first (SearchInput handles that)
+      when: (e) => !(e.target === searchRef.current && query !== ""),
+      handler: () => (sale ? resetSale() : onClose()),
+    },
+  ]);
+
   return (
     <div className="h-full w-full min-h-0 overflow-hidden grid grid-cols-12 gap-3">
       {/* LEFT */}
@@ -181,11 +231,21 @@ export function SalesReturnPanel({ onClose }: Props) {
               onChange={setQuery}
               placeholder="Search bill no., customer or medicine..."
               className="flex-none"
+              inputRef={searchRef}
             />
-            <p className="text-[10px] text-muted-foreground -mt-1">
-              Bills from this app only — older imported history can't be
-              returned here.
-            </p>
+            <div className="flex items-center justify-between gap-3 -mt-1">
+              <p className="text-[10px] text-muted-foreground">
+                Bills from this app only — older imported history can't be
+                returned here.
+              </p>
+              <KeyHints
+                hints={[
+                  { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
+                  { keys: "Enter", label: "Open bill" },
+                  { keys: "Escape", label: "Back" },
+                ]}
+              />
+            </div>
             {list.length === 0 ? (
               <EmptyState
                 icon={ReceiptText}
@@ -193,7 +253,10 @@ export function SalesReturnPanel({ onClose }: Props) {
                 description="Try another bill number or name."
               />
             ) : (
-              <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-auto">
+              <div
+                ref={listRef}
+                className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-auto"
+              >
                 <table className="w-full text-[11px]">
                   <thead className="sticky top-0 z-10">
                     <tr>
@@ -219,7 +282,12 @@ export function SalesReturnPanel({ onClose }: Props) {
                     {list.map((s) => (
                       <tr
                         key={s.id}
-                        className="border-b border-border/50 hover:bg-primary/5 cursor-pointer bg-card"
+                        data-row-id={s.id}
+                        aria-selected={nav.selectedKey === s.id}
+                        className={cn(
+                          "border-b border-border/50 hover:bg-primary/5 cursor-pointer bg-card",
+                          nav.selectedKey === s.id && SELECTED_ROW,
+                        )}
                         onClick={() => pickSale(s)}
                       >
                         <td className="px-3 py-2">

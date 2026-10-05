@@ -1,14 +1,9 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { isTopModal, popModal, pushModal } from "@/lib/modalStack";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-
-/**
- * Open modals, innermost last. Only the topmost one reacts to Esc / Tab,
- * so a dialog opened from another dialog closes on its own.
- */
-const modalStack: symbol[] = [];
 
 type Props = {
   open: boolean;
@@ -46,8 +41,7 @@ export function ModalShell({
 
   useEffect(() => {
     if (!open) return;
-    const token = Symbol("modal");
-    modalStack.push(token);
+    const token = pushModal();
     const panel = panelRef.current;
     const previouslyFocused =
       document.activeElement instanceof HTMLElement
@@ -60,11 +54,29 @@ export function ModalShell({
     initial?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (modalStack[modalStack.length - 1] !== token) return;
+      if (!isTopModal(token)) return;
       if (e.key === "Escape") {
         e.preventDefault();
         onCloseRef.current();
         return;
+      }
+      // Ctrl/⌘ + Enter (or + S) submits the dialog's form — save without the mouse
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key === "Enter" || e.key.toLowerCase() === "s")) {
+        const form = panel?.querySelector("form");
+        if (form) {
+          e.preventDefault();
+          form.requestSubmit();
+          return;
+        }
+        const primary = panel?.querySelector<HTMLButtonElement>(
+          "[data-primary]:not([disabled])",
+        );
+        if (primary) {
+          e.preventDefault();
+          primary.click();
+          return;
+        }
       }
       if (e.key !== "Tab" || !panel) return;
 
@@ -85,8 +97,7 @@ export function ModalShell({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      const i = modalStack.indexOf(token);
-      if (i >= 0) modalStack.splice(i, 1);
+      popModal(token);
       previouslyFocused?.focus();
     };
   }, [open]);

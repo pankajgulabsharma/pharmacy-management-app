@@ -1,4 +1,10 @@
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import {
   AlertTriangle,
   FileText,
@@ -14,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SearchInput } from "@/components/common/SearchInput";
+import { KeyHints } from "@/components/common/KeyHints";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useListNavigation } from "@/hooks/useListNavigation";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { KEYS } from "@/app/shortcuts/registry";
+
 import {
   FilterChips,
   type FilterChipOption,
@@ -71,17 +83,25 @@ export default function PurchasesPage() {
   const suppliers = useSupplierStore((s) => s.suppliers);
   const medicines = useMedicinesWithStock();
 
-  const [tab, setTab] = useState<Tab>("invoices");
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>("all");
+  // Dashboard links like /purchases?status=overdue or ?new=1
+  const intent = useUrlIntent();
+  const [tab, setTab] = useState<Tab>(
+    oneOf(intent.tab, ["invoices", "returns"] as const, "invoices"),
+  );
+  const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
+  const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>(
+    oneOf(
+      intent.status,
+      ["all", "due", "partial", "overdue", "paid", "cancelled"] as const,
+      "all",
+    ),
+  );
+  const searchRef = useRef<HTMLInputElement>(null);
   const [today] = useState(() => startOfDay(new Date()));
 
   // Dialogs — ids, not objects, so dialogs always show the latest version
   const [form, setForm] = useState<{ open: boolean; editingId: string | null }>(
-    {
-      open: false,
-      editingId: null,
-    },
+    { open: intent.new === "1", editingId: null },
   );
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [cancelId, setCancelId] = useState<string | null>(null);
@@ -273,6 +293,26 @@ export default function PurchasesPage() {
     ? (returns.find((r) => r.id === viewingReturnId) ?? null)
     : null;
 
+  // Keyboard: [ ] tabs · ↑↓ select · Enter open · N new · / search
+  const invoiceNav = useListNavigation({
+    items: filteredPurchases,
+    getKey: (p: Purchase) => p.id,
+    onOpen: handleView,
+    enabled: tab === "invoices",
+  });
+  const returnNav = useListNavigation({
+    items: filteredReturns,
+    getKey: (r: PurchaseReturn) => r.id,
+    onOpen: handleViewReturn,
+    enabled: tab === "returns",
+  });
+  useHotkeys([
+    { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
+    { keys: KEYS.create, handler: openNew },
+    { keys: KEYS.prevTab, handler: () => setTab("invoices") },
+    { keys: KEYS.nextTab, handler: () => setTab("returns") },
+  ]);
+
   return (
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">
       <PageHeader
@@ -333,6 +373,7 @@ export default function PurchasesPage() {
               ? "Search invoice, supplier, GSTIN, medicine, batch..."
               : "Search debit note, supplier, invoice, medicine..."
           }
+          inputRef={searchRef}
         />
         {tab === "invoices" ? (
           <FilterChips
@@ -344,20 +385,38 @@ export default function PurchasesPage() {
         ) : null}
       </div>
 
-      <p className="text-[10px] text-muted-foreground shrink-0">
-        {tab === "invoices"
-          ? `Showing ${filteredPurchases.length} of ${purchases.length} invoices`
-          : `Showing ${filteredReturns.length} of ${returns.length} debit notes`}
-      </p>
+      <div className="flex items-center justify-between gap-3 shrink-0">
+        <p className="text-[10px] text-muted-foreground">
+          {tab === "invoices"
+            ? `Showing ${filteredPurchases.length} of ${purchases.length} invoices`
+            : `Showing ${filteredReturns.length} of ${returns.length} debit notes`}
+        </p>
+        <KeyHints
+          hints={[
+            { keys: "/", label: "Search" },
+            { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
+            { keys: "Enter", label: "Open" },
+            { keys: "N", label: "New purchase" },
+            { keys: ["[", "]"], label: "Invoices / Returns" },
+          ]}
+        />
+      </div>
 
       {tab === "invoices" ? (
         <PurchaseTable
           items={filteredPurchases}
           statusById={statusById}
           onView={handleView}
+          selectedId={invoiceNav.selectedKey}
+          onSelect={invoiceNav.select}
         />
       ) : (
-        <ReturnTable items={filteredReturns} onView={handleViewReturn} />
+        <ReturnTable
+          items={filteredReturns}
+          onView={handleViewReturn}
+          selectedId={returnNav.selectedKey}
+          onSelect={returnNav.select}
+        />
       )}
 
       {/* Dialogs — order matters: later ones stack on top */}

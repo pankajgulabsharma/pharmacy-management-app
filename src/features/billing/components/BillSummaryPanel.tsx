@@ -14,6 +14,8 @@ import {
 } from "@/lib/money";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
+import { Kbd } from "@/components/common/Kbd";
+import { KEYS } from "@/app/shortcuts/registry";
 import {
   PAYMENT_METHOD_LABELS,
   type PaymentDraft,
@@ -34,6 +36,8 @@ type Props = {
   saving: boolean;
   onSave: (print: boolean) => void;
   onHold: () => void;
+  /** Alt+A focuses the amount box of the current payment method */
+  amountRef?: (el: HTMLInputElement | null) => void;
 };
 
 const METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
@@ -62,9 +66,15 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
   saving,
   onSave,
   onHold,
+  amountRef,
 }: Props) {
   const { t } = useTranslation();
-  const receivedRef = useRef<HTMLInputElement>(null);
+  const receivedRef = useRef<HTMLInputElement | null>(null);
+  // One ref for both the local "Exact amount" button and the Alt+A shortcut
+  const setReceived = (el: HTMLInputElement | null) => {
+    receivedRef.current = el;
+    amountRef?.(el);
+  };
   const net = totals.netPaise;
 
   const set = (patch: Partial<PaymentDraft>) =>
@@ -179,8 +189,11 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
 
       {/* Payment */}
       <div className="bg-card border border-border rounded-lg p-2.5 flex-[48] min-h-0 flex flex-col overflow-hidden">
-        <h3 className="text-[11px] font-semibold text-foreground shrink-0 mb-1.5">
+        <h3 className="text-[11px] font-semibold text-foreground shrink-0 mb-1.5 flex items-center justify-between">
           {t("billing.paymentMethod")}
+          <span className="inline-flex items-center gap-1 text-[9px] font-normal text-muted-foreground">
+            <Kbd keys={KEYS.nextPayment} /> change
+          </span>
         </h3>
         <div
           className="grid grid-cols-3 gap-1 shrink-0 mb-1.5"
@@ -214,7 +227,8 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   htmlFor="bill-received"
                   className="text-[9px] text-muted-foreground"
                 >
-                  Received (₹)
+                  Received (₹){" "}
+                  <Kbd keys={KEYS.payAmount} className="ml-1 align-middle" />
                 </label>
                 <button
                   type="button"
@@ -230,13 +244,13 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
               </div>
               <Input
                 id="bill-received"
-                ref={receivedRef}
+                ref={setReceived}
                 value={payment.received}
                 onChange={(e) => {
                   if (isMoneyInput(e.target.value))
                     set({ received: e.target.value });
                 }}
-                placeholder="0.00"
+                placeholder={`Exact ${inrFromPaise(net)} — leave empty`}
                 className={PAY_INPUT}
                 inputMode="decimal"
               />
@@ -259,6 +273,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                 via {PAYMENT_METHOD_LABELS[payment.method]}
               </p>
               <Input
+                ref={amountRef}
                 value={payment.reference}
                 maxLength={40}
                 onChange={(e) => set({ reference: e.target.value })}
@@ -318,6 +333,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                     {k}
                   </span>
                   <Input
+                    ref={k === "cash" ? amountRef : undefined}
                     value={payment.split[k]}
                     onChange={(e) => setSplit(k, e.target.value)}
                     placeholder="0"
@@ -344,11 +360,12 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
             type="button"
             disabled={!canSave}
             onClick={() => onSave(true)}
-            title="F9"
-            className="w-full h-8 rounded-md text-[11px] bg-primary text-primary-foreground disabled:opacity-50"
+            title="Save & print (F9)"
+            className="w-full h-8 rounded-md text-[11px] bg-primary text-primary-foreground disabled:opacity-50 gap-2"
           >
             {t("billing.savePrint")}
             {lines.length > 0 ? ` · ${inrFromPaise(net)}` : ""}
+            <Kbd keys={KEYS.savePrintBill} tone="light" />
           </Button>
           <div className="grid grid-cols-2 gap-1">
             <Button
@@ -356,18 +373,20 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
               variant="outline"
               disabled={lines.length === 0 || saving}
               onClick={onHold}
-              className="h-7 rounded-md text-[9px] border-border"
+              className="h-7 rounded-md text-[9px] border-border gap-1"
             >
               {t("billing.holdBill")}
+              <Kbd keys={KEYS.holdBill} />
             </Button>
             <Button
               type="button"
               variant="outline"
               disabled={!canSave}
               onClick={() => onSave(false)}
-              className="h-7 rounded-md text-[9px] border-border"
+              className="h-7 rounded-md text-[9px] border-border gap-1"
             >
               {t("billing.saveNoPrint")}
+              <Kbd keys={KEYS.saveBill} />
             </Button>
           </div>
         </div>

@@ -1,117 +1,149 @@
 import { NavLink } from "react-router-dom";
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Pill,
-  Package,
-  Truck,
-  Users,
-  FileText,
-  Settings,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { Keyboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { KEYS, NAV_ITEMS, type NavItem } from "@/app/shortcuts/registry";
 
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/billing", label: "Sales & Billing", icon: ShoppingCart },
-  { to: "/medicines", label: "Medicines", icon: Pill },
-  { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/purchases", label: "Purchases", icon: Truck },
-  { to: "/suppliers", label: "Suppliers", icon: Users },
-  { to: "/reports", label: "Reports", icon: FileText },
-  { to: "/settings", label: "Settings", icon: Settings },
-];
+const keyText = (keys: string | readonly string[]) =>
+  formatCombo(preferredCombo(keys)).join(" ");
 
+/**
+ * App navigation: one simple list, the active screen clearly marked,
+ * shortcut hints on hover. Collapsing lives in the Header (or Ctrl/⌘+B).
+ */
 export function Sidebar() {
-  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const open = useUIStore((s) => s.sidebarOpen);
+  const shopName = useSettingsStore((s) => s.shop.name);
 
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
-        "h-full shrink-0 flex flex-col border-r border-slate-800",
-        "bg-slate-950 text-slate-200",
-        "transition-[width] duration-300 ease-in-out",
-        sidebarOpen ? "w-56" : "w-[68px]",
+        "h-full shrink-0 flex flex-col",
+        "bg-slate-950 text-slate-300 border-r border-white/[0.06]",
+        "transition-[width] duration-200 ease-out",
+        open ? "w-60" : "w-16",
       )}
     >
-      {/* Brand — + logo always visible */}
+      {/* Brand */}
       <div
         className={cn(
-          "h-14 shrink-0 flex items-center border-b border-slate-800",
-          sidebarOpen ? "px-3 gap-2" : "justify-center px-0",
+          "h-14 shrink-0 flex items-center border-b border-white/[0.06]",
+          open ? "px-4 gap-3" : "justify-center",
         )}
       >
         <div
-          className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 select-none"
-          title="MediCare"
+          aria-hidden="true"
+          className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-950/50 flex items-center justify-center text-white font-bold text-base select-none shrink-0"
         >
           +
         </div>
-
-        {sidebarOpen && (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate leading-tight">
-                MediCare
-              </p>
-              <p className="text-[10px] text-slate-400 truncate">Pharmacy</p>
-            </div>
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-              aria-label="Collapse sidebar"
-              title="Collapse"
+        {open ? (
+          <div className="min-w-0">
+            <p
+              className="text-[13px] font-semibold text-white truncate leading-tight"
+              title={shopName}
             >
-              <ChevronsLeft className="h-4 w-4" />
-            </button>
-          </>
-        )}
+              {shopName}
+            </p>
+            <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+              Pharmacy POS
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 min-h-0 overflow-y-auto py-3 px-2 space-y-0.5">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={!sidebarOpen ? label : undefined}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center rounded-lg text-[12px] font-medium transition-colors",
-                sidebarOpen
-                  ? "gap-2.5 px-2.5 h-9"
-                  : "justify-center h-10 w-full",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white",
-              )
-            }
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            {sidebarOpen && <span className="truncate">{label}</span>}
-          </NavLink>
+      {/* Screens, one after another */}
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
+        {NAV_ITEMS.map((item) => (
+          <NavItemLink key={item.to} item={item} open={open} />
         ))}
       </nav>
 
-      {/* Expand when collapsed */}
-      {!sidebarOpen && (
-        <div className="shrink-0 p-2 border-t border-slate-800">
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="h-10 w-full rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-            aria-label="Expand sidebar"
-            title="Expand"
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* Help */}
+      <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">
+        <button
+          type="button"
+          onClick={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                key: "F1",
+                code: "F1",
+                bubbles: true,
+              }),
+            )
+          }
+          title={`Keyboard shortcuts (${keyText(KEYS.help)})`}
+          className={cn(
+            "group w-full flex items-center rounded-lg text-[12.5px] text-slate-400 transition-colors",
+            "hover:bg-white/[0.05] hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60",
+            open ? "h-9 gap-3 px-3" : "h-10 justify-center",
+          )}
+        >
+          <Keyboard className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
+          {open ? (
+            <>
+              <span className="flex-1 text-left truncate">
+                Keyboard shortcuts
+              </span>
+              <span className="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                {keyText(KEYS.help)}
+              </span>
+            </>
+          ) : null}
+        </button>
+      </div>
     </aside>
+  );
+}
+
+function NavItemLink({ item, open }: { item: NavItem; open: boolean }) {
+  const Icon = item.icon;
+  const hint = keyText(item.keys);
+  return (
+    <NavLink
+      to={item.to}
+      title={`${item.label} (${hint})`}
+      className={({ isActive }) =>
+        cn(
+          "group relative flex items-center rounded-lg text-[12.5px] font-medium transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60",
+          open ? "h-10 gap-3 px-3" : "h-10 justify-center",
+          isActive
+            ? "bg-indigo-500/[0.14] text-white"
+            : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-100",
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {/* Active marker */}
+          <span
+            aria-hidden="true"
+            className={cn(
+              "absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-indigo-400 transition-opacity",
+              isActive ? "opacity-100" : "opacity-0",
+            )}
+          />
+          <Icon
+            className={cn(
+              "h-[18px] w-[18px] shrink-0",
+              isActive && "text-indigo-300",
+            )}
+            strokeWidth={isActive ? 2.2 : 1.9}
+          />
+          {open ? (
+            <>
+              <span className="truncate flex-1">{item.label}</span>
+              <span className="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity shrink-0">
+                {hint}
+              </span>
+            </>
+          ) : null}
+        </>
+      )}
+    </NavLink>
   );
 }

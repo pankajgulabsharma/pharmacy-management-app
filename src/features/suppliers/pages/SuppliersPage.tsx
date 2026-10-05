@@ -1,4 +1,10 @@
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import {
   AlertTriangle,
   BadgeIndianRupee,
@@ -12,6 +18,12 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SearchInput } from "@/components/common/SearchInput";
+import { KeyHints } from "@/components/common/KeyHints";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useListNavigation } from "@/hooks/useListNavigation";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { KEYS } from "@/app/shortcuts/registry";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   FilterChips,
@@ -51,10 +63,19 @@ export default function SuppliersPage() {
   const purchases = usePurchaseStore((s) => s.purchases);
   const returns = usePurchaseStore((s) => s.returns);
 
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  // Dashboard links like /suppliers?filter=overdue or ?new=1
+  const intent = useUrlIntent();
+  const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
+  const [filter, setFilter] = useState<Filter>(
+    oneOf(
+      intent.filter,
+      ["all", "dues", "overdue", "credit", "inactive"] as const,
+      "all",
+    ),
+  );
+  const searchRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<{ open: boolean; editId: string | null }>({
-    open: false,
+    open: intent.new === "1",
     editId: null,
   });
   const [viewingId, setViewingId] = useState<string | null>(null);
@@ -185,6 +206,22 @@ export default function SuppliersPage() {
   const viewing = viewingId ? (byId.get(viewingId) ?? null) : null;
   const deleting = deleteId ? (byId.get(deleteId) ?? null) : null;
 
+  // Keyboard: ↑↓ select · Enter view · E edit · N new · / search
+  const nav = useListNavigation({
+    items: filtered,
+    getKey: (x: SupplierWithSummary) => x.id,
+    onOpen: openView,
+  });
+  useHotkeys([
+    { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
+    { keys: KEYS.create, handler: openAdd },
+    {
+      keys: KEYS.edit,
+      enabled: nav.selected !== null,
+      handler: () => nav.selected && openEdit(nav.selected),
+    },
+  ]);
+
   return (
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background flex flex-col gap-2.5 min-h-0">
       <PageHeader
@@ -235,6 +272,7 @@ export default function SuppliersPage() {
           value={query}
           onChange={setQuery}
           placeholder="Search name, GSTIN, phone, city, licence..."
+          inputRef={searchRef}
         />
         <FilterChips
           options={filterOptions}
@@ -244,11 +282,28 @@ export default function SuppliersPage() {
         />
       </div>
 
-      <p className="text-[10px] text-muted-foreground shrink-0">
-        Showing {filtered.length} of {items.length} · sorted by amount owed
-      </p>
+      <div className="flex items-center justify-between gap-3 shrink-0">
+        <p className="text-[10px] text-muted-foreground">
+          Showing {filtered.length} of {items.length} · sorted by amount owed
+        </p>
+        <KeyHints
+          hints={[
+            { keys: "/", label: "Search" },
+            { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
+            { keys: "Enter", label: "View" },
+            { keys: "E", label: "Edit" },
+            { keys: "N", label: "New supplier" },
+          ]}
+        />
+      </div>
 
-      <SupplierTable items={filtered} onView={openView} onEdit={openEdit} />
+      <SupplierTable
+        items={filtered}
+        onView={openView}
+        onEdit={openEdit}
+        selectedId={nav.selectedKey}
+        onSelect={nav.select}
+      />
 
       <SupplierDetailsDialog
         supplier={viewing}

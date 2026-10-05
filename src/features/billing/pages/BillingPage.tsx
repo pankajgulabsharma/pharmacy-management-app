@@ -7,6 +7,12 @@ import {
   useState,
 } from "react";
 import { PauseCircle, ShoppingCart } from "lucide-react";
+import { Kbd } from "@/components/common/Kbd";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useUrlIntent } from "@/hooks/useUrlIntent";
+import { isTyping } from "@/lib/hotkeys";
+import { KEYS } from "@/app/shortcuts/registry";
+import { BatchHistoryDialog } from "@/features/inventory/components/BatchHistoryDialog";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/EmptyState";
 import { newId } from "@/lib/id";
@@ -17,7 +23,7 @@ import { MedicineSearchBar } from "../components/MedicineSearchBar";
 import { SearchResultsTable } from "../components/SearchResultsTable";
 import { BillItemsTable } from "../components/BillItemsTable";
 import { BillSummaryPanel } from "../components/BillSummaryPanel";
-import { BillingBottomStats } from "../components/BillingBottomStats";
+import { TodayBar } from "../components/TodayBar";
 import { SalesReturnPanel } from "../components/SalesReturnPanel";
 import { ReceiptDialog } from "../components/ReceiptDialog";
 import { HeldBillsDialog } from "../components/HeldBillsDialog";
@@ -29,7 +35,10 @@ import {
   type SellableItem,
 } from "../hooks/useBillingData";
 import {
+  DISCOUNT_OPTIONS,
   EMPTY_PAYMENT,
+  PAYMENT_METHOD_LABELS,
+  type PaymentMethod,
   type CartLine,
   type PaymentDraft,
   type Sale,
@@ -62,6 +71,8 @@ export default function BillingPage() {
   );
 
   const [mode, setMode] = useState<"billing" | "return">("billing");
+  /** Bill picked from "Recent bills" → opens Sales Return on it */
+  const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [doctor, setDoctor] = useState<string>(() => doctors[0] ?? "");
   const [counter, setCounter] = useState<string>(defaultCounter);
@@ -80,6 +91,27 @@ export default function BillingPage() {
     null,
   );
   const savingRef = useRef(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const customerRef = useRef<HTMLInputElement>(null);
+  /** Amount box of the current payment method (cash received / split / ref) */
+  const amountRef = useRef<HTMLInputElement | null>(null);
+  const setAmountRef = useCallback((el: HTMLInputElement | null) => {
+    amountRef.current = el;
+  }, []);
+  /** Bill line picked with ↑ ↓ (when the search box is empty) */
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const [historyBatchId, setHistoryBatchId] = useState<string | null>(null);
+
+  // F2 from any screen opens /billing?focus=search
+  const intent = useUrlIntent();
+  useEffect(() => {
+    if (intent.focus === "search") searchRef.current?.focus();
+  }, [intent.focus]);
+
+  /** Ready for the next customer: cursor back in the medicine search */
+  const focusSearch = useCallback(() => {
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }, []);
 
   const deferredQuery = useDeferredValue(query);
   const results = useSellableSearch(deferredQuery);
@@ -147,6 +179,8 @@ export default function BillingPage() {
       );
       // Scroll the bill to this line (new or existing) and highlight it
       setFocus((f) => ({ lineId, key: (f?.key ?? 0) + 1 }));
+      // Ready to change its quantity right away with + / −
+      setSelectedLineId(lineId);
       setQuery("");
       setFocusedIndex(0);
     },
@@ -199,6 +233,8 @@ export default function BillingPage() {
           payment,
         });
         resetBill();
+        setSelectedLineId(null);
+        focusSearch();
         if (print) {
           setReceipt({ sale, autoPrint: true });
         } else {
@@ -222,6 +258,7 @@ export default function BillingPage() {
       counter,
       payment,
       resetBill,
+      focusSearch,
     ],
   );
 
@@ -265,51 +302,198 @@ export default function BillingPage() {
 
   /* ---------------- keyboard ---------------- */
 
-  useEffect(() => {
-    if (mode !== "billing" || receipt || heldOpen) return;
+  const searching = query.trim().length > 0;
+  const lineIndex = cart.findIndex((l) => l.lineId === selectedLineId);
+  const selectedLine = lineIndex >= 0 ? cart[lineIndex] : null;
+  const selectedView = selectedLine
+    ? bill.lines.find((v) => v.line.lineId === selectedLine.lineId)
+    : undefined;
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F9") {
-        e.preventDefault();
-        handleSave(true);
-        return;
-      }
-      if (!query.trim() || results.length === 0) return;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setFocusedIndex((i) => Math.min(i + 1, results.length - 1));
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setFocusedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const item = results[focusedIndex];
-        if (item) addToCart(item);
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        handleClearSearch();
-      }
-    };
+  /** Bill-line keys work outside inputs, or in the search box while it is empty */
+  const lineKeysAllowed = (e: KeyboardEvent) =>
+    !isTyping(e.target) || (e.target === searchRef.current && !searching);
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    mode,
-    receipt,
-    heldOpen,
-    query,
-    results,
-    focusedIndex,
-    addToCart,
-    handleClearSearch,
-    handleSave,
-  ]);
+  const moveLine = (d: number) => {
+    if (cart.length === 0) return;
+    const next =
+      lineIndex < 0
+        ? d > 0
+          ? 0
+          : cart.length - 1
+        : Math.max(0, Math.min(cart.length - 1, lineIndex + d));
+    const id = cart[next].lineId;
+    setSelectedLineId(id);
+    setFocus((f) => ({ lineId: id, key: (f?.key ?? 0) + 1 }));
+  };
+
+  const bumpLine = (packs: number, loose: number) => {
+    if (!selectedLine || !selectedView) return;
+    const strip = Math.max(
+      0,
+      Math.min(selectedView.limits.maxStrip, selectedLine.qtyStrip + packs),
+    );
+    const lse = Math.max(
+      0,
+      Math.min(selectedView.limits.maxLoose, selectedLine.qtyLoose + loose),
+    );
+    // A line never drops to 0 — remove it with Delete instead
+    if (strip + lse === 0) {
+      toast.info("Quantity can't be 0 — press Delete to remove the line");
+      return;
+    }
+    changeQty(selectedLine.lineId, strip, lse);
+  };
+
+  const nextPaymentMethod = () => {
+    const methods = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
+    const i = methods.indexOf(payment.method);
+    setPayment({ ...payment, method: methods[(i + 1) % methods.length] });
+  };
+
+  useHotkeys(
+    [
+      // Search & add
+      { keys: KEYS.billSearch, handler: () => searchRef.current?.select() },
+      {
+        keys: "ArrowDown",
+        allowInInputs: true,
+        enabled: searching && results.length > 0,
+        handler: () =>
+          setFocusedIndex((i) => Math.min(i + 1, results.length - 1)),
+      },
+      {
+        keys: "ArrowUp",
+        allowInInputs: true,
+        enabled: searching && results.length > 0,
+        handler: () => setFocusedIndex((i) => Math.max(i - 1, 0)),
+      },
+      {
+        keys: "Enter",
+        allowInInputs: true,
+        enabled: searching && results.length > 0,
+        when: (e) => e.target === searchRef.current,
+        handler: () =>
+          results[focusedIndex] && addToCart(results[focusedIndex]),
+      },
+      {
+        keys: "Escape",
+        allowInInputs: true,
+        enabled: searching,
+        handler: handleClearSearch,
+      },
+
+      // Bill lines (search box empty)
+      {
+        keys: "ArrowDown",
+        allowInInputs: true,
+        enabled: !searching,
+        when: lineKeysAllowed,
+        handler: () => moveLine(1),
+      },
+      {
+        keys: "ArrowUp",
+        allowInInputs: true,
+        enabled: !searching,
+        when: lineKeysAllowed,
+        handler: () => moveLine(-1),
+      },
+      {
+        keys: KEYS.qtyUp,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => bumpLine(1, 0),
+      },
+      {
+        keys: KEYS.qtyDown,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => bumpLine(-1, 0),
+      },
+      {
+        keys: KEYS.looseUp,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => bumpLine(0, 1),
+      },
+      {
+        keys: KEYS.looseDown,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => bumpLine(0, -1),
+      },
+      {
+        keys: KEYS.nextDiscount,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => {
+          if (!selectedLine) return;
+          const i = (DISCOUNT_OPTIONS as readonly number[]).indexOf(
+            selectedLine.discountPercent,
+          );
+          changeDiscount(
+            selectedLine.lineId,
+            DISCOUNT_OPTIONS[(i + 1) % DISCOUNT_OPTIONS.length],
+          );
+        },
+      },
+      {
+        keys: KEYS.remove,
+        allowInInputs: true,
+        enabled: selectedLine !== null,
+        when: lineKeysAllowed,
+        handler: () => {
+          if (!selectedLine) return;
+          const nextId =
+            cart[lineIndex + 1]?.lineId ?? cart[lineIndex - 1]?.lineId ?? null;
+          removeLine(selectedLine.lineId);
+          setSelectedLineId(nextId);
+        },
+      },
+
+      // Bill actions (F-keys work everywhere on this screen)
+      { keys: KEYS.customer, handler: () => customerRef.current?.select() },
+      { keys: KEYS.nextPayment, handler: nextPaymentMethod },
+      {
+        keys: KEYS.payAmount,
+        handler: () => {
+          const el = amountRef.current;
+          if (el) {
+            el.focus();
+            el.select();
+          } else {
+            toast.info(
+              `${PAYMENT_METHOD_LABELS[payment.method]} needs no amount — press F9 to save`,
+            );
+          }
+        },
+      },
+      { keys: KEYS.heldBills, handler: () => setHeldOpen(true) },
+      { keys: KEYS.holdBill, enabled: cart.length > 0, handler: handleHold },
+      { keys: KEYS.saveBill, handler: () => handleSave(false) },
+      { keys: KEYS.savePrintBill, handler: () => handleSave(true) },
+      { keys: KEYS.salesReturn, handler: () => setMode("return") },
+      { keys: KEYS.clearBill, enabled: cart.length > 0, handler: resetBill },
+    ],
+    mode === "billing",
+  );
 
   // ——— Sales Return mode ———
   if (mode === "return") {
     return (
       <div className="h-full w-full p-3 overflow-hidden box-border bg-background">
-        <SalesReturnPanel onClose={() => setMode("billing")} />
+        <SalesReturnPanel
+          initialSaleId={returnSaleId}
+          onClose={() => {
+            setReturnSaleId(null);
+            setMode("billing");
+            focusSearch();
+          }}
+        />
       </div>
     );
   }
@@ -331,6 +515,7 @@ export default function BillingPage() {
             onCounterChange={setCounter}
             doctors={doctors}
             counters={counters}
+            customerRef={customerRef}
           />
 
           <div className="flex items-center gap-2 shrink-0">
@@ -339,6 +524,7 @@ export default function BillingPage() {
                 query={query}
                 onQueryChange={handleQueryChange}
                 onClear={handleClearSearch}
+                inputRef={searchRef}
               />
             </div>
 
@@ -349,6 +535,7 @@ export default function BillingPage() {
                 className="h-9 shrink-0 rounded-lg border border-border px-3 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 Clear All
+                <Kbd keys={KEYS.clearBill} className="ml-1.5" />
               </button>
             )}
 
@@ -359,14 +546,16 @@ export default function BillingPage() {
             >
               <PauseCircle className="h-3.5 w-3.5" />
               Held bills{held.length > 0 ? ` (${held.length})` : ""}
+              <Kbd keys={KEYS.heldBills} />
             </button>
 
             <button
               type="button"
               onClick={() => setMode("return")}
-              className="h-9 shrink-0 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 text-[11px] font-medium text-orange-700 dark:text-orange-400 hover:bg-orange-500/15 transition-colors"
+              className="h-9 shrink-0 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 text-[11px] font-medium text-orange-700 dark:text-orange-400 hover:bg-orange-500/15 transition-colors inline-flex items-center gap-1.5"
             >
               Sales Return
+              <Kbd keys={KEYS.salesReturn} />
             </button>
           </div>
 
@@ -385,16 +574,24 @@ export default function BillingPage() {
               onChangeQty={changeQty}
               onChangeDiscount={changeDiscount}
               onRemove={removeLine}
+              selectedLineId={selectedLineId}
+              onSelectLine={setSelectedLineId}
+              onBatchHistory={setHistoryBatchId}
             />
           ) : (
             <EmptyState
               icon={ShoppingCart}
               title="No items in this bill yet"
-              description="Search a medicine above or scan its barcode to add it."
+              description="Search a medicine above or scan its barcode to add it. Press F9 to save & print — one key bill."
             />
           )}
 
-          <BillingBottomStats onViewAll={() => setMode("return")} />
+          <TodayBar
+            onReturnBill={(id) => {
+              setReturnSaleId(id);
+              setMode("return");
+            }}
+          />
         </div>
 
         <div className="col-span-12 xl:col-span-3 min-h-0 overflow-hidden">
@@ -409,6 +606,7 @@ export default function BillingPage() {
             saving={saving}
             onSave={handleSave}
             onHold={handleHold}
+            amountRef={setAmountRef}
           />
         </div>
       </div>
@@ -425,7 +623,15 @@ export default function BillingPage() {
       <ReceiptDialog
         sale={receipt?.sale ?? null}
         autoPrint={receipt?.autoPrint ?? false}
-        onClose={() => setReceipt(null)}
+        onClose={() => {
+          setReceipt(null);
+          focusSearch();
+        }}
+      />
+
+      <BatchHistoryDialog
+        batchId={historyBatchId}
+        onClose={() => setHistoryBatchId(null)}
       />
     </div>
   );
