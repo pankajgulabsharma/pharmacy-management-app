@@ -23,7 +23,10 @@ import {
   medicineToForm,
   unitsPerPackHint,
 } from "@medicare/domain/medicines/types";
-import { validateMedicineForm, type FieldErrors } from "@medicare/domain/medicines/validation";
+import {
+  validateMedicineForm,
+  type FieldErrors,
+} from "@medicare/domain/medicines/validation";
 
 type Props = {
   open: boolean;

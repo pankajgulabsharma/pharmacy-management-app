@@ -516,4 +516,16 @@ export const HI_UI: Record<string, string> = {
 
   "Nothing owed": "कुछ बकाया नहीं",
   Settled: "चुकता",
+
+  // Server connection
+  "Server connected": "सर्वर जुड़ा है",
+  "Connecting to server…": "सर्वर से जुड़ रहे हैं…",
+  "Server offline — click to retry": "सर्वर बंद — दोबारा जोड़ने के लिए क्लिक करें",
+  Server: "सर्वर",
+  Offline: "बंद",
+  Connecting: "जुड़ रहे",
+  "Server not reachable": "सर्वर से कनेक्शन नहीं",
+  "The server took too long to answer": "सर्वर ने जवाब देने में बहुत देर की",
+  "showing demo medicines. Start the server with": "डेमो दवाइयाँ दिख रही हैं। सर्वर चालू करें:",
+  Retry: "फिर कोशिश करें",
 };

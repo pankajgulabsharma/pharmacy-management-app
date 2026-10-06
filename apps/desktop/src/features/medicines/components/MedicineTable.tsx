@@ -9,7 +9,11 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
 import { ExpiryText, type ExpiryState } from "@/components/common/ExpiryText";
 import type { MedicineWithStock } from "@medicare/domain/medicines/types";
-import { CATEGORY_LABELS, canSellLoose, formatPackLabel } from "@medicare/domain/medicines/types";
+import {
+  CATEGORY_LABELS,
+  canSellLoose,
+  formatPackLabel,
+} from "@medicare/domain/medicines/types";
 import { isExpired, isExpiringSoon } from "@/features/inventory/utils/stock";
 
 type Props = {

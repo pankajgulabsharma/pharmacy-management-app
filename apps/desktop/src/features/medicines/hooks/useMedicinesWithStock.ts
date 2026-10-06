@@ -2,7 +2,10 @@ import { useMemo } from "react";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { summarizeStock } from "@medicare/domain/inventory/ledger";
 import { useMedicineStore } from "../store/useMedicineStore";
-import { EMPTY_STOCK, type MedicineWithStock } from "@medicare/domain/medicines/types";
+import {
+  EMPTY_STOCK,
+  type MedicineWithStock,
+} from "@medicare/domain/medicines/types";
 
 /**
  * Medicine master joined with live stock from inventory batches.

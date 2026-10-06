@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Database } from "./db/client";
 import { catalogRoutes } from "./routes/catalog";
+import { cors } from "./cors";
 
 /**
  * Builds the server without starting it — tests call this directly,
@@ -12,6 +13,7 @@ export function buildApp({
   database: Database;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
+  cors(app);
 
   /** Is the server up, and can it read the database? */
   app.get("/health", async (_req, reply) => {
@@ -36,11 +38,9 @@ export function buildApp({
   app.setErrorHandler((err, _req, reply) => {
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) console.error(err);
-    reply
-      .code(status)
-      .send({
-        error: status < 500 ? (err as Error).message : "Something went wrong",
-      });
+    reply.code(status).send({
+      error: status < 500 ? (err as Error).message : "Something went wrong",
+    });
   });
   app.setNotFoundHandler((_req, reply) =>
     reply.code(404).send({ error: "Not found" }),

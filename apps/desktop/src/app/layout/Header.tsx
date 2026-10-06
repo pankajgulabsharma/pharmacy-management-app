@@ -36,6 +36,7 @@ import { KEYS } from "@/app/shortcuts/registry";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { SearchInput } from "@/components/common/SearchInput";
 import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
+import { ServerStatus } from "./ServerStatus";
 
 const IS_MAC =
   typeof navigator !== "undefined" &&
@@ -106,6 +107,7 @@ export function Header() {
       {/* Right side (ml-auto pushes it to the far right) */}
       <div className="ml-auto flex items-center gap-3 shrink-0">
         {/* Language + Theme */}
+        <ServerStatus />
         <ThemeLanguageSwitcher />
 
         {/* Notifications */}

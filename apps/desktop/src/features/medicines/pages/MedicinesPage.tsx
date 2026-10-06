@@ -24,6 +24,7 @@ import { useListNavigation } from "@/hooks/useListNavigation";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+import { ServerBanner } from "../components/ServerBanner";
 import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
@@ -273,6 +274,8 @@ export default function MedicinesPage() {
           </>
         }
       />
+
+      <ServerBanner />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
         <StatCard

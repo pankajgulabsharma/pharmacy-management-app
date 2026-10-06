@@ -3,6 +3,7 @@ import { newId } from "@medicare/domain/lib/id";
 import { DEFAULT_GST_RATE, isGstRate } from "@medicare/domain/lib/gst";
 import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
+import { apiGet } from "@/lib/api";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
 /**
@@ -14,6 +15,10 @@ import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
  */
 type MedicineState = {
   medicines: Medicine[];
+  /** "server" once loaded from the database; "demo" until then */
+  source: "demo" | "server";
+  /** Replace the list with the server's (database) list */
+  loadFromServer: () => Promise<void>;
   addMedicine: (input: MedicineInput) => Medicine;
   updateMedicine: (id: string, input: MedicineInput) => void;
   /** Caller must check stock first — see MedicinesPage / MedicineDeleteDialog */
@@ -55,6 +60,14 @@ function sanitize(input: MedicineInput): MedicineInput {
 
 export const useMedicineStore = create<MedicineState>()((set) => ({
   medicines: mockMedicines,
+  source: "demo",
+
+  loadFromServer: async () => {
+    const { items } = await apiGet<{ items: Medicine[] }>("/api/medicines");
+    if (!Array.isArray(items))
+      throw new Error("Unexpected answer from the server");
+    set({ medicines: items, source: "server" });
+  },
 
   addMedicine: (input) => {
     const medicine: Medicine = { id: newId("med"), ...sanitize(input) };
