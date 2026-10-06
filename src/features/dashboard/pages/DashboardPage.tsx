@@ -14,15 +14,12 @@ import { useCurrentUser } from "@/features/auth/store/useAuthStore";
 export default function DashboardPage() {
   const { t } = useTranslation();
   const name = getGreetingName(useCurrentUser()?.name);
-  // One computation for every widget (same numbers as Reports)
   const d = useDashboardData();
 
   return (
-    // Wide screens (≥1280px): one fixed screen, nothing scrolls.
-    // Smaller screens: the page scrolls and the side column moves below,
-    // so no widget gets squeezed or cut.
     <div className="h-full w-full p-3 overflow-y-auto xl:overflow-hidden box-border">
-      <div className="xl:h-full grid grid-cols-1 xl:grid-cols-12 gap-3">
+      <div className="xl:h-full grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+        {/* Main column */}
         <div className="xl:col-span-9 xl:h-full grid grid-cols-1 gap-2.5 xl:overflow-hidden min-h-0 min-w-0 xl:grid-rows-[auto_auto_minmax(0,1.35fr)_minmax(0,1.15fr)_auto]">
           <div className="flex items-center justify-between shrink-0">
             <h1 className="text-base font-bold text-foreground leading-tight">
@@ -64,8 +61,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="xl:col-span-3 xl:h-full grid grid-cols-2 xl:flex xl:flex-col gap-2.5 min-h-0 min-w-0 xl:overflow-hidden">
-          <div className="shrink-0">
+        {/* Side column: alerts scroll, Quick Actions always fully visible */}
+        <div className="xl:col-span-3 xl:h-full flex flex-col gap-2 min-h-0 min-w-0 justify-start">
+          <div className="shrink-0 max-h-[50%] overflow-y-auto">
             <AlertsPanel d={d} />
           </div>
           <div className="shrink-0">

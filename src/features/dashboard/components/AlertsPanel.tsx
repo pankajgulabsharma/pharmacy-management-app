@@ -4,7 +4,6 @@ import {
   CalendarX,
   CheckCircle2,
   HandCoins,
-  PauseCircle,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -65,16 +64,6 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
       icon: HandCoins,
       tone: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
       to: "/customers", // all, most owed first
-    });
-  }
-  if (d.heldCount) {
-    alerts.push({
-      key: "held",
-      title: `${d.heldCount} ${tr(d.heldCount === 1 ? "bill on hold" : "bills on hold")}`,
-      desc: tr("Customers waiting — resume from Billing (F6)."),
-      icon: PauseCircle,
-      tone: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
-      to: "/billing",
     });
   }
 
