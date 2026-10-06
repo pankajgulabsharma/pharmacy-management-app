@@ -5,9 +5,11 @@
   "type": "module",
   "description": "Business rules shared by the desktop UI and the server (pure TypeScript, no React)",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   }
 }

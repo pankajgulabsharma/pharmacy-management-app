@@ -1,9 +1,9 @@
+import type { Tone } from "@medicare/domain/lib/tone";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useTr } from "@/hooks/useTr";
 
-export type BadgeTone =
-  "success" | "warning" | "danger" | "caution" | "neutral" | "info";
+export type BadgeTone = Tone;
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   success:
