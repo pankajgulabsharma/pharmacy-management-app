@@ -8,8 +8,8 @@ import {
   Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { inrRounded as inrFromPaise } from "@/lib/money";
-import { WEEKDAYS, type SalesInsights } from "../utils/reports";
+import { inrRounded as inrFromPaise } from "@medicare/domain/lib/money";
+import { WEEKDAYS, type SalesInsights } from "@medicare/domain/reports/reports";
 import { ReportCard } from "./ReportTable";
 
 const fmt = (iso: string) =>

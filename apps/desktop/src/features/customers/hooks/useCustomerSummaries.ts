@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { useCustomerStore } from "../store/useCustomerStore";
-import { customerSummaries } from "../utils/ledger";
+import { customerSummaries } from "@medicare/domain/customers/ledger";
 
 /** Live balance etc. for every customer (one pass over the data) */
 export function useCustomerSummaries() {

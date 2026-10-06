@@ -9,8 +9,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { inrRounded } from "@/lib/money";
-import { plural } from "@/lib/format";
+import { inrRounded } from "@medicare/domain/lib/money";
+import { plural } from "@medicare/domain/lib/format";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { useTr } from "@/hooks/useTr";
 import { tr } from "@/lib/i18n";

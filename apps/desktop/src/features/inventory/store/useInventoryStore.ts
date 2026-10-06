@@ -7,7 +7,7 @@ import type {
   StockIssue,
   StockMovement,
   StockReceipt,
-} from "../types";
+} from "@medicare/domain/inventory/types";
 import {
   StockError,
   applyAdjustment,
@@ -15,7 +15,7 @@ import {
   applyIssue,
   applyReceipt,
   applyReversal,
-} from "../utils/ledger";
+} from "@medicare/domain/inventory/ledger";
 
 /**
  * Stock — single source of truth for "how much of which batch we have".

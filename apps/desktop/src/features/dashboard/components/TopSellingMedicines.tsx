@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { inrRounded } from "@/lib/money";
+import { inrRounded } from "@medicare/domain/lib/money";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
 import { tr } from "@/lib/i18n";

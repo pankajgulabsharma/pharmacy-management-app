@@ -29,20 +29,20 @@ import {
   FilterChips,
   type FilterChipOption,
 } from "@/components/common/FilterChips";
-import { startOfDay } from "@/lib/date";
-import { inrFromPaise } from "@/lib/money";
+import { startOfDay } from "@medicare/domain/lib/date";
+import { inrFromPaise } from "@medicare/domain/lib/money";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { SupplierError, useSupplierStore } from "../store/useSupplierStore";
 import { useSupplierSummaries } from "../hooks/useSupplierSummaries";
-import type { SupplierFormValues, SupplierWithSummary } from "../types";
-import { formToSupplierInput } from "../utils/validation";
-import { supplierMatchesQuery } from "../utils/search";
+import type { SupplierFormValues, SupplierWithSummary } from "@medicare/domain/suppliers/types";
+import { formToSupplierInput } from "@medicare/domain/suppliers/validation";
+import { supplierMatchesQuery } from "@medicare/domain/suppliers/search";
 import { SupplierTable } from "../components/SupplierTable";
 import {
   SUPPLIER_STATUS_LABEL,
   supplierStatus,
   type SupplierStatus,
-} from "../utils/status";
+} from "@medicare/domain/suppliers/status";
 import { SupplierFormDialog } from "../components/SupplierFormDialog";
 import { SupplierDetailsDialog } from "../components/SupplierDetailsDialog";
 

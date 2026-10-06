@@ -12,8 +12,8 @@ import { fieldClass } from "@/components/common/formStyles";
 import {
   type MedicineWithStock,
   formatPackLabel,
-} from "@/features/medicines/types";
-import { medicineMatchesQuery } from "@/features/medicines/utils/search";
+} from "@medicare/domain/medicines/types";
+import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
 
 const MAX_RESULTS = 8;
 

@@ -11,7 +11,7 @@ import {
   paiseToInput,
   parseRupees,
   signedInrFromPaise,
-} from "@/lib/money";
+} from "@medicare/domain/lib/money";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Kbd } from "@/components/common/Kbd";
@@ -21,7 +21,7 @@ import {
   type PaymentDraft,
   type PaymentMethod,
   type SaleTotals,
-} from "../types";
+} from "@medicare/domain/billing/types";
 import type { BillLineView } from "../hooks/useBillingData";
 import { tr } from "@/lib/i18n";
 

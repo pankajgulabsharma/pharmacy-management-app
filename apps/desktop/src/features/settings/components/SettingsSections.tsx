@@ -12,16 +12,16 @@ import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import {
   PAYMENT_METHOD_LABELS,
   type PaymentMethod,
-} from "@/features/billing/types";
-import { checkGstin, toGstinInput } from "@/lib/gstin";
+} from "@medicare/domain/billing/types";
+import { checkGstin, toGstinInput } from "@medicare/domain/lib/gstin";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useSectionForm } from "../hooks/useSectionForm";
 import {
   SETTINGS_LIMITS as L,
   type InventoryPrefs,
   type ShopProfile,
-} from "../types";
-import { validateInventory, validateShop } from "../utils/validation";
+} from "@medicare/domain/settings/types";
+import { validateInventory, validateShop } from "@medicare/domain/settings/validation";
 import { SettingsCard } from "./SettingsCard";
 import { EditableList } from "./EditableList";
 

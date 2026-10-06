@@ -14,7 +14,7 @@ import { CodeChip } from "@/components/common/CodeChip";
 import { QtyStepper } from "@/components/common/QtyStepper";
 import { BatchExpiry } from "./BatchExpiry";
 import { fieldClass } from "@/components/common/formStyles";
-import { inrFromPaise, roundToRupee, signedInrFromPaise } from "@/lib/money";
+import { inrFromPaise, roundToRupee, signedInrFromPaise } from "@medicare/domain/lib/money";
 import { useSalesStore } from "../store/useSalesStore";
 import {
   BILLING_LIMITS,
@@ -22,14 +22,14 @@ import {
   SALE_RETURN_REASONS,
   type RefundMode,
   type Sale,
-} from "../types";
-import { SaleError } from "../utils/sale";
+} from "@medicare/domain/billing/types";
+import { SaleError } from "@medicare/domain/billing/sale";
 import {
   SaleReturnError,
   getReturnableSaleLines,
   returnAmount,
-} from "../utils/saleReturn";
-import { StockError } from "@/features/inventory/utils/ledger";
+} from "@medicare/domain/billing/saleReturn";
+import { StockError } from "@medicare/domain/inventory/ledger";
 
 type Props = {
   onClose: () => void;

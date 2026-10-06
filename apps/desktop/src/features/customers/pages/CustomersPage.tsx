@@ -26,7 +26,7 @@ import { SELECTED_ROW, useListNavigation } from "@/hooks/useListNavigation";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { cn } from "@/lib/utils";
-import { formatPaise, inrRounded } from "@/lib/money";
+import { formatPaise, inrRounded } from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
 import { useCustomerStore } from "../store/useCustomerStore";
 import { useCustomerSummaries } from "../hooks/useCustomerSummaries";
@@ -35,9 +35,9 @@ import {
   CUSTOMER_STATUS_TONE,
   customerStatus,
   type CustomerStatus,
-} from "../utils/status";
-import { totalUdhaar, type CustomerSummary } from "../utils/ledger";
-import type { Customer } from "../types";
+} from "@medicare/domain/customers/status";
+import { totalUdhaar, type CustomerSummary } from "@medicare/domain/customers/ledger";
+import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerFormDialog } from "../components/CustomerFormDialog";
 import { ReceivePaymentDialog } from "../components/ReceivePaymentDialog";
 import { CustomerStatementDialog } from "../components/CustomerStatementDialog";

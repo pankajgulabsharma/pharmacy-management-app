@@ -1,9 +1,9 @@
-import { batchRatePaise } from "@/features/billing/utils/allocate";
+import { batchRatePaise } from "@medicare/domain/billing/allocate";
 import { useMemo } from "react";
-import type { Medicine } from "@/features/medicines/types";
+import type { Medicine } from "@medicare/domain/medicines/types";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useInventoryStore } from "../store/useInventoryStore";
-import type { InventoryBatch, StockBatch } from "../types";
+import type { InventoryBatch, StockBatch } from "@medicare/domain/inventory/types";
 
 function toRow(b: StockBatch, m: Medicine): InventoryBatch {
   return {

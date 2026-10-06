@@ -2,15 +2,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
-import { EMPTY_PAYMENT } from "@/features/billing/types";
+import { EMPTY_PAYMENT } from "@medicare/domain/billing/types";
 import {
   sellableBatches,
   stockLimits,
-} from "@/features/billing/utils/allocate";
+} from "@medicare/domain/billing/allocate";
 import { owedBy, useCustomerStore } from "../store/useCustomerStore";
-import { customerLedger, customerSummaries } from "./ledger";
-import { validatePaymentIn } from "./validation";
-import { searchCustomers } from "./search";
+import { customerLedger, customerSummaries } from "@medicare/domain/customers/ledger";
+import { validatePaymentIn } from "@medicare/domain/customers/validation";
+import { searchCustomers } from "@medicare/domain/customers/search";
 
 const init = {
   sales: useSalesStore.getState(),

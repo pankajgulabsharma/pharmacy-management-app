@@ -3,14 +3,14 @@ import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
-import { customRange, presetRange } from "./period";
+import { customRange, presetRange } from "@medicare/domain/reports/period";
 import {
   gstReport,
   purchaseReport,
   salesInsights,
   salesReport,
   stockReport,
-} from "./reports";
+} from "@medicare/domain/reports/reports";
 
 const ALL = { from: new Date(2000, 0, 1), to: new Date(2100, 0, 1) };
 const sales = useSalesStore.getState().sales;

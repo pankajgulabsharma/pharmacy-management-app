@@ -1,17 +1,17 @@
 import { create } from "zustand";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { checkReversal } from "@/features/inventory/utils/ledger";
+import { checkReversal } from "@medicare/domain/inventory/ledger";
 import { demoPurchases, demoReturns } from "@/app/demo/seed";
-import { cleanText } from "@/lib/sanitize";
-import type { Paise } from "@/lib/money";
-import type { Purchase, PurchaseReturn, PurchaseReturnInput } from "../types";
-import { getDuePaise } from "../utils/calc";
-import { purchaseToStockReceipt } from "../utils/receipt";
+import { cleanText } from "@medicare/domain/lib/sanitize";
+import type { Paise } from "@medicare/domain/lib/money";
+import type { Purchase, PurchaseReturn, PurchaseReturnInput } from "@medicare/domain/purchases/types";
+import { getDuePaise } from "@medicare/domain/purchases/calc";
+import { purchaseToStockReceipt } from "@medicare/domain/purchases/receipt";
 import {
   buildPurchaseReturn,
   getReturnableLines,
   nextReturnNo,
-} from "../utils/returns";
+} from "@medicare/domain/purchases/returns";
 import {
   canCancelPurchase,
   canEditPurchase,
@@ -19,7 +19,7 @@ import {
   canReturnPurchase,
   type PurchaseRuleContext,
   type RuleResult,
-} from "../utils/rules";
+} from "@medicare/domain/purchases/rules";
 
 export class PurchaseError extends Error {
   constructor(message: string) {

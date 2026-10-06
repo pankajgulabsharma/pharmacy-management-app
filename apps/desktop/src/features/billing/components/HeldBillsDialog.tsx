@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
-import type { HeldBill } from "../types";
+import type { HeldBill } from "@medicare/domain/billing/types";
 import { tr } from "@/lib/i18n";
 
 type Props = {

@@ -4,8 +4,8 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
-import { inrFromPaise } from "@/lib/money";
-import { CANCEL_REASONS, type Purchase } from "../types";
+import { inrFromPaise } from "@medicare/domain/lib/money";
+import { CANCEL_REASONS, type Purchase } from "@medicare/domain/purchases/types";
 
 type Props = {
   purchase: Purchase | null;

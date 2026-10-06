@@ -1,19 +1,19 @@
 import { useMemo } from "react";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { duesSummary } from "@/features/purchases/utils/calc";
+import { duesSummary } from "@medicare/domain/purchases/calc";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import {
   customerSummaries,
   totalUdhaar,
-} from "@/features/customers/utils/ledger";
+} from "@medicare/domain/customers/ledger";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { stockLevel } from "@/features/medicines/utils/stockLevel";
-import { presetRange } from "@/features/reports/utils/period";
-import { percentChange } from "@/lib/format";
-import { salesReport, stockReport } from "@/features/reports/utils/reports";
+import { stockLevel } from "@medicare/domain/medicines/stockLevel";
+import { presetRange } from "@medicare/domain/reports/period";
+import { percentChange } from "@medicare/domain/lib/format";
+import { salesReport, stockReport } from "@medicare/domain/reports/reports";
 
 /**
  * Everything the Dashboard shows, from the live stores — computed with the

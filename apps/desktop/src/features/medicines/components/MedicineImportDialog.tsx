@@ -2,12 +2,12 @@ import { useId, useRef, useState } from "react";
 import { Download, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
-import type { MedicineInput } from "../types";
+import type { MedicineInput } from "@medicare/domain/medicines/types";
 import {
   buildSampleCsv,
   parseMedicineCsv,
   type CsvRowResult,
-} from "../utils/csv";
+} from "@medicare/domain/medicines/csv";
 
 type Props = {
   open: boolean;

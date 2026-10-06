@@ -27,18 +27,18 @@ import {
   FilterChips,
   type FilterChipOption,
 } from "@/components/common/FilterChips";
-import { canSellLoose } from "@/features/medicines/types";
+import { canSellLoose } from "@medicare/domain/medicines/types";
 import { useInventoryStore } from "../store/useInventoryStore";
 import { useInventoryRows } from "../hooks/useInventoryRows";
-import { StockError } from "../utils/ledger";
+import { StockError } from "@medicare/domain/inventory/ledger";
 import type {
   InventoryBatch,
   InventoryStatusFilter,
   StockAdjustValues,
-} from "../types";
+} from "@medicare/domain/inventory/types";
 import { InventoryTable } from "../components/InventoryTable";
 import { StockAdjustDialog } from "../components/StockAdjustDialog";
-import { inventoryMatchesQuery } from "../utils/search";
+import { inventoryMatchesQuery } from "@medicare/domain/inventory/search";
 import { batchStatuses, type BatchStatus } from "../utils/stock";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 

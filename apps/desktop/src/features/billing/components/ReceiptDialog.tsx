@@ -2,9 +2,9 @@ import { useEffect, useId } from "react";
 import { Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
-import { formatPaise, inrFromPaise, signedInrFromPaise } from "@/lib/money";
+import { formatPaise, inrFromPaise, signedInrFromPaise } from "@medicare/domain/lib/money";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { PAYMENT_METHOD_LABELS, type Sale } from "../types";
+import { PAYMENT_METHOD_LABELS, type Sale } from "@medicare/domain/billing/types";
 
 type Props = {
   sale: Sale | null;

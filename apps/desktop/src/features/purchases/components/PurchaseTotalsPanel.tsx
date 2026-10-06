@@ -1,16 +1,16 @@
 import { memo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { formatISODate } from "@/lib/date";
+import { formatISODate } from "@medicare/domain/lib/date";
 import {
   inrFromPaise,
   isMoneyInput,
   paiseToInput,
   parseRupees,
   signedInrFromPaise,
-} from "@/lib/money";
+} from "@medicare/domain/lib/money";
 import { focusAtEnd } from "@/lib/dom";
-import type { PurchaseTotals } from "../types";
+import type { PurchaseTotals } from "@medicare/domain/purchases/types";
 
 type Props = {
   totals: PurchaseTotals;

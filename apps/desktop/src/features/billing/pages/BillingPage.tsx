@@ -15,9 +15,9 @@ import { KEYS } from "@/app/shortcuts/registry";
 import { BatchHistoryDialog } from "@/features/inventory/components/BatchHistoryDialog";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/EmptyState";
-import { newId } from "@/lib/id";
-import { inrFromPaise } from "@/lib/money";
-import { StockError } from "@/features/inventory/utils/ledger";
+import { newId } from "@medicare/domain/lib/id";
+import { inrFromPaise } from "@medicare/domain/lib/money";
+import { StockError } from "@medicare/domain/inventory/ledger";
 import { BillingContextBar } from "../components/BillingContextBar";
 import { MedicineSearchBar } from "../components/MedicineSearchBar";
 import { SearchResultsTable } from "../components/SearchResultsTable";
@@ -43,8 +43,8 @@ import {
   type CartLine,
   type PaymentDraft,
   type Sale,
-} from "../types";
-import { SaleError, nextBillNo, validatePayment } from "../utils/sale";
+} from "@medicare/domain/billing/types";
+import { SaleError, nextBillNo, validatePayment } from "@medicare/domain/billing/sale";
 import { tr } from "@/lib/i18n";
 
 /** Show domain errors as-is; hide anything unexpected behind a generic message */

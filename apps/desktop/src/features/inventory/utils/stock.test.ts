@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryBatch } from "../types";
+import type { InventoryBatch } from "@medicare/domain/inventory/types";
 import {
   batchCostPaise,
   batchMrpPaise,
@@ -7,7 +7,7 @@ import {
   batchStatuses,
   sellableTotals,
 } from "./stock";
-import { stockLevel } from "@/features/medicines/utils/stockLevel";
+import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 
 const NOW = new Date(2026, 9, 5); // 5 Oct 2026
 

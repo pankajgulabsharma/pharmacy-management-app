@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { checkReversal } from "@/features/inventory/utils/ledger";
+import { checkReversal } from "@medicare/domain/inventory/ledger";
 import { usePurchaseStore } from "../store/usePurchaseStore";
-import type { Purchase } from "../types";
+import type { Purchase } from "@medicare/domain/purchases/types";
 import {
   canCancelPurchase,
   canEditPurchase,
   canRecordPayment,
   canReturnPurchase,
-} from "../utils/rules";
+} from "@medicare/domain/purchases/rules";
 
 /**
  * What the user may do with an invoice right now, and why not.

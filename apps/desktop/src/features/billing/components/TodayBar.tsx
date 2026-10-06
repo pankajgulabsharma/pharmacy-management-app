@@ -12,14 +12,14 @@ import {
 import { cn } from "@/lib/utils";
 import { StatusBadge, type BadgeTone } from "@/components/common/StatusBadge";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { inrFromPaise, inrRounded } from "@/lib/money";
-import { percentChange } from "@/lib/format";
+import { inrFromPaise, inrRounded } from "@medicare/domain/lib/money";
+import { percentChange } from "@medicare/domain/lib/format";
 import { useNow } from "@/hooks/useNow";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { presetRange } from "@/features/reports/utils/period";
-import { purchaseReport, salesReport } from "@/features/reports/utils/reports";
+import { presetRange } from "@medicare/domain/reports/period";
+import { purchaseReport, salesReport } from "@medicare/domain/reports/reports";
 import { useSalesStore } from "../store/useSalesStore";
-import type { Sale } from "../types";
+import type { Sale } from "@medicare/domain/billing/types";
 import { tr } from "@/lib/i18n";
 
 type Props = {

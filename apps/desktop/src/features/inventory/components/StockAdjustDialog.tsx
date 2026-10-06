@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { ModalShell } from "@/components/common/ModalShell";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { isIntInput } from "@/lib/sanitize";
-import { canSellLoose } from "@/features/medicines/types";
-import type { InventoryBatch, StockAdjustValues } from "../types";
+import { isIntInput } from "@medicare/domain/lib/sanitize";
+import { canSellLoose } from "@medicare/domain/medicines/types";
+import type { InventoryBatch, StockAdjustValues } from "@medicare/domain/inventory/types";
 
 type Props = {
   open: boolean;

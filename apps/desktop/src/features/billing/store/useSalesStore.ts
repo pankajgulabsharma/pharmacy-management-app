@@ -6,8 +6,8 @@ import {
   useCustomerStore,
 } from "@/features/customers/store/useCustomerStore";
 import { demoHeldBills, demoSaleReturns, demoSales } from "@/app/demo/seed";
-import { newId } from "@/lib/id";
-import { cleanText } from "@/lib/sanitize";
+import { newId } from "@medicare/domain/lib/id";
+import { cleanText } from "@medicare/domain/lib/sanitize";
 import {
   BILLING_LIMITS,
   type HeldBill,
@@ -15,9 +15,9 @@ import {
   type SaleInput,
   type SaleReturn,
   type SaleReturnInput,
-} from "../types";
-import { SaleError, buildSale, nextBillNo } from "../utils/sale";
-import { buildSaleReturn, nextSaleReturnNo } from "../utils/saleReturn";
+} from "@medicare/domain/billing/types";
+import { SaleError, buildSale, nextBillNo } from "@medicare/domain/billing/sale";
+import { buildSaleReturn, nextSaleReturnNo } from "@medicare/domain/billing/saleReturn";
 
 /**
  * Sales (bills), sales returns and held bills.

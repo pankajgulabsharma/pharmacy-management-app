@@ -9,50 +9,50 @@
  */
 import { mockMedicines } from "@/features/medicines/data/mockMedicines";
 import { mockStockBatches } from "@/features/inventory/data/mockStock";
-import type { StockBatch, StockMovement } from "@/features/inventory/types";
+import type { StockBatch, StockMovement } from "@medicare/domain/inventory/types";
 import {
   applyIssue,
   applyReceipt,
   openingMovements,
-} from "@/features/inventory/utils/ledger";
+} from "@medicare/domain/inventory/ledger";
 import { mockPurchases } from "@/features/purchases/data/mockPurchases";
 import type {
   Purchase,
   PurchaseReturn,
   ReturnReason,
-} from "@/features/purchases/types";
-import { purchaseToStockReceipt } from "@/features/purchases/utils/receipt";
+} from "@medicare/domain/purchases/types";
+import { purchaseToStockReceipt } from "@medicare/domain/purchases/receipt";
 import {
   buildPurchaseReturn,
   getReturnableLines,
   nextReturnNo,
-} from "@/features/purchases/utils/returns";
-import { toISODate } from "@/lib/date";
-import type { Medicine } from "@/features/medicines/types";
-import { applyChange } from "@/features/inventory/utils/ledger";
+} from "@medicare/domain/purchases/returns";
+import { toISODate } from "@medicare/domain/lib/date";
+import type { Medicine } from "@medicare/domain/medicines/types";
+import { applyChange } from "@medicare/domain/inventory/ledger";
 import type {
   CartLine,
   HeldBill,
   PaymentDraft,
   Sale,
   SaleReturn,
-} from "@/features/billing/types";
+} from "@medicare/domain/billing/types";
 import {
   sellableBatches,
   sellsLoose,
   stockLimits,
-} from "@/features/billing/utils/allocate";
-import { buildSale, nextBillNo } from "@/features/billing/utils/sale";
+} from "@medicare/domain/billing/allocate";
+import { buildSale, nextBillNo } from "@medicare/domain/billing/sale";
 import {
   buildSaleReturn,
   nextSaleReturnNo,
-} from "@/features/billing/utils/saleReturn";
-import { DEFAULT_SETTINGS } from "@/features/settings/utils/defaults";
-import type { Customer, CustomerPayment } from "@/features/customers/types";
+} from "@medicare/domain/billing/saleReturn";
+import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
+import type { Customer, CustomerPayment } from "@medicare/domain/customers/types";
 import {
   customerSummaries,
   nextReceiptNo,
-} from "@/features/customers/utils/ledger";
+} from "@medicare/domain/customers/ledger";
 
 const DOCTORS = DEFAULT_SETTINGS.doctors;
 const COUNTERS = DEFAULT_SETTINGS.counters;

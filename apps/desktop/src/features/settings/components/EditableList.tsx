@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { cleanText } from "@/lib/sanitize";
+import { cleanText } from "@medicare/domain/lib/sanitize";
 
 type Props = {
   label: string;

@@ -14,14 +14,14 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { formatRupees, inrFromPaise } from "@/lib/money";
+import { formatRupees, inrFromPaise } from "@medicare/domain/lib/money";
 import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore";
-import type { InventoryBatch } from "../types";
+import type { InventoryBatch } from "@medicare/domain/inventory/types";
 import {
   CATEGORY_LABELS,
   canSellLoose,
   formatPackLabel,
-} from "@/features/medicines/types";
+} from "@medicare/domain/medicines/types";
 import { batchCostPaise, type BatchStatus } from "../utils/stock";
 
 type Props = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mockSuppliers } from "../data/mockSuppliers";
-import { checkGstin, gstinCheckChar } from "./gstin";
+import { checkGstin, gstinCheckChar } from "@medicare/domain/lib/gstin";
 
 describe("GSTIN", () => {
   it("computes the official check character", () => {

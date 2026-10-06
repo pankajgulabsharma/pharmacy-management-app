@@ -8,7 +8,7 @@ import {
   SUPPLIER_STATUS_LABEL,
   SUPPLIER_STATUS_TONE,
   supplierStatus,
-} from "../utils/status";
+} from "@medicare/domain/suppliers/status";
 import { CodeChip } from "@/components/common/CodeChip";
 import {
   SpacerRow,
@@ -18,9 +18,9 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { formatISODate } from "@/lib/date";
-import { formatPaise } from "@/lib/money";
-import type { SupplierWithSummary } from "../types";
+import { formatISODate } from "@medicare/domain/lib/date";
+import { formatPaise } from "@medicare/domain/lib/money";
+import type { SupplierWithSummary } from "@medicare/domain/suppliers/types";
 
 type Props = {
   items: SupplierWithSummary[];

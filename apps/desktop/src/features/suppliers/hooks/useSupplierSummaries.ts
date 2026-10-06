@@ -4,9 +4,9 @@ import {
   getCreditPaise,
   getDuePaise,
   getPaymentStatus,
-} from "@/features/purchases/utils/calc";
+} from "@medicare/domain/purchases/calc";
 import { useSupplierStore } from "../store/useSupplierStore";
-import type { SupplierSummary, SupplierWithSummary } from "../types";
+import type { SupplierSummary, SupplierWithSummary } from "@medicare/domain/suppliers/types";
 
 const empty = (): SupplierSummary => ({
   invoiceCount: 0,

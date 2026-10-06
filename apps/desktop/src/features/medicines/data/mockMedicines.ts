@@ -1,4 +1,4 @@
-import type { Medicine } from "../types";
+import type { Medicine } from "@medicare/domain/medicines/types";
 
 /**
  * Medicine master (catalogue). Stock is not stored here — it is derived

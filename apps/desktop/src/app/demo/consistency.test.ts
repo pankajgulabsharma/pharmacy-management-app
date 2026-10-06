@@ -6,16 +6,16 @@ import {
   calcTotals,
   getDuePaise,
   getCreditPaise,
-} from "@/features/purchases/utils/calc";
-import { calcSaleTotals, priceLine } from "@/features/billing/utils/pricing";
-import { presetRange } from "@/features/reports/utils/period";
+} from "@medicare/domain/purchases/calc";
+import { calcSaleTotals, priceLine } from "@medicare/domain/billing/pricing";
+import { presetRange } from "@medicare/domain/reports/period";
 import {
   salesReport,
   stockReport,
   gstReport,
-} from "@/features/reports/utils/reports";
-import { isSameDay } from "@/lib/date";
-import { summarizeStock } from "@/features/inventory/utils/ledger";
+} from "@medicare/domain/reports/reports";
+import { isSameDay } from "@medicare/domain/lib/date";
+import { summarizeStock } from "@medicare/domain/inventory/ledger";
 
 const { sales, saleReturns } = useSalesStore.getState();
 const { purchases, returns } = usePurchaseStore.getState();

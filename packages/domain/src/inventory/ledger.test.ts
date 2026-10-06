@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StockBatch, StockReceipt } from "../types";
+import type { StockBatch, StockReceipt } from "./types";
 import {
   StockError,
   applyAdjustment,

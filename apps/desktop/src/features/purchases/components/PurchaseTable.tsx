@@ -13,14 +13,14 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { formatISODate } from "@/lib/date";
-import { formatPaise } from "@/lib/money";
+import { formatISODate } from "@medicare/domain/lib/date";
+import { formatPaise } from "@medicare/domain/lib/money";
 import {
   PAYMENT_STATUS_META,
   type PaymentStatus,
   type Purchase,
-} from "../types";
-import { getDuePaise } from "../utils/calc";
+} from "@medicare/domain/purchases/types";
+import { getDuePaise } from "@medicare/domain/purchases/calc";
 
 type Props = {
   items: Purchase[];

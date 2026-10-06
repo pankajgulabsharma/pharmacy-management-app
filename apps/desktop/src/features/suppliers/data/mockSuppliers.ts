@@ -1,4 +1,4 @@
-import type { Supplier } from "../types";
+import type { Supplier } from "@medicare/domain/suppliers/types";
 
 /**
  * Demo suppliers. GSTINs have valid check digits.

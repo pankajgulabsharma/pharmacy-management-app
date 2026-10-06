@@ -34,11 +34,11 @@ import {
   SegmentedTabs,
   type SegmentedTab,
 } from "@/components/common/SegmentedTabs";
-import { diffInDays, parseISODate, startOfDay } from "@/lib/date";
-import { formatPaise, inrFromPaise, type Paise } from "@/lib/money";
+import { diffInDays, parseISODate, startOfDay } from "@medicare/domain/lib/date";
+import { formatPaise, inrFromPaise, type Paise } from "@medicare/domain/lib/money";
 import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
-import { StockError } from "@/features/inventory/utils/ledger";
+import { StockError } from "@medicare/domain/inventory/ledger";
 import { PurchaseError, usePurchaseStore } from "../store/usePurchaseStore";
 import type {
   PaymentStatus,
@@ -46,10 +46,10 @@ import type {
   PurchaseReturn,
   PurchaseReturnInput,
   PurchaseStatusFilter,
-} from "../types";
-import { getDuePaise, getPaymentStatus } from "../utils/calc";
-import { ReturnError } from "../utils/returns";
-import { purchaseMatchesQuery, returnMatchesQuery } from "../utils/search";
+} from "@medicare/domain/purchases/types";
+import { getDuePaise, getPaymentStatus } from "@medicare/domain/purchases/calc";
+import { ReturnError } from "@medicare/domain/purchases/returns";
+import { purchaseMatchesQuery, returnMatchesQuery } from "@medicare/domain/purchases/search";
 import { PurchaseTable } from "../components/PurchaseTable";
 import { PurchaseFormDialog } from "../components/PurchaseFormDialog";
 import { PurchaseDetailsDialog } from "../components/PurchaseDetailsDialog";

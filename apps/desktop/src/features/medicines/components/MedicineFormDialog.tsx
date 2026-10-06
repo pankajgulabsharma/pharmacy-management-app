@@ -5,15 +5,15 @@ import { Input } from "@/components/ui/input";
 import { ModalShell } from "@/components/common/ModalShell";
 import { FormField as Field } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
-import { isMoneyInput } from "@/lib/money";
-import { isIntInput } from "@/lib/sanitize";
-import { GST_RATES, isGstRate } from "@/lib/gst";
+import { isMoneyInput } from "@medicare/domain/lib/money";
+import { isIntInput } from "@medicare/domain/lib/sanitize";
+import { GST_RATES, isGstRate } from "@medicare/domain/lib/gst";
 import type {
   Medicine,
   MedicineFormValues,
   MedicineCategory,
   PackUnit,
-} from "../types";
+} from "@medicare/domain/medicines/types";
 import {
   CATEGORY_LABELS,
   PACK_UNIT_LABELS,
@@ -22,8 +22,8 @@ import {
   emptyMedicineForm,
   medicineToForm,
   unitsPerPackHint,
-} from "../types";
-import { validateMedicineForm, type FieldErrors } from "../utils/validation";
+} from "@medicare/domain/medicines/types";
+import { validateMedicineForm, type FieldErrors } from "@medicare/domain/medicines/validation";
 
 type Props = {
   open: boolean;

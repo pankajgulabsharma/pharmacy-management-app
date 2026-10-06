@@ -13,9 +13,9 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { formatISODate } from "@/lib/date";
-import { formatPaise } from "@/lib/money";
-import { RETURN_REASONS, type PurchaseReturn } from "../types";
+import { formatISODate } from "@medicare/domain/lib/date";
+import { formatPaise } from "@medicare/domain/lib/money";
+import { RETURN_REASONS, type PurchaseReturn } from "@medicare/domain/purchases/types";
 
 type Props = {
   items: PurchaseReturn[];

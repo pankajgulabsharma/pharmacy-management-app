@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { StockBatch } from "@/features/inventory/types";
-import type { Medicine } from "@/features/medicines/types";
-import { applyChange } from "@/features/inventory/utils/ledger";
-import { EMPTY_PAYMENT, type PaymentDraft, type SaleInput } from "../types";
+import type { StockBatch } from "../inventory/types";
+import type { Medicine } from "../medicines/types";
+import { applyChange } from "../inventory/ledger";
+import { EMPTY_PAYMENT, type PaymentDraft, type SaleInput } from "./types";
 import { allocateFefo, sellableBatches, stockLimits } from "./allocate";
 import { priceLine } from "./pricing";
 import { SaleError, buildSale, nextBillNo, validatePayment } from "./sale";

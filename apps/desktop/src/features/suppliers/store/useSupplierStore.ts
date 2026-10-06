@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import { newId } from "@/lib/id";
-import { cleanCode, cleanText } from "@/lib/sanitize";
+import { newId } from "@medicare/domain/lib/id";
+import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
 import { mockSuppliers } from "../data/mockSuppliers";
-import { SUPPLIER_LIMITS, type Supplier, type SupplierInput } from "../types";
-import { checkGstin } from "../utils/gstin";
-import { normalizePhone } from "../utils/validation";
+import { SUPPLIER_LIMITS, type Supplier, type SupplierInput } from "@medicare/domain/suppliers/types";
+import { checkGstin } from "@medicare/domain/lib/gstin";
+import { normalizePhone } from "@medicare/domain/suppliers/validation";
 
 export class SupplierError extends Error {
   constructor(message: string) {

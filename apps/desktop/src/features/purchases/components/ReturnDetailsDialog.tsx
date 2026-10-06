@@ -3,11 +3,11 @@ import { FileMinus, X } from "lucide-react";
 import { ModalShell } from "@/components/common/ModalShell";
 import { CodeChip } from "@/components/common/CodeChip";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { formatPackLabel } from "@/features/medicines/types";
-import { formatISODate } from "@/lib/date";
-import { formatPaise, inrFromPaise } from "@/lib/money";
+import { formatPackLabel } from "@medicare/domain/medicines/types";
+import { formatISODate } from "@medicare/domain/lib/date";
+import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import { cn } from "@/lib/utils";
-import { RETURN_REASONS, type PurchaseReturn } from "../types";
+import { RETURN_REASONS, type PurchaseReturn } from "@medicare/domain/purchases/types";
 
 type Props = {
   ret: PurchaseReturn | null;

@@ -16,17 +16,17 @@ import {
 import { cn } from "@/lib/utils";
 import { StatCard } from "@/components/common/StatCard";
 import { CodeChip } from "@/components/common/CodeChip";
-import { PAYMENT_METHOD_LABELS } from "@/features/billing/types";
-import { splitCgstSgst } from "@/lib/gst";
-import { formatPaise, inrFromPaise } from "@/lib/money";
+import { PAYMENT_METHOD_LABELS } from "@medicare/domain/billing/types";
+import { splitCgstSgst } from "@medicare/domain/lib/gst";
+import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import {
   salesInsights,
   type GstReport,
   type PurchaseReport,
   type SalesReport,
   type StockReport,
-} from "../utils/reports";
-import { plural } from "@/lib/format";
+} from "@medicare/domain/reports/reports";
+import { plural } from "@medicare/domain/lib/format";
 import { ReportCard, ReportTable, ShareBar } from "./ReportTable";
 import { DailyChart } from "./DailyChart";
 import { SalesInsightsCard } from "./SalesInsightsCard";

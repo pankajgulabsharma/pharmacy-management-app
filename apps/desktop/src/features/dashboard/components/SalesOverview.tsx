@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { inrRounded } from "@/lib/money";
+import { inrRounded } from "@medicare/domain/lib/money";
 import { ChartTooltipCard } from "@/components/common/ChartTooltipCard";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";

@@ -16,18 +16,18 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { FormField } from "@/components/common/FormField";
 import { DateInput } from "@/components/common/DateInput";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { toCodeInput } from "@/lib/sanitize";
-import { toISODate } from "@/lib/date";
-import { formatPaise } from "@/lib/money";
-import type { Medicine, MedicineWithStock } from "@/features/medicines/types";
+import { toCodeInput } from "@medicare/domain/lib/sanitize";
+import { toISODate } from "@medicare/domain/lib/date";
+import { formatPaise } from "@medicare/domain/lib/money";
+import type { Medicine, MedicineWithStock } from "@medicare/domain/medicines/types";
 import {
   PURCHASE_LIMITS,
   type Purchase,
   type PurchaseDraft,
   type PurchaseHeaderField,
   type Supplier,
-} from "../types";
-import { calcTotals } from "../utils/calc";
+} from "@medicare/domain/purchases/types";
+import { calcTotals } from "@medicare/domain/purchases/calc";
 import {
   draftToEditedPurchase,
   purchaseToDraft,
@@ -37,12 +37,12 @@ import {
   draftToPurchase,
   getDueDate,
   isDraftDirty,
-} from "../utils/draft";
+} from "@medicare/domain/purchases/draft";
 import {
   NO_ERRORS,
   hasErrors,
   validatePurchaseDraft,
-} from "../utils/validation";
+} from "@medicare/domain/purchases/validation";
 import { MedicinePicker } from "./MedicinePicker";
 import {
   PurchaseLinesEditor,

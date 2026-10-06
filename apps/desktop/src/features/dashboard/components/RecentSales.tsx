@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { StatusBadge, type BadgeTone } from "@/components/common/StatusBadge";
-import { inrFromPaise } from "@/lib/money";
-import type { Sale } from "@/features/billing/types";
+import { inrFromPaise } from "@medicare/domain/lib/money";
+import type { Sale } from "@medicare/domain/billing/types";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
 import { tr } from "@/lib/i18n";

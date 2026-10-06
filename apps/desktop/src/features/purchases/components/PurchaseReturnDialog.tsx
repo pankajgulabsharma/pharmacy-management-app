@@ -14,18 +14,18 @@ import {
 } from "@/components/common/formStyles";
 import { TableShell, type TableColumn } from "@/components/common/TableShell";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { formatPackLabel } from "@/features/medicines/types";
-import { toISODate } from "@/lib/date";
-import { formatPaise, inrFromPaise } from "@/lib/money";
-import { isIntInput } from "@/lib/sanitize";
+import { formatPackLabel } from "@medicare/domain/medicines/types";
+import { toISODate } from "@medicare/domain/lib/date";
+import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
+import { isIntInput } from "@medicare/domain/lib/sanitize";
 import { usePurchaseStore } from "../store/usePurchaseStore";
 import {
   RETURN_REASONS,
   type Purchase,
   type PurchaseReturnInput,
   type ReturnReason,
-} from "../types";
-import { RETURN_NOTES_MAX, getReturnableLines } from "../utils/returns";
+} from "@medicare/domain/purchases/types";
+import { RETURN_NOTES_MAX, getReturnableLines } from "@medicare/domain/purchases/returns";
 
 type Props = {
   purchase: Purchase | null;

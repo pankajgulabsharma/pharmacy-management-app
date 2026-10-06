@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS } from "./defaults";
 import { cleanList, sanitizeSettings, validateShop } from "./validation";
-import { checkGstin } from "@/lib/gstin";
+import { checkGstin } from "../lib/gstin";
 
 describe("settings", () => {
   it("default shop profile is valid (incl. GSTIN check digit)", () => {

@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatPaise } from "@/lib/money";
+import { formatPaise } from "@medicare/domain/lib/money";
 import { ChartTooltipCard } from "@/components/common/ChartTooltipCard";
 
 export type DailyPoint = { date: string; amountPaise: number; count: number };

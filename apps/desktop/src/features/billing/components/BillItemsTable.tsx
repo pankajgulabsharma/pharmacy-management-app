@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import { QtyStepper } from "@/components/common/QtyStepper";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { scrollRowIntoView } from "@/lib/dom";
-import { formatPackLabel } from "@/features/medicines/types";
-import { formatPaise } from "@/lib/money";
-import { DISCOUNT_OPTIONS } from "../types";
+import { formatPackLabel } from "@medicare/domain/medicines/types";
+import { formatPaise } from "@medicare/domain/lib/money";
+import { DISCOUNT_OPTIONS } from "@medicare/domain/billing/types";
 import type { BillLineView } from "../hooks/useBillingData";
-import { sellsLoose, unitsPerPack } from "../utils/allocate";
+import { sellsLoose, unitsPerPack } from "@medicare/domain/billing/allocate";
 import { BatchExpiry } from "./BatchExpiry";
 import { tr } from "@/lib/i18n";
 

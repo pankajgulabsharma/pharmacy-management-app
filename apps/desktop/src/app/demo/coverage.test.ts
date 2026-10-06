@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
-import { customerSummaries } from "@/features/customers/utils/ledger";
-import { customerStatus } from "@/features/customers/utils/status";
+import { customerSummaries } from "@medicare/domain/customers/ledger";
+import { customerStatus } from "@medicare/domain/customers/status";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { getPaymentStatus } from "@/features/purchases/utils/calc";
+import { getPaymentStatus } from "@medicare/domain/purchases/calc";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 
 /** The demo must show something under EVERY filter chip — an empty chip looks broken */

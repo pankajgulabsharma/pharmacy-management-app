@@ -6,16 +6,16 @@ import { cn } from "@/lib/utils";
 import { ModalShell } from "@/components/common/ModalShell";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { isIntInput } from "@/lib/sanitize";
+import { isIntInput } from "@medicare/domain/lib/sanitize";
 import {
   EMPTY_SUPPLIER_FORM,
   SUPPLIER_LIMITS,
   supplierToForm,
   type Supplier,
   type SupplierFormValues,
-} from "../types";
-import { checkGstin, toGstinInput } from "../utils/gstin";
-import { validateSupplierForm, type SupplierErrors } from "../utils/validation";
+} from "@medicare/domain/suppliers/types";
+import { checkGstin, toGstinInput } from "@medicare/domain/lib/gstin";
+import { validateSupplierForm, type SupplierErrors } from "@medicare/domain/suppliers/validation";
 
 type Props = {
   open: boolean;

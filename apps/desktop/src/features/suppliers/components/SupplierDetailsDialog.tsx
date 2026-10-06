@@ -5,16 +5,16 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { getDuePaise, getPaymentStatus } from "@/features/purchases/utils/calc";
+import { getDuePaise, getPaymentStatus } from "@medicare/domain/purchases/calc";
 import {
   PAYMENT_STATUS_META,
   RETURN_REASONS,
-} from "@/features/purchases/types";
-import { formatISODate } from "@/lib/date";
-import { formatPaise, inrFromPaise } from "@/lib/money";
+} from "@medicare/domain/purchases/types";
+import { formatISODate } from "@medicare/domain/lib/date";
+import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import { cn } from "@/lib/utils";
-import type { SupplierWithSummary } from "../types";
-import { checkGstin } from "../utils/gstin";
+import type { SupplierWithSummary } from "@medicare/domain/suppliers/types";
+import { checkGstin } from "@medicare/domain/lib/gstin";
 
 type Props = {
   supplier: SupplierWithSummary | null;

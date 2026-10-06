@@ -2,7 +2,7 @@ import { useId } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
 import { ModalShell } from "@/components/common/ModalShell";
 import { Button } from "@/components/ui/button";
-import type { MedicineWithStock } from "../types";
+import type { MedicineWithStock } from "@medicare/domain/medicines/types";
 
 type Props = {
   open: boolean;

@@ -24,7 +24,7 @@ import { useListNavigation } from "@/hooks/useListNavigation";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { stockLevel } from "../utils/stockLevel";
+import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
   FilterChips,
@@ -35,15 +35,15 @@ import type {
   MedicineFormValues,
   MedicineInput,
   MedicineWithStock,
-} from "../types";
-import { CATEGORY_LABELS } from "../types";
+} from "@medicare/domain/medicines/types";
+import { CATEGORY_LABELS } from "@medicare/domain/medicines/types";
 import { useMedicineStore } from "../store/useMedicineStore";
 import { useMedicinesWithStock } from "../hooks/useMedicinesWithStock";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
-import { medicineMatchesQuery } from "../utils/search";
+import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
 
 /** Chips — exclusive, they add up to All (active medicines by stockLevel) */
 type StatusFilter = "all" | "in_stock" | "low_only" | "out" | "inactive";

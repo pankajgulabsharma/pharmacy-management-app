@@ -8,21 +8,21 @@ import {
   cellInputClass,
   invalidFieldClass,
 } from "@/components/common/formStyles";
-import { formatPackLabel } from "@/features/medicines/types";
+import { formatPackLabel } from "@medicare/domain/medicines/types";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { formatExpiryInput, monthsToExpiry } from "@/lib/expiry";
-import { formatPaise, isMoneyInput } from "@/lib/money";
-import { isIntInput, isPercentInput, toCodeInput } from "@/lib/sanitize";
+import { formatExpiryInput, monthsToExpiry } from "@medicare/domain/lib/expiry";
+import { formatPaise, isMoneyInput } from "@medicare/domain/lib/money";
+import { isIntInput, isPercentInput, toCodeInput } from "@medicare/domain/lib/sanitize";
 import {
   GST_RATES,
   PURCHASE_LIMITS,
   type GstRate,
   type PurchaseLineDraft,
   type PurchaseLineField,
-} from "../types";
-import { calcLine } from "../utils/calc";
-import { draftLineToAmountInput } from "../utils/draft";
-import type { LineErrors } from "../utils/validation";
+} from "@medicare/domain/purchases/types";
+import { calcLine } from "@medicare/domain/purchases/calc";
+import { draftLineToAmountInput } from "@medicare/domain/purchases/draft";
+import type { LineErrors } from "@medicare/domain/purchases/validation";
 
 export type LineChangeHandler = <K extends PurchaseLineField>(
   key: string,

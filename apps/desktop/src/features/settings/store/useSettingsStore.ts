@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { DEFAULT_SETTINGS } from "../utils/defaults";
-import { sanitizeSettings } from "../utils/validation";
+import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
+import { sanitizeSettings } from "@medicare/domain/settings/validation";
 import type {
   BillingPrefs,
   InventoryPrefs,
   Settings,
   ShopProfile,
-} from "../types";
+} from "@medicare/domain/settings/types";
 
 /**
  * Shop settings. Unlike business data these are remembered in the browser:

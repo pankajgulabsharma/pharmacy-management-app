@@ -7,16 +7,16 @@ import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
-import { inrFromPaise, isMoneyInput, paiseToInput } from "@/lib/money";
+import { inrFromPaise, isMoneyInput, paiseToInput } from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
 import {
   PAYMENT_IN_LABELS,
   PAYMENT_IN_METHODS,
   type Customer,
   type PaymentInMethod,
-} from "../types";
+} from "@medicare/domain/customers/types";
 import { CustomerError, useCustomerStore } from "../store/useCustomerStore";
-import { validatePaymentIn } from "../utils/validation";
+import { validatePaymentIn } from "@medicare/domain/customers/validation";
 
 type Props = {
   customer: Customer | null;

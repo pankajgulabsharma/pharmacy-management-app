@@ -6,8 +6,8 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
-import { formatPackLabel } from "@/features/medicines/types";
-import { formatISODate } from "@/lib/date";
+import { formatPackLabel } from "@medicare/domain/medicines/types";
+import { formatISODate } from "@medicare/domain/lib/date";
 import { focusAtEnd } from "@/lib/dom";
 import {
   formatPaise,
@@ -17,7 +17,7 @@ import {
   paiseToInput,
   parseRupees,
   type Paise,
-} from "@/lib/money";
+} from "@medicare/domain/lib/money";
 import { usePurchaseStore } from "../store/usePurchaseStore";
 import { usePurchaseRules } from "../hooks/usePurchaseRules";
 import {
@@ -25,10 +25,10 @@ import {
   type PaymentStatus,
   type Purchase,
   type PurchaseReturn,
-} from "../types";
-import { calcLine, getCreditPaise, getDuePaise } from "../utils/calc";
-import type { RuleResult } from "../utils/rules";
-import { validatePayment } from "../utils/validation";
+} from "@medicare/domain/purchases/types";
+import { calcLine, getCreditPaise, getDuePaise } from "@medicare/domain/purchases/calc";
+import type { RuleResult } from "@medicare/domain/purchases/rules";
+import { validatePayment } from "@medicare/domain/purchases/validation";
 
 type Actions = {
   onClose: () => void;

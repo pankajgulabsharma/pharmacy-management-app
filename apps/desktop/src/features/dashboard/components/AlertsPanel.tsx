@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { inrRounded } from "@/lib/money";
+import { inrRounded } from "@medicare/domain/lib/money";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { tr } from "@/lib/i18n";
 

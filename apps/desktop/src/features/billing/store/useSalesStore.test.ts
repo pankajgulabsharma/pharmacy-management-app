@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
-import { EMPTY_PAYMENT, type SaleInput } from "../types";
-import { sellableBatches, stockLimits } from "../utils/allocate";
+import { EMPTY_PAYMENT, type SaleInput } from "@medicare/domain/billing/types";
+import { sellableBatches, stockLimits } from "@medicare/domain/billing/allocate";
 import { useSalesStore } from "./useSalesStore";
 
 const initialInventory = useInventoryStore.getState();
@@ -120,8 +120,8 @@ describe("held bills", () => {
 
 describe("today's sales after a return", () => {
   it("a refund counts on the day the money goes back, not on the bill's day", async () => {
-    const { salesReport } = await import("@/features/reports/utils/reports");
-    const { presetRange } = await import("@/features/reports/utils/period");
+    const { salesReport } = await import("@medicare/domain/reports/reports");
+    const { presetRange } = await import("@medicare/domain/reports/period");
     const old = store().sales.find(
       (s) =>
         !s.imported &&

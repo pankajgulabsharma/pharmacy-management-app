@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import type { Purchase } from "../types";
-import { getCreditPaise, getDuePaise } from "../utils/calc";
-import { getReturnableLines } from "../utils/returns";
+import type { Purchase } from "@medicare/domain/purchases/types";
+import { getCreditPaise, getDuePaise } from "@medicare/domain/purchases/calc";
+import { getReturnableLines } from "@medicare/domain/purchases/returns";
 import {
   PurchaseError,
   getRuleContext,

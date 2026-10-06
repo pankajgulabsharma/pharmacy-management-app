@@ -3,12 +3,12 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { CodeChip } from "@/components/common/CodeChip";
 import { cn } from "@/lib/utils";
-import { formatPaise, inrFromPaise } from "@/lib/money";
+import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { useCustomerStore } from "../store/useCustomerStore";
-import { customerLedger } from "../utils/ledger";
-import type { Customer } from "../types";
+import { customerLedger } from "@medicare/domain/customers/ledger";
+import type { Customer } from "@medicare/domain/customers/types";
 
 type Props = {
   customer: Customer | null;

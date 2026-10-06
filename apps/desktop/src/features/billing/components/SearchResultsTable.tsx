@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { scrollRowIntoView } from "@/lib/dom";
 import { CodeChip } from "@/components/common/CodeChip";
 import { BatchExpiry } from "./BatchExpiry";
-import { formatPaise } from "@/lib/money";
+import { formatPaise } from "@medicare/domain/lib/money";
 import type { SellableItem } from "../hooks/useBillingData";
 import { tr } from "@/lib/i18n";
 

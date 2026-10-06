@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
 import { Pencil as PencilIcon, PillBottle, Trash2 } from "lucide-react";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { stockLevel } from "../utils/stockLevel";
+import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { scrollRowIntoView } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
 import { ExpiryText, type ExpiryState } from "@/components/common/ExpiryText";
-import type { MedicineWithStock } from "../types";
-import { CATEGORY_LABELS, canSellLoose, formatPackLabel } from "../types";
+import type { MedicineWithStock } from "@medicare/domain/medicines/types";
+import { CATEGORY_LABELS, canSellLoose, formatPackLabel } from "@medicare/domain/medicines/types";
 import { isExpired, isExpiringSoon } from "@/features/inventory/utils/stock";
 
 type Props = {

@@ -1,17 +1,17 @@
 import { useMemo } from "react";
-import type { StockBatch } from "@/features/inventory/types";
+import type { StockBatch } from "@medicare/domain/inventory/types";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import type { Medicine } from "@/features/medicines/types";
-import { medicineMatchesQuery } from "@/features/medicines/utils/search";
-import { isExpiringWithin, isExpiryPast } from "@/lib/expiry";
-import { rupeesToPaise } from "@/lib/money";
+import type { Medicine } from "@medicare/domain/medicines/types";
+import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
+import { isExpiringWithin, isExpiryPast } from "@medicare/domain/lib/expiry";
+import { rupeesToPaise } from "@medicare/domain/lib/money";
 import {
   type BatchAllocation,
   type CartLine,
   type LineAmounts,
-} from "../types";
+} from "@medicare/domain/billing/types";
 import {
   allocateFefo,
   batchRatePaise,
@@ -19,9 +19,9 @@ import {
   stockLimits,
   unitsPerPack,
   type StockLimits,
-} from "../utils/allocate";
-import { calcSaleTotals, priceLine } from "../utils/pricing";
-import { validateCartLine } from "../utils/sale";
+} from "@medicare/domain/billing/allocate";
+import { calcSaleTotals, priceLine } from "@medicare/domain/billing/pricing";
+import { validateCartLine } from "@medicare/domain/billing/sale";
 
 /* ------------------------------------------------------------------ */
 /* Search                                                             */

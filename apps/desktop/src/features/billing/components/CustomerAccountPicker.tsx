@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { inrFromPaise } from "@/lib/money";
+import { inrFromPaise } from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import { useCustomerSummaries } from "@/features/customers/hooks/useCustomerSummaries";
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
-import type { Customer } from "@/features/customers/types";
-import { searchCustomers } from "@/features/customers/utils/search";
+import type { Customer } from "@medicare/domain/customers/types";
+import { searchCustomers } from "@medicare/domain/customers/search";
 
 type Props = {
   /** Selected account, or null */

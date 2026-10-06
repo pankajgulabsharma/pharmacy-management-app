@@ -1,17 +1,17 @@
 import { create } from "zustand";
 import { demoCustomerPayments, demoCustomers } from "@/app/demo/seed";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
-import { newId } from "@/lib/id";
-import { cleanText } from "@/lib/sanitize";
+import { newId } from "@medicare/domain/lib/id";
+import { cleanText } from "@medicare/domain/lib/sanitize";
 import {
   CUSTOMER_LIMITS as L,
   type Customer,
   type CustomerInput,
   type CustomerPayment,
   type CustomerPaymentInput,
-} from "../types";
-import { customerSummaries, nextReceiptNo } from "../utils/ledger";
-import { digits, isValidPhone, validatePaymentIn } from "../utils/validation";
+} from "@medicare/domain/customers/types";
+import { customerSummaries, nextReceiptNo } from "@medicare/domain/customers/ledger";
+import { digits, isValidPhone, validatePaymentIn } from "@medicare/domain/customers/validation";
 
 export class CustomerError extends Error {
   constructor(message: string) {

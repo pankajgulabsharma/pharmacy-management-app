@@ -5,7 +5,7 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { CodeChip } from "@/components/common/CodeChip";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useInventoryStore } from "../store/useInventoryStore";
-import type { StockMovementType } from "../types";
+import type { StockMovementType } from "@medicare/domain/inventory/types";
 
 type Props = {
   /** Batch to show; null = closed */

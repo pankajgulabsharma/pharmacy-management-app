@@ -1,4 +1,4 @@
-import type { StockBatch } from "../types";
+import type { StockBatch } from "@medicare/domain/inventory/types";
 
 /**
  * Opening stock (one row per batch). Product details come from the
