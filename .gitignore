@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local databases and backups (never commit shop data)
+*.sqlite
+*.sqlite-*
+*.db
+backups/
