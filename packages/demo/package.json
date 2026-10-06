@@ -1,0 +1,16 @@
+{
+  "name": "@medicare/demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Demo shop data (3 months of sales, purchases, customers\u2026) built with the real rules",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@medicare/domain": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

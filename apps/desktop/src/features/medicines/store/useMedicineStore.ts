@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { newId } from "@medicare/domain/lib/id";
 import { DEFAULT_GST_RATE, isGstRate } from "@medicare/domain/lib/gst";
 import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
-import { mockMedicines } from "../data/mockMedicines";
+import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mockSuppliers } from "../data/mockSuppliers";
+import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
 import { checkGstin, gstinCheckChar } from "@medicare/domain/lib/gstin";
 
 describe("GSTIN", () => {

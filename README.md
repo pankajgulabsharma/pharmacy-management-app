@@ -8,9 +8,10 @@ purchases, suppliers, customer udhaar, GST reports.
 ```
 apps/
   desktop/     The app you see (React + Vite). Everything UI lives here.
-  server/      Local server (Fastify); database comes in Step 4
+  server/      Local server (Fastify) + SQLite database (Drizzle)
 packages/
   domain/      Business rules shared by UI and server (pure TypeScript)
+  demo/        Demo shop data, built with the real rules
 ```
 
 **Why this shape?** The same rules (FEFO, GST, stock ledger, udhaar…) must run
@@ -24,6 +25,8 @@ written once and can never disagree.
 | `npm install` | Installs everything for all packages (once) |
 | `npm run dev` | Starts the desktop app at http://localhost:5173 |
 | `npm run dev:server` | Starts the server at http://localhost:4000/health |
+| `npm run db:seed` | Fills an empty database with the demo shop (`-- --reset` starts over) |
+| `npm run db:studio` | Opens the tables in the browser (https://local.drizzle.studio) |
 | `npm test` | Runs every test in every package |
 | `npm run typecheck` | Type-checks every package |
 | `npm run lint` | Lints the whole project |
@@ -36,7 +39,7 @@ Demo login: `admin` / `admin` (owner) or `cashier` / `cashier`.
 1. ✅ Monorepo layout
 2. ✅ Business rules in `packages/domain` (app imports them directly)
 3. ✅ Server "hello" (Fastify) — `GET /health`, this computer only
-4. Database: SQLite + Drizzle, all tables, demo data
+4. ✅ Database: SQLite (built into Node) + Drizzle — 19 tables, demo data, DB-level safety rules
 5. First API: medicines & inventory (read)
 6. Desktop reads medicines from the server — data survives a refresh
 7. Writes with transactions (add/edit medicine, stock adjust)
@@ -46,3 +49,8 @@ Demo login: `admin` / `admin` (owner) or `cashier` / `cashier`.
 11. Daily backup & restore
 12. Desktop installer (Tauri)
 13. Several counters on the shop LAN
+
+## Where is the data?
+
+`apps/server/data/medicare.sqlite` — one file, never committed to git.
+Copy it (with the server stopped) and you have a full backup.

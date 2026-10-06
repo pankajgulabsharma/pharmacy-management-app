@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { newId } from "@medicare/domain/lib/id";
 import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
-import { mockSuppliers } from "../data/mockSuppliers";
+import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
 import { SUPPLIER_LIMITS, type Supplier, type SupplierInput } from "@medicare/domain/suppliers/types";
 import { checkGstin } from "@medicare/domain/lib/gstin";
 import { normalizePhone } from "@medicare/domain/suppliers/validation";

@@ -5,7 +5,7 @@ import {
   owedBy,
   useCustomerStore,
 } from "@/features/customers/store/useCustomerStore";
-import { demoHeldBills, demoSaleReturns, demoSales } from "@/app/demo/seed";
+import { demoHeldBills, demoSaleReturns, demoSales } from "@medicare/demo/seed";
 import { newId } from "@medicare/domain/lib/id";
 import { cleanText } from "@medicare/domain/lib/sanitize";
 import {

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
-import { demoInventory } from "@/app/demo/seed";
+import { demoInventory } from "@medicare/demo/seed";
 import type {
   StockBatch,
   StockChange,

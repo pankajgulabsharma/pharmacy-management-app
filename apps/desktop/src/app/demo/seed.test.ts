@@ -14,7 +14,7 @@ describe("demo sales history has no empty days", () => {
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date(2026, 9, 5, h, m));
       vi.resetModules();
-      const { demoSales } = await import("./seed");
+      const { demoSales } = await import("@medicare/demo/seed");
 
       const days = new Set(
         demoSales.map((s) => new Date(s.createdAt).toDateString()),

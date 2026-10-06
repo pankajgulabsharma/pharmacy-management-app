@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { demoCustomerPayments, demoCustomers } from "@/app/demo/seed";
+import { demoCustomerPayments, demoCustomers } from "@medicare/demo/seed";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { newId } from "@medicare/domain/lib/id";
 import { cleanText } from "@medicare/domain/lib/sanitize";

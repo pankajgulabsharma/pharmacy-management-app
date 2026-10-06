@@ -1,11 +1,16 @@
-import { mockMedicines } from "@/features/medicines/data/mockMedicines";
+import { mockMedicines } from "./mockMedicines";
 import type { Medicine } from "@medicare/domain/medicines/types";
 import { addDays, startOfDay, toISODate } from "@medicare/domain/lib/date";
 import { rupeesToPaise } from "@medicare/domain/lib/money";
-import type { GstRate, Purchase, PurchaseLine, Supplier } from "@medicare/domain/purchases/types";
+import type {
+  GstRate,
+  Purchase,
+  PurchaseLine,
+  Supplier,
+} from "@medicare/domain/purchases/types";
 import { calcTotals } from "@medicare/domain/purchases/calc";
 import { getDueDate } from "@medicare/domain/purchases/draft";
-import { mockSuppliers } from "@/features/suppliers/data/mockSuppliers";
+import { mockSuppliers } from "./mockSuppliers";
 
 /**
  * Demo purchase invoices.

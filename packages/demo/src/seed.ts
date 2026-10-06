@@ -7,15 +7,18 @@
  *
  * TODO(api): delete this file when data comes from the backend.
  */
-import { mockMedicines } from "@/features/medicines/data/mockMedicines";
-import { mockStockBatches } from "@/features/inventory/data/mockStock";
-import type { StockBatch, StockMovement } from "@medicare/domain/inventory/types";
+import { mockMedicines } from "./data/mockMedicines";
+import { mockStockBatches } from "./data/mockStock";
+import type {
+  StockBatch,
+  StockMovement,
+} from "@medicare/domain/inventory/types";
 import {
   applyIssue,
   applyReceipt,
   openingMovements,
 } from "@medicare/domain/inventory/ledger";
-import { mockPurchases } from "@/features/purchases/data/mockPurchases";
+import { mockPurchases } from "./data/mockPurchases";
 import type {
   Purchase,
   PurchaseReturn,
@@ -48,7 +51,10 @@ import {
   nextSaleReturnNo,
 } from "@medicare/domain/billing/saleReturn";
 import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
-import type { Customer, CustomerPayment } from "@medicare/domain/customers/types";
+import type {
+  Customer,
+  CustomerPayment,
+} from "@medicare/domain/customers/types";
 import {
   customerSummaries,
   nextReceiptNo,

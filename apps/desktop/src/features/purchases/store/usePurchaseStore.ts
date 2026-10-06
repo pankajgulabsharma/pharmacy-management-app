@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { checkReversal } from "@medicare/domain/inventory/ledger";
-import { demoPurchases, demoReturns } from "@/app/demo/seed";
+import { demoPurchases, demoReturns } from "@medicare/demo/seed";
 import { cleanText } from "@medicare/domain/lib/sanitize";
 import type { Paise } from "@medicare/domain/lib/money";
 import type { Purchase, PurchaseReturn, PurchaseReturnInput } from "@medicare/domain/purchases/types";
