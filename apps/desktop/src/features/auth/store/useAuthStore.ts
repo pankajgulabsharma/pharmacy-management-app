@@ -84,6 +84,16 @@ const splitStorage: StateStorage = {
   },
 };
 
+/** In-memory storage for tests / non-browser runs */
+function memoryStorage(): StateStorage {
+  const m = new Map<string, string>();
+  return {
+    getItem: (k) => m.get(k) ?? null,
+    setItem: (k, v) => void m.set(k, v),
+    removeItem: (k) => void m.delete(k),
+  };
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -127,10 +137,10 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "medicare-session",
       version: 1,
-      storage:
-        typeof window !== "undefined"
-          ? createJSONStorage(() => splitStorage)
-          : undefined,
+      // Outside a browser (tests) keep the session in memory — no storage warnings
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" ? splitStorage : memoryStorage(),
+      ),
       partialize: (s) => ({ session: s.session, remember: s.remember }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AuthState>;

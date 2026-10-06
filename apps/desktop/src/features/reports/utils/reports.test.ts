@@ -115,9 +115,11 @@ describe("sales insights", () => {
   const r = salesReport(sales, saleReturns, batches, presetRange("90d"));
   const i = salesInsights(r.daily);
 
-  it("finds the weekday pattern built into the demo history", () => {
-    expect(i.busiestWeekday).toBe(1); // Monday
+  // Demo data is random around a pattern; only claim what ALWAYS holds.
+  // The exact weekday logic is tested on fixed data in packages/domain.
+  it("sees the demo's quiet Sundays", () => {
     expect(i.quietestWeekday).toBe(0); // Sunday
+    expect(i.busiestWeekday).not.toBe(0);
   });
   it("sees the salary-day lift and the seasonal rise", () => {
     expect(i.salaryLiftPct).toBeGreaterThan(5);

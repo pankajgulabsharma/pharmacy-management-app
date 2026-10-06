@@ -211,7 +211,7 @@ function buildDemo() {
       qtyStrip: 100_000,
       qtyLoose: 100_000,
     }));
-    const WEEKDAY = [0.55, 1.3, 1.05, 1.0, 0.95, 1.1, 1.2]; // Sun … Sat
+    const WEEKDAY = [0.55, 1.5, 1.05, 1.0, 0.95, 1.05, 1.15]; // Sun … Sat — Monday clearly busiest
     const FIRST_DAY = 92;
     // History must run right up to the day the live demo bills start —
     // a fixed "4 days ago" left an empty day depending on the time of day.
@@ -227,7 +227,7 @@ function buildDemo() {
       day.setDate(day.getDate() - ago);
       const season = 0.85 + 0.35 * ((FIRST_DAY - ago) / (FIRST_DAY - LAST_DAY));
       const salary = day.getDate() <= 5 ? 1.3 : 1;
-      const noise = 0.8 + hr() * 0.4;
+      const noise = 0.9 + hr() * 0.2; // ±10%, so the weekly pattern always shows
       const bills = Math.max(
         1,
         Math.round(8 * WEEKDAY[day.getDay()] * season * salary * noise),
