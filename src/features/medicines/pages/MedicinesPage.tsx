@@ -24,6 +24,7 @@ import { useListNavigation } from "@/hooks/useListNavigation";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+import { stockLevel } from "../utils/stockLevel";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
   FilterChips,
@@ -44,7 +45,17 @@ import { MedicineImportDialog } from "../components/MedicineImportDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
 import { medicineMatchesQuery } from "../utils/search";
 
-type StatusFilter = "all" | "active" | "inactive" | "low";
+/** Chips — exclusive, they add up to All (active medicines by stockLevel) */
+type StatusFilter = "all" | "in_stock" | "low_only" | "out" | "inactive";
+
+/** Which exclusive bucket a medicine is in */
+function bucket(
+  m: MedicineWithStock,
+): "in_stock" | "low_only" | "out" | "inactive" {
+  if (m.status !== "active") return "inactive";
+  const level = stockLevel(m);
+  return level === "out" ? "out" : level === "low" ? "low_only" : "in_stock";
+}
 type CategoryFilter = "all" | MedicineCategory;
 
 const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
@@ -55,12 +66,9 @@ const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
   })),
 ];
 
+/** Same rule as everywhere else (sellable stock only) — see stockLevel() */
 function isOut(m: MedicineWithStock) {
-  return m.stockStrip === 0 && m.stockLoose === 0;
-}
-
-function isLowOrOut(m: MedicineWithStock) {
-  return isOut(m) || m.stockStrip < m.minStock;
+  return stockLevel(m) === "out";
 }
 
 /** Form strings → typed master input (the store sanitises again) */
@@ -96,7 +104,12 @@ export default function MedicinesPage() {
   const intent = useUrlIntent();
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(
-    oneOf(intent.status, ["all", "active", "inactive", "low"] as const, "all"),
+    oneOf(
+      // Old links used "low" for Low / Out — they now open "Low"
+      intent.status === "low" ? "low_only" : intent.status,
+      ["all", "in_stock", "low_only", "out", "inactive"] as const,
+      "all",
+    ),
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
@@ -111,17 +124,13 @@ export default function MedicinesPage() {
   const deferredQuery = useDeferredValue(query);
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    let low = 0;
-    let out = 0;
-    for (const m of items) {
-      if (m.status === "active") active++;
-      else inactive++;
-      if (m.status === "active" && isLowOrOut(m)) low++;
-      if (isOut(m)) out++;
-    }
-    return { total: items.length, active, inactive, low, out };
+    const c = { in_stock: 0, low_only: 0, out: 0, inactive: 0 };
+    for (const m of items) c[bucket(m)]++;
+    return {
+      total: items.length,
+      active: items.length - c.inactive,
+      ...c,
+    };
   }, [items]);
 
   // Batch numbers per medicine, so typing a batch (e.g. OT3981M) finds it
@@ -136,10 +145,7 @@ export default function MedicinesPage() {
   const filtered = useMemo(
     () =>
       items.filter((m) => {
-        if (statusFilter === "active" && m.status !== "active") return false;
-        if (statusFilter === "inactive" && m.status !== "inactive")
-          return false;
-        if (statusFilter === "low" && !isLowOrOut(m)) return false;
+        if (statusFilter !== "all" && bucket(m) !== statusFilter) return false;
         if (categoryFilter !== "all" && m.category !== categoryFilter)
           return false;
         const q = deferredQuery.trim().toUpperCase();
@@ -154,8 +160,9 @@ export default function MedicinesPage() {
   const filterOptions = useMemo<FilterChipOption<StatusFilter>[]>(
     () => [
       { id: "all", label: "All", count: stats.total },
-      { id: "active", label: "Active", count: stats.active },
-      { id: "low", label: "Low / Out", count: stats.low },
+      { id: "in_stock", label: "In stock", count: stats.in_stock },
+      { id: "low_only", label: "Low", count: stats.low_only },
+      { id: "out", label: "Out", count: stats.out },
       { id: "inactive", label: "Inactive", count: stats.inactive },
     ],
     [stats],
@@ -283,7 +290,7 @@ export default function MedicinesPage() {
         <StatCard
           icon={AlertTriangle}
           label="Low stock"
-          value={String(stats.low)}
+          value={String(stats.low_only)}
           iconClass="bg-orange-500/10 text-orange-600"
         />
         <StatCard

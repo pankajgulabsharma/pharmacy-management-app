@@ -3,6 +3,7 @@ import { AlertTriangle, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ModalShell } from "./ModalShell";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   open: boolean;
@@ -35,6 +36,7 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
 }: Props) {
+  const tr = useTr();
   const titleId = useId();
   const descId = useId();
   if (!open) return null;
@@ -64,13 +66,13 @@ export function ConfirmDialog({
           </div>
           <div className="min-w-0">
             <h2 id={titleId} className="text-sm font-semibold text-foreground">
-              {title}
+              {tr(title)}
             </h2>
             <div
               id={descId}
               className="mt-1 text-[12px] text-muted-foreground leading-snug"
             >
-              {description}
+              {tr(description)}
             </div>
           </div>
         </div>
@@ -97,7 +99,7 @@ export function ConfirmDialog({
             danger && "bg-red-600 hover:bg-red-700 text-white",
           )}
         >
-          {confirmLabel}
+          {tr(confirmLabel)}
         </Button>
       </div>
     </ModalShell>

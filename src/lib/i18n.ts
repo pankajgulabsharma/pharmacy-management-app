@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { HI_UI } from "./i18n/hi-ui";
 
 const resources = {
   en: {
@@ -267,11 +268,60 @@ const resources = {
   },
 };
 
+/* ------------------------------------------------------------------ */
+/* Language: remembered on this computer, validated when read back      */
+/* ------------------------------------------------------------------ */
+
+export const LANGUAGES = ["en", "hi"] as const;
+export type Language = (typeof LANGUAGES)[number];
+const LANG_KEY = "medicare-lang";
+
+function storedLanguage(): Language {
+  try {
+    const v =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(LANG_KEY)
+        : null;
+    return v === "hi" ? "hi" : "en"; // anything else → English
+  } catch {
+    return "en";
+  }
+}
+
 i18n.use(initReactI18next).init({
-  resources,
-  lng: "en",
+  resources: {
+    en: { translation: resources.en.translation, ui: {} },
+    hi: { translation: resources.hi.translation, ui: HI_UI },
+  },
+  lng: storedLanguage(),
   fallbackLng: "en",
+  // Keys are flat ("billing.title") or plain English ("Low stock")
+  keySeparator: false,
+  nsSeparator: false,
   interpolation: { escapeValue: false },
 });
+
+function applyLanguage(lng: string) {
+  if (typeof document !== "undefined")
+    document.documentElement.lang = lng === "hi" ? "hi" : "en";
+  try {
+    window.localStorage.setItem(LANG_KEY, lng === "hi" ? "hi" : "en");
+  } catch {
+    /* storage unavailable — language just isn't remembered */
+  }
+}
+applyLanguage(i18n.language);
+i18n.on("languageChanged", applyLanguage);
+
+/**
+ * Translate a plain-English UI text (falls back to the English itself).
+ * Values fill {{placeholders}}: tr("Within {{days}} days", { days: 90 })
+ */
+export function tr(
+  text: string,
+  vars?: Record<string, string | number>,
+): string {
+  return i18n.t(text, { ns: "ui", defaultValue: text, ...vars });
+}
 
 export default i18n;

@@ -11,6 +11,7 @@ import { DISCOUNT_OPTIONS } from "../types";
 import type { BillLineView } from "../hooks/useBillingData";
 import { sellsLoose, unitsPerPack } from "../utils/allocate";
 import { BatchExpiry } from "./BatchExpiry";
+import { tr } from "@/lib/i18n";
 
 type Props = {
   lines: BillLineView[];
@@ -95,7 +96,7 @@ export function BillItemsTable({
                     align,
                   )}
                 >
-                  {label}
+                  {tr(label)}
                 </th>
               ))}
             </tr>
@@ -240,7 +241,7 @@ const BillRow = memo(function BillRow({
             ))}
             {shortExpiry ? (
               <p className="text-[9px] font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                Expires soon — tell the customer
+                {tr("Expires soon — tell the customer")}
               </p>
             ) : null}
           </div>

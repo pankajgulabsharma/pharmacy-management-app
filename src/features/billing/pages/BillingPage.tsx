@@ -24,6 +24,7 @@ import { SearchResultsTable } from "../components/SearchResultsTable";
 import { BillItemsTable } from "../components/BillItemsTable";
 import { BillSummaryPanel } from "../components/BillSummaryPanel";
 import { TodayBar } from "../components/TodayBar";
+import { CustomerAccountPicker } from "../components/CustomerAccountPicker";
 import { SalesReturnPanel } from "../components/SalesReturnPanel";
 import { ReceiptDialog } from "../components/ReceiptDialog";
 import { HeldBillsDialog } from "../components/HeldBillsDialog";
@@ -44,6 +45,7 @@ import {
   type Sale,
 } from "../types";
 import { SaleError, nextBillNo, validatePayment } from "../utils/sale";
+import { tr } from "@/lib/i18n";
 
 /** Show domain errors as-is; hide anything unexpected behind a generic message */
 function errorMessage(err: unknown, fallback: string) {
@@ -71,6 +73,8 @@ export default function BillingPage() {
   );
 
   const [mode, setMode] = useState<"billing" | "return">("billing");
+  /** Customer account for udhaar (required when paying by udhaar) */
+  const [udhaarCustomerId, setUdhaarCustomerId] = useState<string | null>(null);
   /** Bill picked from "Recent bills" → opens Sales Return on it */
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
@@ -103,10 +107,12 @@ export default function BillingPage() {
   const [historyBatchId, setHistoryBatchId] = useState<string | null>(null);
 
   // F2 from any screen opens /billing?focus=search
-  const intent = useUrlIntent();
+  // Opening Billing (sidebar, Alt+2, F2, Dashboard…) puts the cursor straight
+  // in the medicine search — the cashier can start typing immediately.
+  useUrlIntent(); // clears ?focus=search from the URL
   useEffect(() => {
-    if (intent.focus === "search") searchRef.current?.focus();
-  }, [intent.focus]);
+    if (mode === "billing") searchRef.current?.focus();
+  }, [mode]);
 
   /** Ready for the next customer: cursor back in the medicine search */
   const focusSearch = useCallback(() => {
@@ -123,8 +129,13 @@ export default function BillingPage() {
     if (cart.length === 0) return "Add at least one medicine";
     const lineError = bill.lines.find((l) => l.error)?.error;
     if (lineError) return lineError;
-    return validatePayment(payment, bill.totals.netPaise, customerName);
-  }, [cart.length, bill, payment, customerName]);
+    return validatePayment(
+      payment,
+      bill.totals.netPaise,
+      customerName,
+      udhaarCustomerId,
+    );
+  }, [cart.length, bill, payment, customerName, udhaarCustomerId]);
 
   /* ---------------- cart ---------------- */
 
@@ -212,6 +223,7 @@ export default function BillingPage() {
   }, []);
 
   const resetBill = useCallback(() => {
+    setUdhaarCustomerId(null);
     setCart([]);
     setPayment(freshPayment);
     setCustomerName("");
@@ -228,6 +240,7 @@ export default function BillingPage() {
         const sale = completeSale({
           cart,
           customerName,
+          customerId: payment.method === "udhaar" ? udhaarCustomerId : null,
           doctor,
           counter,
           payment,
@@ -259,6 +272,7 @@ export default function BillingPage() {
       payment,
       resetBill,
       focusSearch,
+      udhaarCustomerId,
     ],
   );
 
@@ -534,7 +548,7 @@ export default function BillingPage() {
                 onClick={resetBill}
                 className="h-9 shrink-0 rounded-lg border border-border px-3 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
-                Clear All
+                {tr("Clear All")}
                 <Kbd keys={KEYS.clearBill} className="ml-1.5" />
               </button>
             )}
@@ -545,7 +559,8 @@ export default function BillingPage() {
               className="h-9 shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 text-[11px] font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-500/15 transition-colors inline-flex items-center gap-1.5"
             >
               <PauseCircle className="h-3.5 w-3.5" />
-              Held bills{held.length > 0 ? ` (${held.length})` : ""}
+              {tr("Held bills")}
+              {held.length > 0 ? ` (${held.length})` : ""}
               <Kbd keys={KEYS.heldBills} />
             </button>
 
@@ -554,7 +569,7 @@ export default function BillingPage() {
               onClick={() => setMode("return")}
               className="h-9 shrink-0 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 text-[11px] font-medium text-orange-700 dark:text-orange-400 hover:bg-orange-500/15 transition-colors inline-flex items-center gap-1.5"
             >
-              Sales Return
+              {tr("Sales Return")}
               <Kbd keys={KEYS.salesReturn} />
             </button>
           </div>
@@ -601,11 +616,21 @@ export default function BillingPage() {
             totals={bill.totals}
             payment={payment}
             onPaymentChange={setPayment}
-            customerName={customerName}
             blockReason={blockReason}
             saving={saving}
             onSave={handleSave}
             onHold={handleHold}
+            udhaarSlot={
+              <CustomerAccountPicker
+                customerId={udhaarCustomerId}
+                netPaise={bill.totals.netPaise}
+                initialQuery={customerName}
+                onChange={(c) => {
+                  setUdhaarCustomerId(c?.id ?? null);
+                  if (c) setCustomerName(c.name);
+                }}
+              />
+            }
             amountRef={setAmountRef}
           />
         </div>

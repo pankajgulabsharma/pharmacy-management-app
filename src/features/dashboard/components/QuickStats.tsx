@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import type { DashboardData } from "../hooks/useDashboardData";
+import { tr } from "@/lib/i18n";
 
 /** Stock health by medicine — each row opens Inventory filtered to it */
 export function QuickStats({ d }: { d: DashboardData }) {
@@ -10,21 +11,21 @@ export function QuickStats({ d }: { d: DashboardData }) {
       label: "In stock",
       value: d.health.inStock,
       color: "#4f46e5",
-      to: "/inventory?status=in_stock",
+      to: "/medicines?status=in_stock",
     },
     {
       key: "low",
       label: "Low stock",
       value: d.health.low,
       color: "#f59e0b",
-      to: "/inventory?status=low",
+      to: "/medicines?status=low_only",
     },
     {
       key: "out",
       label: "Out of stock",
       value: d.health.out,
       color: "#ef4444",
-      to: "/medicines?status=low",
+      to: "/medicines?status=out",
     },
   ];
   const total = rows.reduce((s, r) => s + r.value, 0) || 1;
@@ -33,7 +34,7 @@ export function QuickStats({ d }: { d: DashboardData }) {
   return (
     <div className="bg-card border border-border rounded-xl p-3 h-full flex flex-col overflow-hidden">
       <h3 className="text-xs font-semibold text-foreground shrink-0 mb-2">
-        Stock health
+        {tr("Stock health")}
       </h3>
       <div className="flex-1 min-h-0 flex items-center gap-2.5">
         <div className="relative h-[78px] w-[78px] shrink-0">
@@ -76,7 +77,7 @@ export function QuickStats({ d }: { d: DashboardData }) {
                 style={{ backgroundColor: r.color }}
               />
               <span className="text-[10px] text-foreground flex-1 whitespace-nowrap">
-                {r.label}
+                {tr(r.label)}
               </span>
               <span className="text-[10px] font-semibold tabular-nums">
                 {r.value}
@@ -87,7 +88,7 @@ export function QuickStats({ d }: { d: DashboardData }) {
             </Link>
           ))}
           <p className="text-[9px] text-muted-foreground">
-            Active medicines · click to see them
+            {tr("Active medicines · click to see them")}
           </p>
         </div>
       </div>

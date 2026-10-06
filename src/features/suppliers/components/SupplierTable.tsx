@@ -4,6 +4,11 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { RowActionButton } from "@/components/common/RowActionButton";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import {
+  SUPPLIER_STATUS_LABEL,
+  SUPPLIER_STATUS_TONE,
+  supplierStatus,
+} from "../utils/status";
 import { CodeChip } from "@/components/common/CodeChip";
 import {
   SpacerRow,
@@ -224,8 +229,8 @@ const SupplierRow = memo(function SupplierRow({
       </td>
 
       <td className="px-3 py-2.5 align-middle text-center">
-        <StatusBadge tone={s.status === "active" ? "success" : "neutral"}>
-          {s.status === "active" ? "Active" : "Inactive"}
+        <StatusBadge tone={SUPPLIER_STATUS_TONE[supplierStatus(s)]}>
+          {SUPPLIER_STATUS_LABEL[supplierStatus(s)]}
         </StatusBadge>
       </td>
 

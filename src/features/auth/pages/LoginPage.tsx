@@ -1,6 +1,18 @@
 import { useState } from "react";
+import { useAuthStore, useCurrentUser } from "../store/useAuthStore";
+
+/** Only redirect back to our own screens — never to another site */
+function safeFrom(state: unknown): string {
+  const from = (state as { from?: unknown } | null)?.from;
+  return typeof from === "string" &&
+    from.startsWith("/") &&
+    !from.startsWith("//") &&
+    from !== "/login"
+    ? from
+    : "/dashboard";
+}
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +27,14 @@ import {
 import { Eye, EyeOff, Cross, Loader2 } from "lucide-react";
 import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const login = useAuthStore((st) => st.login);
+  const user = useCurrentUser();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -40,35 +56,29 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Fake delay — baad mein real API
-      await new Promise((resolve) => setTimeout(resolve, 900));
-
-      // Demo only — baad mein secure API + hashed password
-      if (trimmedEmail === "admin" && trimmedPassword === "admin") {
-        if (remember) {
-          localStorage.setItem("medicare_remember", "1");
-        } else {
-          localStorage.removeItem("medicare_remember");
-        }
-
-        // Token demo — real app mein httpOnly cookie / secure storage
-        sessionStorage.setItem("medicare_auth", "1");
-
+      const result = await login(trimmedEmail, password, remember);
+      if (result.ok) {
         toast.success(t("login.success"), {
-          description: t("login.successDesc"),
+          description: `${result.user.name} · ${t("login.successDesc")}`,
         });
-
-        navigate("/dashboard", { replace: true });
+        // Back to the screen they were trying to open (only in-app paths)
+        navigate(safeFrom(location.state), { replace: true });
+      } else if (result.reason === "locked") {
+        toast.error(
+          tr("Too many wrong attempts — try again in {{sec}} seconds", {
+            sec: result.retryInSec ?? 30,
+          }),
+        );
       } else {
         toast.error(t("login.errorInvalid"));
       }
-    } catch {
-      toast.error(t("login.errorInvalid"));
     } finally {
       setLoading(false);
       setPassword(""); // security: clear password from state after attempt
     }
   };
+
+  if (user) return <Navigate to={safeFrom(location.state)} replace />;
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background px-4 transition-colors duration-300">

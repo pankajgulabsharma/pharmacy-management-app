@@ -8,6 +8,7 @@ import { CodeChip } from "@/components/common/CodeChip";
 import { BatchExpiry } from "./BatchExpiry";
 import { formatPaise } from "@/lib/money";
 import type { SellableItem } from "../hooks/useBillingData";
+import { tr } from "@/lib/i18n";
 
 type Props = {
   results: SellableItem[];
@@ -76,7 +77,7 @@ export function SearchResultsTable({
                     align,
                   )}
                 >
-                  {label}
+                  {tr(label)}
                 </th>
               ))}
             </tr>
@@ -161,7 +162,9 @@ const ResultRow = memo(function ResultRow({
               : `${limits.maxStrip} ${m.unit}${limits.maxLoose > 0 && m.allowLoose ? ` · loose ok` : ""}`}
           </span>
         ) : (
-          <span className="text-red-500 font-semibold">Out of stock</span>
+          <span className="text-red-500 font-semibold">
+            {tr("Out of stock")}
+          </span>
         )}
         {item.expiredStrip > 0 ? (
           <p className="text-[10px] text-red-500/80">

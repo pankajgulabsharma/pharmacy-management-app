@@ -162,17 +162,33 @@ describe("applyAdjustment", () => {
 
 describe("summarizeStock", () => {
   it("totals per medicine and finds the nearest expiry with stock", () => {
-    const map = summarizeStock([
-      batch({ id: "a", qtyStrip: 10, expiry: "08/27" }),
-      batch({ id: "b", qtyStrip: 5, qtyLoose: 4, expiry: "12/26" }),
-      batch({ id: "c", qtyStrip: 0, expiry: "01/26" }), // empty → ignored for expiry
-    ]);
+    const map = summarizeStock(
+      [
+        batch({ id: "a", qtyStrip: 10, expiry: "08/27" }),
+        batch({ id: "b", qtyStrip: 5, qtyLoose: 4, expiry: "12/26" }),
+        batch({ id: "c", qtyStrip: 0, expiry: "01/26" }), // empty → ignored for expiry
+      ],
+      new Date(2026, 9, 5),
+    );
     expect(map.get("m1")).toEqual({
       stockStrip: 15,
       stockLoose: 4,
       nearestExpiry: "12/26",
       batchCount: 2,
+      sellableStrip: 15,
+      sellableLoose: 4,
     });
+  });
+
+  it("sellable stock leaves out expired batches", () => {
+    const map = summarizeStock(
+      [
+        batch({ id: "a", qtyStrip: 10, expiry: "08/27" }),
+        batch({ id: "x", qtyStrip: 99, expiry: "01/26" }),
+      ],
+      new Date(2026, 9, 5),
+    );
+    expect(map.get("m1")).toMatchObject({ stockStrip: 109, sellableStrip: 10 });
   });
 });
 

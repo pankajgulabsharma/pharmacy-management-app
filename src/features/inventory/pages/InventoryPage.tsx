@@ -39,23 +39,20 @@ import type {
 import { InventoryTable } from "../components/InventoryTable";
 import { StockAdjustDialog } from "../components/StockAdjustDialog";
 import { inventoryMatchesQuery } from "../utils/search";
-import {
-  isExpired,
-  isExpiringSoon,
-  isLowStock,
-  isOutOfStock,
-} from "../utils/stock";
+import { batchStatuses, type BatchStatus } from "../utils/stock";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /** One filter predicate per status — shared by counts and filtering */
-const MATCHERS: Record<
+/** Filter chip → the ONE status it shows (chips never overlap) */
+const FILTER_STATUS: Record<
   Exclude<InventoryStatusFilter, "all">,
-  (b: InventoryBatch) => boolean
+  BatchStatus
 > = {
-  in_stock: (b) => !isOutOfStock(b) && !isExpired(b.expiry),
-  low: (b) => isLowStock(b),
-  out: (b) => isOutOfStock(b),
-  expiring: (b) => isExpiringSoon(b.expiry) && !isExpired(b.expiry),
-  expired: (b) => isExpired(b.expiry),
+  in_stock: "ok",
+  low: "low",
+  out: "out",
+  expiring: "expiring",
+  expired: "expired",
 };
 
 export default function InventoryPage() {
@@ -79,32 +76,33 @@ export default function InventoryPage() {
   // Filtering runs at lower priority so typing stays smooth on big lists
   const deferredQuery = useDeferredValue(query);
 
+  // One status per batch — the same map drives chips, counts and row badges
+  const expiringDays = useSettingsStore((st) => st.inventory.expiringSoonDays);
+  const statuses = useMemo(
+    () => batchStatuses(items, new Date(), expiringDays),
+    [items, expiringDays],
+  );
+
   const stats = useMemo(() => {
-    const counts = {
-      in_stock: 0,
+    const counts: Record<BatchStatus, number> = {
+      ok: 0,
       low: 0,
-      lowOnly: 0,
       out: 0,
       expiring: 0,
       expired: 0,
     };
-    for (const b of items) {
-      if (MATCHERS.in_stock(b)) counts.in_stock++;
-      if (MATCHERS.low(b)) counts.low++;
-      if (MATCHERS.low(b) && !isOutOfStock(b)) counts.lowOnly++;
-      if (MATCHERS.out(b)) counts.out++;
-      if (MATCHERS.expiring(b)) counts.expiring++;
-      if (MATCHERS.expired(b)) counts.expired++;
-    }
+    for (const st of statuses.values()) counts[st]++;
     return { batches: items.length, ...counts };
-  }, [items]);
+  }, [items, statuses]);
 
   const filtered = useMemo(() => {
-    const match = statusFilter === "all" ? null : MATCHERS[statusFilter];
+    const want = statusFilter === "all" ? null : FILTER_STATUS[statusFilter];
     return items.filter(
-      (b) => (!match || match(b)) && inventoryMatchesQuery(b, deferredQuery),
+      (b) =>
+        (!want || statuses.get(b.id) === want) &&
+        inventoryMatchesQuery(b, deferredQuery),
     );
-  }, [items, deferredQuery, statusFilter]);
+  }, [items, deferredQuery, statusFilter, statuses]);
 
   // Keyboard: ↑↓ select · Enter adjust · H history · / search
   const nav = useListNavigation({
@@ -133,7 +131,7 @@ export default function InventoryPage() {
   const filterOptions = useMemo<FilterChipOption<InventoryStatusFilter>[]>(
     () => [
       { id: "all", label: "All", count: stats.batches },
-      { id: "in_stock", label: "In stock", count: stats.in_stock },
+      { id: "in_stock", label: "In stock", count: stats.ok },
       { id: "low", label: "Low", count: stats.low },
       { id: "out", label: "Out", count: stats.out },
       { id: "expiring", label: "Expiring", count: stats.expiring },
@@ -189,7 +187,7 @@ export default function InventoryPage() {
         <StatCard
           icon={AlertTriangle}
           label="Low stock"
-          value={String(stats.lowOnly)}
+          value={String(stats.low)}
           iconClass="bg-orange-500/10 text-orange-600"
         />
         <StatCard
@@ -243,6 +241,7 @@ export default function InventoryPage() {
 
       <InventoryTable
         items={filtered}
+        statuses={statuses}
         onAdjust={setAdjustTarget}
         onHistory={openHistory}
         selectedId={nav.selectedKey}

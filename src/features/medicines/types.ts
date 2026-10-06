@@ -58,6 +58,9 @@ export type MedicineStock = {
   nearestExpiry: string | null;
   /** Number of batches that still have stock */
   batchCount: number;
+  /** Sellable stock only — expired batches excluded (used for low / out) */
+  sellableStrip: number;
+  sellableLoose: number;
 };
 
 export type MedicineWithStock = Medicine & MedicineStock;
@@ -67,6 +70,8 @@ export const EMPTY_STOCK: MedicineStock = {
   stockLoose: 0,
   nearestExpiry: null,
   batchCount: 0,
+  sellableStrip: 0,
+  sellableLoose: 0,
 };
 
 /** Master fields a user can create/import (everything except the id) */

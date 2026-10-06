@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { UserRound, Stethoscope, MonitorSmartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
 
 type Props = {
   customerName: string;
@@ -56,7 +57,7 @@ export function BillingContextBar({
           <Input
             ref={customerRef}
             value={customerName}
-            placeholder="Walk-in customer (F3)"
+            placeholder={tr("Walk-in customer (F3)")}
             onChange={(e) => onCustomerChange(e.target.value)}
             className={cn(fieldStyle, "pl-3 pr-8")}
             autoComplete="off"

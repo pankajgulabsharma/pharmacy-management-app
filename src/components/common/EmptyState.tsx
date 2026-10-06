@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   icon: LucideIcon;
@@ -24,6 +25,7 @@ export function EmptyState({
   bordered = true,
   className,
 }: Props) {
+  const tr = useTr();
   return (
     <div
       className={cn(
@@ -52,7 +54,7 @@ export function EmptyState({
           compact ? "text-[11px]" : "text-xs",
         )}
       >
-        {title}
+        {tr(title)}
       </p>
       {description ? (
         <p
@@ -61,7 +63,7 @@ export function EmptyState({
             compact ? "text-[10px]" : "text-[11px]",
           )}
         >
-          {description}
+          {tr(description)}
         </p>
       ) : null}
       {action ? <div className="pt-1">{action}</div> : null}

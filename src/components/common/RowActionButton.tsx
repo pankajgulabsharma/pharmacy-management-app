@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   icon: LucideIcon;
@@ -20,12 +21,13 @@ export const RowActionButton = memo(function RowActionButton({
   tone = "default",
   onClick,
 }: Props) {
+  const tr = useTr();
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={label}
-      title={title ?? label}
+      aria-label={tr(label)}
+      title={tr(title ?? label)}
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent",
         "text-muted-foreground transition-colors",

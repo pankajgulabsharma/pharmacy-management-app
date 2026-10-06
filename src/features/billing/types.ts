@@ -152,6 +152,8 @@ export type Sale = {
   status: "paid" | "udhaar";
   /** Total refunded through sales returns */
   returnedPaise: Paise;
+  /** Customer account (khata) — always set for udhaar bills */
+  customerId?: string | null;
   /**
    * History imported from before this app tracked stock (demo: older
    * sales). Counted in reports, but never moved stock and can't be returned.
@@ -163,6 +165,8 @@ export type Sale = {
 export type SaleInput = {
   cart: CartLine[];
   customerName: string;
+  /** Customer account; REQUIRED when paying by udhaar */
+  customerId?: string | null;
   doctor: string;
   counter: string;
   payment: PaymentDraft;

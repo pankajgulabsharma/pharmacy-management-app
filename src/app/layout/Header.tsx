@@ -1,5 +1,36 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Calendar, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  Bell,
+  Calendar,
+  ChevronDown,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  useAuthStore,
+  useCurrentUser,
+} from "@/features/auth/store/useAuthStore";
+import { ROLE_LABELS } from "@/features/auth/types";
+import { tr } from "@/lib/i18n";
+
+/** "Pankaj Sharma" → "PS" */
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+}
 import { useUIStore } from "@/stores/useUIStore";
 import { KEYS } from "@/app/shortcuts/registry";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
@@ -12,6 +43,9 @@ const IS_MAC =
 const SHORTCUT_LABEL = IS_MAC ? "⌘K" : "Ctrl K";
 
 export function Header() {
+  const user = useCurrentUser();
+  const logout = useAuthStore((st) => st.logout);
+  const navigate = useNavigate();
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const toggleHint = formatCombo(preferredCombo(KEYS.toggleSidebar)).join("+");
@@ -90,16 +124,47 @@ export function Header() {
           <span>{today}</span>
         </div>
 
-        {/* User profile */}
-        <div className="flex items-center gap-2 pl-3 border-l border-border">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground">
-            PS
-          </div>
-          <div className="hidden sm:block leading-tight">
-            <p className="text-xs font-medium text-foreground">Pankaj Sharma</p>
-            <p className="text-[10px] text-muted-foreground">Admin</p>
-          </div>
-        </div>
+        {/* Signed-in user — menu with Sign out */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                aria-label={`${user?.name ?? ""} — account menu`}
+                className="flex items-center gap-2 pl-3 border-l border-border rounded-r-lg hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            }
+          >
+            <span className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground">
+              {initials(user?.name ?? "")}
+            </span>
+            <span className="hidden sm:block leading-tight text-left">
+              <span className="block text-xs font-medium text-foreground">
+                {user?.name}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">
+                {user ? tr(ROLE_LABELS[user.role]) : ""}
+              </span>
+            </span>
+            <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground mr-1" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <Settings className="h-3.5 w-3.5" />
+              {tr("Settings")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                logout();
+                navigate("/login", { replace: true });
+              }}
+              className="text-red-600 focus:text-red-600"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {tr("Sign out")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

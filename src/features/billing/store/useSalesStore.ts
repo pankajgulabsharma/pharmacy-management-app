@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
+import {
+  owedBy,
+  useCustomerStore,
+} from "@/features/customers/store/useCustomerStore";
 import { demoHeldBills, demoSaleReturns, demoSales } from "@/app/demo/seed";
 import { newId } from "@/lib/id";
 import { cleanText } from "@/lib/sanitize";
@@ -49,13 +53,37 @@ export const useSalesStore = create<SalesState>()((set, get) => ({
     const inventory = useInventoryStore.getState();
     const now = new Date();
 
+    // Udhaar goes on an active customer account, within its credit limit
+    let customerName = input.customerName;
+    if (input.payment.method === "udhaar") {
+      const c = useCustomerStore
+        .getState()
+        .customers.find((x) => x.id === input.customerId);
+      if (!c) throw new SaleError("Choose the customer's account for udhaar");
+      if (c.status !== "active")
+        throw new SaleError(`${c.name}'s account is inactive`);
+      customerName = c.name;
+    }
+
     const { sale, change } = buildSale(
-      input,
+      { ...input, customerName },
       medicines,
       inventory.batches,
       nextBillNo(sales),
       now,
     );
+
+    if (sale.status === "udhaar" && sale.customerId) {
+      const c = useCustomerStore
+        .getState()
+        .customers.find((x) => x.id === sale.customerId)!;
+      const after = owedBy(c.id) + sale.totals.netPaise;
+      if (c.creditLimitPaise > 0 && after > c.creditLimitPaise) {
+        throw new SaleError(
+          `Over ${c.name}'s udhaar limit of ₹${(c.creditLimitPaise / 100).toLocaleString("en-IN")}`,
+        );
+      }
+    }
 
     // 1) Stock out (throws and stops here if anything is short)
     inventory.change({

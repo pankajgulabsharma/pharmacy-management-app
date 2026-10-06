@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 export type ReportColumn<T> = {
   key: string;
@@ -33,6 +34,7 @@ export function ReportTable<T>({
   empty,
   maxHeightClass = "max-h-[340px]",
 }: Props<T>) {
+  const tr = useTr();
   return (
     <ReportCard title={title} subtitle={subtitle} flush>
       {rows.length === 0 ? (
@@ -55,7 +57,7 @@ export function ReportTable<T>({
                       c.width,
                     )}
                   >
-                    {c.label}
+                    {tr(c.label)}
                   </th>
                 ))}
               </tr>
@@ -124,6 +126,7 @@ export function ReportCard({
   className?: string;
   children: ReactNode;
 }) {
+  const tr = useTr();
   return (
     <section
       className={cn(
@@ -133,10 +136,12 @@ export function ReportCard({
     >
       <div className="flex items-start justify-between gap-2 px-3 py-2.5 border-b border-border">
         <div className="min-w-0">
-          <h3 className="text-[12px] font-semibold text-foreground">{title}</h3>
+          <h3 className="text-[12px] font-semibold text-foreground">
+            {tr(title)}
+          </h3>
           {subtitle ? (
             <p className="text-[10px] text-muted-foreground truncate">
-              {subtitle}
+              {tr(subtitle)}
             </p>
           ) : null}
         </div>

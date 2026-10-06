@@ -3,14 +3,15 @@ import {
   CalendarClock,
   CalendarX,
   CheckCircle2,
+  HandCoins,
   PauseCircle,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { inrRounded } from "@/lib/money";
-import { plural } from "@/lib/format";
 import type { DashboardData } from "../hooks/useDashboardData";
+import { tr } from "@/lib/i18n";
 
 type Alert = {
   key: string;
@@ -27,8 +28,8 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
   if (d.stock.expired.length) {
     alerts.push({
       key: "expired",
-      title: `${plural(d.stock.expired.length, "batch", "batches")} expired`,
-      desc: `${inrRounded(d.stock.expiredValuePaise)} at cost — not sellable. Return to supplier or dispose.`,
+      title: `${d.stock.expired.length} ${tr(d.stock.expired.length === 1 ? "batch expired" : "batches expired")}`,
+      desc: `${inrRounded(d.stock.expiredValuePaise)} ${tr("at cost — not sellable. Return to supplier or dispose.")}`,
       icon: CalendarX,
       tone: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
       to: "/inventory?status=expired",
@@ -37,8 +38,8 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
   if (d.supplier.overdueCount) {
     alerts.push({
       key: "overdue",
-      title: `${plural(d.supplier.overdueCount, "invoice")} overdue`,
-      desc: `${inrRounded(d.supplier.overduePaise)} past the due date.`,
+      title: `${d.supplier.overdueCount} ${tr(d.supplier.overdueCount === 1 ? "invoice overdue" : "invoices overdue")}`,
+      desc: `${inrRounded(d.supplier.overduePaise)} ${tr("past the due date.")}`,
       icon: Wallet,
       tone: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
       to: "/purchases?status=overdue",
@@ -47,18 +48,30 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
   if (d.stock.expiring.length) {
     alerts.push({
       key: "expiring",
-      title: `${plural(d.stock.expiring.length, "batch", "batches")} expiring soon`,
-      desc: `Within ${d.expiringDays} days — sell first or return in time.`,
+      title: `${d.stock.expiring.length} ${tr(d.stock.expiring.length === 1 ? "batch expiring soon" : "batches expiring soon")}`,
+      desc: tr("Within {{days}} days — sell first or return in time.", {
+        days: d.expiringDays,
+      }),
       icon: CalendarClock,
       tone: "bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
       to: "/inventory?status=expiring",
     });
   }
+  if (d.udhaarPaise > 0) {
+    alerts.push({
+      key: "udhaar",
+      title: `${inrRounded(d.udhaarPaise)} ${tr("udhaar to collect")}`,
+      desc: tr("Customers who bought on credit — open their accounts."),
+      icon: HandCoins,
+      tone: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
+      to: "/customers", // all, most owed first
+    });
+  }
   if (d.heldCount) {
     alerts.push({
       key: "held",
-      title: `${plural(d.heldCount, "bill")} on hold`,
-      desc: "Customers waiting — resume from Billing (F6).",
+      title: `${d.heldCount} ${tr(d.heldCount === 1 ? "bill on hold" : "bills on hold")}`,
+      desc: tr("Customers waiting — resume from Billing (F6)."),
       icon: PauseCircle,
       tone: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
       to: "/billing",
@@ -72,7 +85,7 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
           <CheckCircle2 className="h-4 w-4" />
         </div>
         <p className="text-xs font-medium">
-          All good — nothing needs attention.
+          {tr("All good — nothing needs attention.")}
         </p>
       </div>
     );

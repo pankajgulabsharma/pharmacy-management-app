@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Pencil as PencilIcon, PillBottle, Trash2 } from "lucide-react";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
+import { stockLevel } from "../utils/stockLevel";
 import { scrollRowIntoView } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -82,8 +83,9 @@ export function MedicineTable({
           </thead>
           <tbody>
             {items.map((m) => {
-              const out = m.stockStrip === 0 && m.stockLoose === 0;
-              const low = !out && m.stockStrip < m.minStock;
+              const level = stockLevel(m);
+              const out = level === "out";
+              const low = level === "low";
               const looseOk = canSellLoose(m.unit, m.allowLoose);
               const expiryState: ExpiryState = !m.nearestExpiry
                 ? "ok"

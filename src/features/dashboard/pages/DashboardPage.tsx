@@ -9,10 +9,11 @@ import { LowStockAlerts } from "../components/LowStockAlerts";
 import { AlertsPanel } from "../components/AlertsPanel";
 import { getGreetingName, getTimeBasedGreetingKey } from "@/lib/greeting";
 import { useDashboardData } from "../hooks/useDashboardData";
+import { useCurrentUser } from "@/features/auth/store/useAuthStore";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const name = getGreetingName();
+  const name = getGreetingName(useCurrentUser()?.name);
   // One computation for every widget (same numbers as Reports)
   const d = useDashboardData();
 

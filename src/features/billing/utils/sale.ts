@@ -117,6 +117,7 @@ export function validatePayment(
   p: PaymentDraft,
   netPaise: Paise,
   customerName: string,
+  customerId: string | null = null,
 ): string | null {
   switch (p.method) {
     case "cash": {
@@ -137,9 +138,11 @@ export function validatePayment(
       return null;
     }
     case "udhaar": {
+      // Udhaar always goes on a customer's account (khata)
+      if (!customerId) return "Choose the customer's account for udhaar";
       const name = cleanText(customerName, BILLING_LIMITS.customerMax);
       if (!name || name.toLowerCase() === WALK_IN.toLowerCase()) {
-        return "Enter the customer's name for udhaar";
+        return "Choose the customer's account for udhaar";
       }
       return null;
     }
@@ -225,7 +228,12 @@ export function buildSale(
   const totals = calcSaleTotals(lines);
   const customerName =
     cleanText(input.customerName, BILLING_LIMITS.customerMax) || WALK_IN;
-  const payErr = validatePayment(input.payment, totals.netPaise, customerName);
+  const payErr = validatePayment(
+    input.payment,
+    totals.netPaise,
+    customerName,
+    input.customerId ?? null,
+  );
   if (payErr) throw new SaleError(payErr);
 
   return {
@@ -240,6 +248,7 @@ export function buildSale(
       totals,
       payment: toSalePayment(input.payment, totals.netPaise),
       status: input.payment.method === "udhaar" ? "udhaar" : "paid",
+      customerId: input.customerId ?? null,
       returnedPaise: 0,
     },
     change,

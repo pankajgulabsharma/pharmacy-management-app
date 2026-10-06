@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 export type BadgeTone =
-  "success" | "warning" | "danger" | "caution" | "neutral";
+  "success" | "warning" | "danger" | "caution" | "neutral" | "info";
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   success:
@@ -13,6 +14,7 @@ const TONE_CLASS: Record<BadgeTone, string> = {
     "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
   danger: "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-400",
   neutral: "bg-muted text-muted-foreground",
+  info: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400",
 };
 
 const SIZE_CLASS = {
@@ -46,6 +48,7 @@ export function StatusBadge({
   title,
   className,
 }: Props) {
+  const tr = useTr();
   return (
     <span
       title={title}
@@ -57,7 +60,7 @@ export function StatusBadge({
         className,
       )}
     >
-      {children}
+      {tr(children)}
     </span>
   );
 }

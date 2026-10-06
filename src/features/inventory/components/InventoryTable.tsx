@@ -14,7 +14,7 @@ import {
 import { useVirtualRows } from "@/hooks/useVirtualRows";
 import { useStableCallback } from "@/hooks/useStableCallback";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
-import { formatRupees } from "@/lib/money";
+import { formatRupees, inrFromPaise } from "@/lib/money";
 import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore";
 import type { InventoryBatch } from "../types";
 import {
@@ -22,15 +22,12 @@ import {
   canSellLoose,
   formatPackLabel,
 } from "@/features/medicines/types";
-import {
-  isExpired,
-  isExpiringSoon,
-  isLowStock,
-  isOutOfStock,
-} from "../utils/stock";
+import { batchCostPaise, type BatchStatus } from "../utils/stock";
 
 type Props = {
   items: InventoryBatch[];
+  /** One status per batch, from batchStatuses() */
+  statuses: ReadonlyMap<string, BatchStatus>;
   onAdjust: (b: InventoryBatch) => void;
   /** Open the batch's stock history */
   onHistory: (b: InventoryBatch) => void;
@@ -43,7 +40,7 @@ type Props = {
 /* Static config — created once at module load, never per render      */
 /* ------------------------------------------------------------------ */
 
-type StatusKey = "expired" | "out" | "low" | "expiring" | "ok";
+type StatusKey = BatchStatus;
 
 const STATUS: Record<
   StatusKey,
@@ -79,10 +76,10 @@ const COLUMNS: TableColumn[] = [
   { key: "actions", label: "", width: "w-[80px]", align: "text-center" },
 ];
 
-/** Stock colour: red when out, orange when low, green otherwise */
-function stockTextClass(b: InventoryBatch): string {
-  if (isOutOfStock(b)) return "text-red-500";
-  if (isLowStock(b)) return "text-orange-600 dark:text-orange-400";
+/** Stock colour follows the batch status: red out, orange low, green otherwise */
+function stockTextClass(status: StatusKey): string {
+  if (status === "out") return "text-red-500";
+  if (status === "low") return "text-orange-600 dark:text-orange-400";
   return "text-emerald-600 dark:text-emerald-400";
 }
 
@@ -99,7 +96,8 @@ type RowView = {
   subtitle: string;
   stockText: string;
   stockClass: string;
-  stockValue: number;
+  /** Value at landed cost, paise (shared batchCostPaise) */
+  stockValuePaise: number;
   margin: number;
   mrp: string;
   purchase: string;
@@ -110,21 +108,15 @@ type RowView = {
 
 const rowCache = new WeakMap<InventoryBatch, RowView>();
 
-function buildRowView(b: InventoryBatch, day: string): RowView {
-  const expired = isExpired(b.expiry);
-  const expiring = !expired && isExpiringSoon(b.expiry);
-
-  let status: StatusKey = "ok";
-  if (expired) status = "expired";
-  else if (isOutOfStock(b)) status = "out";
-  else if (isLowStock(b)) status = "low";
-  else if (expiring) status = "expiring";
+function buildRowView(
+  b: InventoryBatch,
+  day: string,
+  status: StatusKey,
+): RowView {
+  // Status comes from batchStatus() — the same one the filters use
+  const expiring = status === "expiring";
 
   const looseOk = canSellLoose(b.unit, b.allowLoose);
-  const ups = b.unitsPerStrip > 0 ? b.unitsPerStrip : 1;
-
-  // Stock in the same unit as minStock (packs, or loose units for LSE)
-  const packs = b.unit === "LSE" ? b.qtyLoose : b.qtyStrip + b.qtyLoose / ups;
 
   // LSE-only items show the loose count directly
   const stockText =
@@ -140,8 +132,8 @@ function buildRowView(b: InventoryBatch, day: string): RowView {
     packLabel: formatPackLabel(b.unit, b.unitsPerStrip),
     subtitle: `${b.brand} · ${CATEGORY_LABELS[b.category]}`,
     stockText,
-    stockClass: stockTextClass(b),
-    stockValue: packs * b.purchasePrice,
+    stockClass: stockTextClass(status),
+    stockValuePaise: batchCostPaise(b, b),
     margin:
       b.salePrice > 0
         ? ((b.salePrice - b.purchasePrice) / b.salePrice) * 100
@@ -157,10 +149,15 @@ function buildRowView(b: InventoryBatch, day: string): RowView {
  * Returns the cached view while the batch object is unchanged (immutable
  * updates create a new object, which invalidates the cache automatically).
  */
-function getRowView(b: InventoryBatch, day: string): RowView {
+function getRowView(
+  b: InventoryBatch,
+  day: string,
+  status: StatusKey,
+): RowView {
   const cached = rowCache.get(b);
-  if (cached && cached.day === day) return cached;
-  const view = buildRowView(b, day);
+  // Low stock depends on the medicine's OTHER batches too, so status is part of the key
+  if (cached && cached.day === day && cached.status === status) return cached;
+  const view = buildRowView(b, day, status);
   rowCache.set(b, view);
   return view;
 }
@@ -173,6 +170,7 @@ const getKey = (b: InventoryBatch) => b.id;
 
 export function InventoryTable({
   items,
+  statuses,
   onAdjust,
   onHistory,
   selectedId = null,
@@ -189,13 +187,13 @@ export function InventoryTable({
     let total = 0;
     let attention = 0;
     for (const b of items) {
-      const v = getRowView(b, day);
+      const v = getRowView(b, day, statuses.get(b.id) ?? "ok");
       views.push(v);
-      total += v.stockValue;
+      total += v.stockValuePaise;
       if (v.status !== "ok") attention++;
     }
     return { rows: views, totalValue: total, attentionCount: attention };
-  }, [items]);
+  }, [items, statuses]);
 
   const {
     scrollRef,
@@ -248,7 +246,7 @@ export function InventoryTable({
           <span>
             Stock value (at cost):{" "}
             <span className="font-semibold text-foreground tabular-nums">
-              ₹{formatRupees(totalValue)}
+              {inrFromPaise(totalValue)}
             </span>
           </span>
         </>

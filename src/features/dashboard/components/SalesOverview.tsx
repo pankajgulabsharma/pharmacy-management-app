@@ -14,6 +14,7 @@ import { inrRounded } from "@/lib/money";
 import { ChartTooltipCard } from "@/components/common/ChartTooltipCard";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
+import { tr } from "@/lib/i18n";
 
 type Range = "7d" | "30d";
 
@@ -45,7 +46,7 @@ export function SalesOverview({ d }: { d: DashboardData }) {
       <div className="flex items-start justify-between gap-2 shrink-0">
         <div>
           <h3 className="text-xs font-semibold text-foreground">
-            Sales overview
+            {tr("Sales overview")}
           </h3>
           <p className="text-[10px] text-muted-foreground">
             {inrRounded(report.netAfterReturnsPaise)} · {report.billCount} bills
@@ -65,11 +66,11 @@ export function SalesOverview({ d }: { d: DashboardData }) {
             aria-label="Chart period"
             className="text-[10px] border border-border rounded-lg px-2 py-1 bg-background text-foreground outline-none focus:ring-1 focus:ring-ring cursor-pointer"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
+            <option value="7d">{tr("Last 7 days")}</option>
+            <option value="30d">{tr("Last 30 days")}</option>
           </select>
           <ViewAll to={`/reports?tab=sales&period=${range}`}>
-            Open report
+            {tr("Open report")}
           </ViewAll>
         </div>
       </div>

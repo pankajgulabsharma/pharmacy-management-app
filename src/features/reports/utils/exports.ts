@@ -6,6 +6,10 @@ import type { StockBatch } from "@/features/inventory/types";
 import type { Medicine } from "@/features/medicines/types";
 import { PAYMENT_METHOD_LABELS, type Sale } from "@/features/billing/types";
 import { toCsv } from "@/lib/csv";
+import {
+  batchCostPaise,
+  batchMrpPaise,
+} from "@/features/inventory/utils/stock";
 import { splitCgstSgst } from "@/lib/gst";
 import { inRange, type DateRange } from "./period";
 import type { GstReport, PurchaseReport } from "./reports";
@@ -101,10 +105,13 @@ export function stockCsv(
     .filter((b) => (b.qtyStrip > 0 || b.qtyLoose > 0) && byId.has(b.medicineId))
     .map((b) => {
       const m = byId.get(b.medicineId)!;
-      const ups = m.unitsPerStrip > 0 ? m.unitsPerStrip : 1;
-      const packs =
-        m.unit === "LSE" ? b.qtyLoose : b.qtyStrip + b.qtyLoose / ups;
-      return { b, m, packs };
+      // Same valuation as the Inventory screen and the Stock report
+      return {
+        b,
+        m,
+        costPaise: batchCostPaise(b, m),
+        mrpPaise: batchMrpPaise(b, m),
+      };
     })
     .sort((x, y) => x.m.name.localeCompare(y.m.name));
   return toCsv(rows, [
@@ -122,11 +129,8 @@ export function stockCsv(
     { header: "MRP per pack (Rs)", value: (r) => r.b.mrp.toFixed(2) },
     {
       header: "Value at cost (Rs)",
-      value: (r) => (r.packs * r.b.purchasePrice).toFixed(2),
+      value: (r) => rupees(r.costPaise),
     },
-    {
-      header: "Value at MRP (Rs)",
-      value: (r) => (r.packs * r.b.mrp).toFixed(2),
-    },
+    { header: "Value at MRP (Rs)", value: (r) => rupees(r.mrpPaise) },
   ]);
 }

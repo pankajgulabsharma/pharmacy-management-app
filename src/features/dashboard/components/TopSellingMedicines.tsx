@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { inrRounded } from "@/lib/money";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
+import { tr } from "@/lib/i18n";
 
 /** Best sellers of the last 30 days — click one to open it in Medicines */
 export function TopSellingMedicines({ d }: { d: DashboardData }) {
@@ -10,15 +11,19 @@ export function TopSellingMedicines({ d }: { d: DashboardData }) {
     <div className="bg-card border border-border rounded-xl p-3 h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2 shrink-0">
         <div>
-          <h3 className="text-xs font-semibold text-foreground">Top selling</h3>
-          <p className="text-[9px] text-muted-foreground">Last 30 days</p>
+          <h3 className="text-xs font-semibold text-foreground">
+            {tr("Top selling")}
+          </h3>
+          <p className="text-[9px] text-muted-foreground">
+            {tr("Last 30 days")}
+          </p>
         </div>
         <ViewAll to="/reports?tab=sales&period=30d" />
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto space-y-1">
         {items.length === 0 ? (
           <p className="py-6 text-center text-[11px] text-muted-foreground">
-            No sales yet
+            {tr("No sales yet")}
           </p>
         ) : (
           items.map((m, i) => (

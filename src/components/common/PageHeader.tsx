@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   icon: LucideIcon;
@@ -10,6 +11,7 @@ type Props = {
 
 /** Page title row used by Medicines / Inventory / Purchases */
 export function PageHeader({ icon: Icon, title, subtitle, actions }: Props) {
+  const tr = useTr();
   return (
     <div className="flex items-center justify-between gap-2 shrink-0">
       <div className="flex items-center gap-2 min-w-0">
@@ -18,11 +20,11 @@ export function PageHeader({ icon: Icon, title, subtitle, actions }: Props) {
         </div>
         <div className="min-w-0">
           <h1 className="text-sm font-semibold text-foreground leading-tight">
-            {title}
+            {tr(title)}
           </h1>
           {subtitle ? (
             <p className="text-[10px] text-muted-foreground truncate">
-              {subtitle}
+              {tr(subtitle)}
             </p>
           ) : null}
         </div>

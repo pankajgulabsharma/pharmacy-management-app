@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { inrRounded } from "@/lib/money";
 import { plural } from "@/lib/format";
 import type { DashboardData } from "../hooks/useDashboardData";
+import { useTr } from "@/hooks/useTr";
+import { tr } from "@/lib/i18n";
 
 type Card = {
   key: string;
@@ -26,14 +28,15 @@ type Card = {
 
 const trend = (pct: number | null) =>
   pct === null
-    ? { text: "No sales yesterday", tone: "muted" as const }
+    ? { text: tr("No sales yesterday"), tone: "muted" as const }
     : {
-        text: `${pct >= 0 ? "↑" : "↓"} ${Math.abs(pct)}% vs yesterday`,
+        text: `${pct >= 0 ? "↑" : "↓"} ${Math.abs(pct)}% ${tr("vs yesterday")}`,
         tone: pct >= 0 ? ("good" as const) : ("bad" as const),
       };
 
 /** Five live KPIs — each opens the screen behind the number */
 export function StatsCards({ d }: { d: DashboardData }) {
+  const tr = useTr();
   const sales = trend(d.salesChange);
   const bills = trend(d.billsChange);
   const cards: Card[] = [
@@ -65,7 +68,7 @@ export function StatsCards({ d }: { d: DashboardData }) {
       subTone: d.health.out > 0 ? "bad" : "muted",
       icon: AlertTriangle,
       iconBg: "bg-orange-500/10 text-orange-600",
-      to: "/inventory?status=low",
+      to: "/medicines?status=low_only", // opens the Low chip
     },
     {
       key: "expiring",
@@ -87,7 +90,7 @@ export function StatsCards({ d }: { d: DashboardData }) {
       subTone: d.supplier.overdueCount ? "bad" : "good",
       icon: Wallet,
       iconBg: "bg-red-500/10 text-red-500",
-      to: "/suppliers?filter=dues",
+      to: "/suppliers", // all, most owed first
     },
   ];
 
@@ -111,7 +114,7 @@ export function StatsCards({ d }: { d: DashboardData }) {
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-1">
             <p className="text-[10px] text-muted-foreground leading-tight">
-              {c.label}
+              {tr(c.label)}
             </p>
             <ChevronRight className="hidden @min-[140px]:block h-3.5 w-3.5 text-muted-foreground shrink-0 group-hover:translate-x-0.5 group-hover:text-primary transition" />
           </div>

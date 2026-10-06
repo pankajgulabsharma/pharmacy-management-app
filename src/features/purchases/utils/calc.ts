@@ -136,3 +136,20 @@ export function getPaymentStatus(p: Purchase, today: Date): PaymentStatus {
   // "Partial" means money was paid; a return alone only lowers the balance
   return p.paidPaise > 0 ? "partial" : "due";
 }
+
+/** Money owed to suppliers across invoices — Dashboard, Suppliers, alerts */
+export function duesSummary(purchases: readonly Purchase[], today: Date) {
+  let duePaise = 0;
+  let overduePaise = 0;
+  let overdueCount = 0;
+  for (const p of purchases) {
+    const due = getDuePaise(p); // 0 for cancelled
+    if (due === 0) continue;
+    duePaise += due;
+    if (getPaymentStatus(p, today) === "overdue") {
+      overduePaise += due;
+      overdueCount++;
+    }
+  }
+  return { duePaise, overduePaise, overdueCount };
+}

@@ -4,6 +4,7 @@ import { inrFromPaise } from "@/lib/money";
 import type { Sale } from "@/features/billing/types";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
+import { tr } from "@/lib/i18n";
 
 const STATUS: Record<
   "paid" | "udhaar" | "returned",
@@ -28,28 +29,34 @@ export function RecentSales({ d }: { d: DashboardData }) {
   return (
     <div className="bg-card border border-border rounded-xl p-3 h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2 shrink-0">
-        <h3 className="text-xs font-semibold text-foreground">Recent sales</h3>
+        <h3 className="text-xs font-semibold text-foreground">
+          {tr("Recent sales")}
+        </h3>
         <ViewAll to="/reports?tab=sales&period=today" />
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto">
         {d.recentSales.length === 0 ? (
           <p className="py-6 text-center text-[11px] text-muted-foreground">
-            No bills yet — press F2 to start one
+            {tr("No bills yet — press F2 to start one")}
           </p>
         ) : (
           <table className="w-full text-[10px]">
             <thead>
               <tr className="bg-muted/60 text-muted-foreground">
                 <th className="text-left font-medium px-2 py-1.5 rounded-l-md">
-                  Bill
+                  {tr("Bill")}
                 </th>
-                <th className="text-left font-medium px-2 py-1.5">Customer</th>
                 <th className="text-left font-medium px-2 py-1.5">
-                  Date & time
+                  {tr("Customer")}
                 </th>
-                <th className="text-right font-medium px-2 py-1.5">Amount</th>
+                <th className="text-left font-medium px-2 py-1.5">
+                  {tr("Date & time")}
+                </th>
+                <th className="text-right font-medium px-2 py-1.5">
+                  {tr("Amount")}
+                </th>
                 <th className="text-left font-medium px-2 py-1.5 rounded-r-md">
-                  Status
+                  {tr("Status")}
                 </th>
               </tr>
             </thead>

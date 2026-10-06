@@ -5,6 +5,7 @@ import { ModalShell } from "@/components/common/ModalShell";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import type { HeldBill } from "../types";
+import { tr } from "@/lib/i18n";
 
 type Props = {
   open: boolean;
@@ -89,7 +90,7 @@ export function HeldBillsDialog({
                     onClick={() => onResume(h.id)}
                   >
                     <Play className="h-3 w-3" />
-                    Resume
+                    {tr("Resume")}
                   </Button>
                   <button
                     type="button"
@@ -109,7 +110,9 @@ export function HeldBillsDialog({
 
       {cartHasItems && held.length > 0 ? (
         <p className="border-t border-border px-4 py-2 text-[10px] text-muted-foreground shrink-0">
-          Resuming will hold your current bill first, so nothing is lost.
+          {tr(
+            "Resuming will hold your current bill first, so nothing is lost.",
+          )}
         </p>
       ) : null}
     </ModalShell>

@@ -1,5 +1,6 @@
-export function getGreetingName() {
-  return "Pankaj";
+/** First name of the signed-in user (empty when signed out) */
+export function getGreetingName(fullName = ""): string {
+  return fullName.trim().split(/\s+/)[0] ?? "";
 }
 
 export function getTimeBasedGreetingKey() {

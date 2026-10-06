@@ -21,6 +21,7 @@ import {
   ListsSection,
   ShopProfileSection,
 } from "../components/SettingsSections";
+import { tr } from "@/lib/i18n";
 
 type SectionId =
   "shop" | "billing" | "inventory" | "lists" | "appearance" | "data";
@@ -102,7 +103,7 @@ export default function SettingsPage() {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {label}
+                  {tr(label)}
                 </button>
               </li>
             ))}

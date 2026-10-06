@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   icon: LucideIcon;
@@ -18,6 +19,7 @@ export const StatCard = memo(function StatCard({
   iconClass,
   hint,
 }: Props) {
+  const tr = useTr();
   return (
     <div className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-2.5 min-w-0">
       <div
@@ -29,12 +31,16 @@ export const StatCard = memo(function StatCard({
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] text-muted-foreground truncate">{label}</p>
+        <p className="text-[10px] text-muted-foreground truncate">
+          {tr(label)}
+        </p>
         <p className="text-sm font-bold text-foreground tabular-nums leading-tight truncate">
           {value}
         </p>
         {hint ? (
-          <p className="text-[9px] text-muted-foreground truncate">{hint}</p>
+          <p className="text-[9px] text-muted-foreground truncate">
+            {tr(hint)}
+          </p>
         ) : null}
       </div>
     </div>

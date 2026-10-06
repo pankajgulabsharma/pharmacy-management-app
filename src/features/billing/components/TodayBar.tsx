@@ -13,9 +13,14 @@ import { cn } from "@/lib/utils";
 import { StatusBadge, type BadgeTone } from "@/components/common/StatusBadge";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { inrFromPaise, inrRounded } from "@/lib/money";
-import { isSameDay } from "@/lib/date";
+import { percentChange } from "@/lib/format";
+import { useNow } from "@/hooks/useNow";
+import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+import { presetRange } from "@/features/reports/utils/period";
+import { purchaseReport, salesReport } from "@/features/reports/utils/reports";
 import { useSalesStore } from "../store/useSalesStore";
 import type { Sale } from "../types";
+import { tr } from "@/lib/i18n";
 
 type Props = {
   /** Open Sales Return with this bill already picked */
@@ -31,10 +36,6 @@ const STATUS: Record<
   returned: { label: "Returned", tone: "caution" },
 };
 const statusOf = (s: Sale) => (s.returnedPaise > 0 ? "returned" : s.status);
-
-/** % vs yesterday, or null when yesterday had nothing */
-const pct = (today: number, yesterday: number) =>
-  yesterday > 0 ? Math.round(((today - yesterday) / yesterday) * 100) : null;
 
 function ago(iso: string, now: number): string {
   const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
@@ -58,48 +59,43 @@ export function TodayBar({ onReturnBill }: Props) {
   const purchases = usePurchaseStore((s) => s.purchases);
   const [listOpen, setListOpen] = useState(false);
 
+  const saleReturns = useSalesStore((s) => s.saleReturns);
+  const debitNotes = usePurchaseStore((s) => s.returns);
+  const batches = useInventoryStore((s) => s.batches);
+
+  // Same report functions as Dashboard & Reports, so the numbers always match.
+  // (Refunds count on the day the money went back, not on the bill's day.)
+  const now = useNow();
   const t = useMemo(() => {
-    const now = new Date();
-    const y = new Date(now);
-    y.setDate(now.getDate() - 1);
-    let sales0 = 0,
-      sales1 = 0,
-      bills0 = 0,
-      bills1 = 0,
-      buy0 = 0,
-      buys0 = 0;
-    for (const s of sales) {
-      const d = new Date(s.createdAt);
-      const net = s.totals.netPaise - s.returnedPaise;
-      if (isSameDay(d, now)) {
-        sales0 += net;
-        bills0++;
-      } else if (isSameDay(d, y)) {
-        sales1 += net;
-        bills1++;
-      }
-    }
-    for (const p of purchases) {
-      if (
-        p.status !== "cancelled" &&
-        isSameDay(new Date(`${p.invoiceDate}T00:00:00`), now)
-      ) {
-        buy0 += p.totals.netPaise;
-        buys0++;
-      }
-    }
+    const at = new Date(now);
+    const today = salesReport(
+      sales,
+      saleReturns,
+      batches,
+      presetRange("today", at),
+    );
+    const yesterday = salesReport(
+      sales,
+      saleReturns,
+      batches,
+      presetRange("yesterday", at),
+    );
+    const buy = purchaseReport(purchases, debitNotes, presetRange("today", at));
     return {
-      sales0,
-      bills0,
-      buy0,
-      buys0,
-      salesPct: pct(sales0, sales1),
-      billsPct: pct(bills0, bills1),
+      sales0: today.netAfterReturnsPaise,
+      bills0: today.billCount,
+      buy0: buy.netPaise,
+      buys0: buy.invoiceCount,
+      salesPct: percentChange(
+        today.netAfterReturnsPaise,
+        yesterday.netAfterReturnsPaise,
+      ),
+      billsPct: percentChange(today.billCount, yesterday.billCount),
       last: sales[0] ?? null,
       recent: sales.slice(0, 8),
-      now: now.getTime(),
+      now,
     };
-  }, [sales, purchases]);
+  }, [sales, saleReturns, purchases, debitNotes, batches, now]);
 
   return (
     <div className="relative shrink-0">
@@ -173,7 +169,7 @@ export function TodayBar({ onReturnBill }: Props) {
               : "text-primary hover:bg-primary/5",
           )}
         >
-          Recent bills
+          {tr("Recent bills")}
           <span
             className={cn(
               "min-w-5 h-5 px-1.5 rounded-full text-[10px] font-semibold tabular-nums flex items-center justify-center",
@@ -251,7 +247,7 @@ function Tile({
       <IconChip icon={icon} className={iconClass} />
       <div className="leading-tight">
         <p className="text-[10px] text-muted-foreground whitespace-nowrap">
-          {label}
+          {tr(label)}
         </p>
         <div className="flex items-baseline gap-1.5 whitespace-nowrap">
           <span className="text-[14px] font-bold text-foreground tabular-nums">
@@ -321,7 +317,7 @@ function RecentBillsPopover({
     >
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div>
-          <p className="text-[12px] font-semibold">Recent bills</p>
+          <p className="text-[12px] font-semibold">{tr("Recent bills")}</p>
           <p className="text-[10px] text-muted-foreground">
             Latest {bills.length} · Esc to close
           </p>
@@ -330,7 +326,7 @@ function RecentBillsPopover({
           to="/reports?tab=sales&period=today"
           className="text-[11px] font-medium text-primary hover:underline whitespace-nowrap"
         >
-          Sales report →
+          {tr("Sales report →")}
         </Link>
       </div>
       <ul className="max-h-[320px] overflow-y-auto divide-y divide-border/70">
@@ -371,7 +367,7 @@ function RecentBillsPopover({
                 className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10.5px] font-medium hover:bg-muted disabled:opacity-40"
               >
                 <Undo2 className="h-3 w-3" />
-                Return
+                {tr("Return")}
               </button>
             </li>
           );

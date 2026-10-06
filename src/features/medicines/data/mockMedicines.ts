@@ -184,7 +184,7 @@ export const mockMedicines: Medicine[] = [
     salePrice: 82,
     minStock: 10,
     gstPercent: 5,
-    status: "active",
+    status: "inactive", // discontinued by the company — shows the Inactive filter
   },
   {
     id: "m11",

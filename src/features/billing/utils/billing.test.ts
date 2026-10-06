@@ -238,7 +238,7 @@ describe("buildSale", () => {
     [{ payment: cash("10") }, /less than the total/],
     [
       { payment: { ...EMPTY_PAYMENT, method: "udhaar" as const } },
-      /customer's name/,
+      /customer's account/,
     ],
   ])("rejects %o", (over, msg) => {
     expect(() =>

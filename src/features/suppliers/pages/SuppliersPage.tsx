@@ -38,20 +38,24 @@ import type { SupplierFormValues, SupplierWithSummary } from "../types";
 import { formToSupplierInput } from "../utils/validation";
 import { supplierMatchesQuery } from "../utils/search";
 import { SupplierTable } from "../components/SupplierTable";
+import {
+  SUPPLIER_STATUS_LABEL,
+  supplierStatus,
+  type SupplierStatus,
+} from "../utils/status";
 import { SupplierFormDialog } from "../components/SupplierFormDialog";
 import { SupplierDetailsDialog } from "../components/SupplierDetailsDialog";
 
-type Filter = "all" | "dues" | "overdue" | "credit" | "inactive";
-
-const MATCH: Record<
-  Exclude<Filter, "all">,
-  (s: SupplierWithSummary) => boolean
-> = {
-  dues: (s) => s.outstandingPaise > 0,
-  overdue: (s) => s.overduePaise > 0,
-  credit: (s) => s.creditPaise > 0,
-  inactive: (s) => s.status === "inactive",
-};
+/** "All" + one chip per status; chips never overlap and add up to All */
+type Filter = "all" | SupplierStatus;
+const FILTERS: readonly Filter[] = [
+  "all",
+  "overdue",
+  "due",
+  "credit",
+  "settled",
+  "inactive",
+];
 
 export default function SuppliersPage() {
   const [today] = useState(() => startOfDay(new Date()));
@@ -67,11 +71,7 @@ export default function SuppliersPage() {
   const intent = useUrlIntent();
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
   const [filter, setFilter] = useState<Filter>(
-    oneOf(
-      intent.filter,
-      ["all", "dues", "overdue", "credit", "inactive"] as const,
-      "all",
-    ),
+    oneOf(intent.filter, FILTERS, "all"),
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<{ open: boolean; editId: string | null }>({
@@ -93,9 +93,10 @@ export default function SuppliersPage() {
     };
     const counts: Record<Filter, number> = {
       all: items.length,
-      dues: 0,
       overdue: 0,
+      due: 0,
       credit: 0,
+      settled: 0,
       inactive: 0,
     };
     for (const s of items) {
@@ -104,19 +105,18 @@ export default function SuppliersPage() {
       out.overdue += s.overduePaise;
       out.credit += s.creditPaise;
       if (s.overduePaise > 0) out.overdueCount++;
-      for (const k of Object.keys(MATCH) as Exclude<Filter, "all">[]) {
-        if (MATCH[k](s)) counts[k]++;
-      }
+      counts[supplierStatus(s)]++;
     }
     return { ...out, counts };
   }, [items]);
 
   const filtered = useMemo(() => {
-    const match = filter === "all" ? null : MATCH[filter];
     return (
       items
         .filter(
-          (s) => (!match || match(s)) && supplierMatchesQuery(s, deferredQuery),
+          (s) =>
+            (filter === "all" || supplierStatus(s) === filter) &&
+            supplierMatchesQuery(s, deferredQuery),
         )
         // Most money owed first — what a shop owner checks first
         .sort(
@@ -130,10 +130,11 @@ export default function SuppliersPage() {
   const filterOptions = useMemo<FilterChipOption<Filter>[]>(
     () => [
       { id: "all", label: "All", count: stats.counts.all },
-      { id: "dues", label: "With dues", count: stats.counts.dues },
-      { id: "overdue", label: "Overdue", count: stats.counts.overdue },
-      { id: "credit", label: "Credit", count: stats.counts.credit },
-      { id: "inactive", label: "Inactive", count: stats.counts.inactive },
+      ...FILTERS.filter((f): f is SupplierStatus => f !== "all").map((f) => ({
+        id: f,
+        label: SUPPLIER_STATUS_LABEL[f],
+        count: stats.counts[f],
+      })),
     ],
     [stats.counts],
   );

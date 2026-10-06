@@ -5,6 +5,7 @@
  */
 import {
   BarChart3,
+  BookUser,
   LayoutDashboard,
   Package,
   Pill,
@@ -22,7 +23,7 @@ export type NavItem = {
   keys: string;
 };
 
-/** Screens — Alt+1 … Alt+8 (same order as the sidebar) */
+/** Screens — Alt+1 … Alt+9, in the same order as the sidebar */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
     to: "/dashboard",
@@ -61,16 +62,22 @@ export const NAV_ITEMS: readonly NavItem[] = [
     keys: "Alt+6",
   },
   {
+    to: "/customers",
+    label: "Customers & Udhaar",
+    icon: BookUser,
+    keys: "Alt+7",
+  },
+  {
     to: "/reports",
     label: "Reports",
     icon: BarChart3,
-    keys: "Alt+7",
+    keys: "Alt+8",
   },
   {
     to: "/settings",
     label: "Settings",
     icon: Settings,
-    keys: "Alt+8",
+    keys: "Alt+9",
   },
 ];
 
@@ -136,7 +143,10 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: "Anywhere",
     rows: [
-      { keys: "Alt+1", label: "Dashboard … Alt+8 Settings (sidebar order)" },
+      {
+        keys: "Alt+1",
+        label: "Switch screens: Alt+1 … Alt+9 (sidebar order)",
+      },
       { keys: KEYS.newBill, label: "New bill" },
       { keys: KEYS.globalSearch, label: "Search everything" },
       { keys: KEYS.help, label: "Show this list" },

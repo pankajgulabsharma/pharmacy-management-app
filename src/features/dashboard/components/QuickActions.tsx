@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Kbd } from "@/components/common/Kbd";
 import { useHotkeys } from "@/hooks/useHotkeys";
+import { useTr } from "@/hooks/useTr";
 
 type Action = {
   key: string;
@@ -74,6 +75,7 @@ const QUICK_ACTIONS: Action[] = [
 ];
 
 export function QuickActions() {
+  const tr = useTr();
   const navigate = useNavigate();
   // F2 is global; the letters work on the Dashboard
   useHotkeys(
@@ -86,7 +88,7 @@ export function QuickActions() {
   return (
     <div className="bg-card border border-border rounded-xl p-3">
       <h3 className="text-xs font-semibold text-foreground mb-2">
-        Quick actions
+        {tr("Quick actions")}
       </h3>
       <div className="grid grid-cols-2 gap-2">
         {QUICK_ACTIONS.map((a) => (
@@ -111,7 +113,7 @@ export function QuickActions() {
               <a.icon className="h-4 w-4" />
             </div>
             <span className="text-[10px] font-medium text-center leading-tight text-foreground">
-              {a.label}
+              {tr(a.label)}
             </span>
           </button>
         ))}

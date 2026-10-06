@@ -11,6 +11,10 @@ import { GST_RATES, splitInclusive } from "@/lib/gst";
 import { compareExpiry, isExpiringWithin, isExpiryPast } from "@/lib/expiry";
 import { toISODate } from "@/lib/date";
 import { rupeesToPaise, type Paise } from "@/lib/money";
+import {
+  batchCostPaise,
+  batchMrpPaise,
+} from "@/features/inventory/utils/stock";
 import { daysIn, inRange, type DateRange } from "./period";
 
 /* ------------------------------------------------------------------ */
@@ -368,10 +372,8 @@ export function stockReport(
   for (const b of batches) {
     const m = byId.get(b.medicineId);
     if (!m || (b.qtyStrip <= 0 && b.qtyLoose <= 0)) continue;
-    const ups = m.unitsPerStrip > 0 ? m.unitsPerStrip : 1;
-    const packs = m.unit === "LSE" ? b.qtyLoose : b.qtyStrip + b.qtyLoose / ups;
-    const c = Math.round(packs * rupeesToPaise(b.purchasePrice));
-    const v = Math.round(packs * rupeesToPaise(b.mrp));
+    const c = batchCostPaise(b, m);
+    const v = batchMrpPaise(b, m);
     count++;
     cost += c;
     mrp += v;
@@ -388,10 +390,13 @@ export function stockReport(
     cat.mrpPaise += v;
     cats.set(label, cat);
 
-    const s = strips.get(m.id) ?? { strip: 0, loose: 0 };
-    s.strip += b.qtyStrip;
-    s.loose += b.qtyLoose;
-    strips.set(m.id, s);
+    // Below-minimum uses SELLABLE stock only (expired batches don't count)
+    if (!isExpiryPast(b.expiry, now)) {
+      const s = strips.get(m.id) ?? { strip: 0, loose: 0 };
+      s.strip += b.qtyStrip;
+      s.loose += b.qtyLoose;
+      strips.set(m.id, s);
+    }
 
     const qtyText =
       m.unit === "LSE"

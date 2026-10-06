@@ -1,3 +1,4 @@
+import { batchRatePaise } from "@/features/billing/utils/allocate";
 import { useMemo } from "react";
 import type { Medicine } from "@/features/medicines/types";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
@@ -23,7 +24,8 @@ function toRow(b: StockBatch, m: Medicine): InventoryBatch {
     qtyLoose: b.qtyLoose,
     mrp: b.mrp,
     purchasePrice: b.purchasePrice,
-    salePrice: m.salePrice,
+    // What billing will actually charge: master price, capped at this batch's MRP
+    salePrice: batchRatePaise(m, b) / 100,
     minStock: m.minStock,
   };
 }

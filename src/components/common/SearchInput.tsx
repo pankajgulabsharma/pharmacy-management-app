@@ -2,6 +2,7 @@ import { memo, type Ref } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 const SIZE = {
   /** Page toolbars (Medicines, Inventory, Purchases) */
@@ -41,6 +42,7 @@ export const SearchInput = memo(function SearchInput({
   inputRef,
   className,
 }: Props) {
+  const tr = useTr();
   const s = SIZE[size];
   const hasValue = value.length > 0;
 
@@ -66,7 +68,7 @@ export const SearchInput = memo(function SearchInput({
             onChange("");
           }
         }}
-        placeholder={placeholder}
+        placeholder={tr(placeholder)}
         aria-label={ariaLabel ?? placeholder}
         maxLength={maxLength}
         className={cn(

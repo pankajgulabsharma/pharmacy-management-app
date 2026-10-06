@@ -9,6 +9,9 @@ import PurchasesPage from "@/features/purchases/pages/PurchasesPage";
 import SuppliersPage from "@/features/suppliers/pages/SuppliersPage";
 import ReportsPage from "@/features/reports/pages/ReportsPage";
 import SettingsPage from "@/features/settings/pages/SettingsPage";
+import NotFoundPage from "@/app/pages/NotFoundPage";
+import CustomersPage from "@/features/customers/pages/CustomersPage";
+import { RequireAuth } from "@/features/auth/components/RequireAuth";
 
 export const router = createBrowserRouter([
   {
@@ -17,17 +20,24 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <AppLayout />,
+    // Every screen requires sign-in
+    element: (
+      <RequireAuth>
+        <AppLayout />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "billing", element: <BillingPage /> },
+      { path: "customers", element: <CustomersPage /> },
       { path: "medicines", element: <MedicinesPage /> },
       { path: "inventory", element: <InventoryPage /> },
       { path: "purchases", element: <PurchasesPage /> },
       { path: "suppliers", element: <SuppliersPage /> },
       { path: "reports", element: <ReportsPage /> },
       { path: "settings", element: <SettingsPage /> },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 ]);

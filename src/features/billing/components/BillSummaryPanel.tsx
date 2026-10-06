@@ -23,14 +23,16 @@ import {
   type SaleTotals,
 } from "../types";
 import type { BillLineView } from "../hooks/useBillingData";
+import { tr } from "@/lib/i18n";
 
 type Props = {
+  /** Shown when paying by udhaar: the customer account picker */
+  udhaarSlot?: React.ReactNode;
   billNo: string;
   lines: BillLineView[];
   totals: SaleTotals;
   payment: PaymentDraft;
   onPaymentChange: (p: PaymentDraft) => void;
-  customerName: string;
   /** Why saving is blocked right now, or null */
   blockReason: string | null;
   saving: boolean;
@@ -52,16 +54,13 @@ const PAY_INPUT = cn(
   "focus-visible:bg-background",
 );
 
-/** Previous udhaar balance — TODO(customers): from the customer ledger */
-const PREV_UDHAAR_DUE_PAISE = 124_000;
-
 export const BillSummaryPanel = memo(function BillSummaryPanel({
+  udhaarSlot,
   billNo,
   lines,
   totals,
   payment,
   onPaymentChange,
-  customerName,
   blockReason,
   saving,
   onSave,
@@ -90,7 +89,6 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
     0,
   );
   const splitLeft = net - splitSum;
-  const displayName = customerName.trim() || "Customer";
   const canSave = !blockReason && !saving;
 
   return (
@@ -192,7 +190,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
         <h3 className="text-[11px] font-semibold text-foreground shrink-0 mb-1.5 flex items-center justify-between">
           {t("billing.paymentMethod")}
           <span className="inline-flex items-center gap-1 text-[9px] font-normal text-muted-foreground">
-            <Kbd keys={KEYS.nextPayment} /> change
+            <Kbd keys={KEYS.nextPayment} /> {tr("change")}
           </span>
         </h3>
         <div
@@ -214,7 +212,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   : "border-border bg-background text-muted-foreground hover:bg-muted",
               )}
             >
-              {PAYMENT_METHOD_LABELS[m]}
+              {tr(PAYMENT_METHOD_LABELS[m])}
             </button>
           ))}
         </div>
@@ -227,7 +225,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   htmlFor="bill-received"
                   className="text-[9px] text-muted-foreground"
                 >
-                  Received (₹){" "}
+                  {tr("Received (₹)")}{" "}
                   <Kbd keys={KEYS.payAmount} className="ml-1 align-middle" />
                 </label>
                 <button
@@ -239,7 +237,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   }}
                   className="text-[9px] font-medium text-primary hover:underline disabled:opacity-50"
                 >
-                  Exact amount
+                  {tr("Exact amount")}
                 </button>
               </div>
               <Input
@@ -250,12 +248,16 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   if (isMoneyInput(e.target.value))
                     set({ received: e.target.value });
                 }}
-                placeholder={`Exact ${inrFromPaise(net)} — leave empty`}
+                placeholder={tr("Exact {{amount}} — leave empty", {
+                  amount: inrFromPaise(net),
+                })}
                 className={PAY_INPUT}
                 inputMode="decimal"
               />
               <div className="flex justify-between text-[10px]">
-                <span className="text-muted-foreground">Change to return</span>
+                <span className="text-muted-foreground">
+                  {tr("Change to return")}
+                </span>
                 <span className="font-semibold tabular-nums">
                   {inrFromPaise(changeDue)}
                 </span>
@@ -296,23 +298,7 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
             </p>
           )}
 
-          {payment.method === "udhaar" && (
-            <div className="space-y-1.5 rounded-md border border-red-500/20 bg-red-50/50 dark:bg-red-950/20 p-2">
-              <p className="text-[10px] text-foreground leading-snug">
-                <span className="font-semibold text-red-600">
-                  {inrFromPaise(net)}
-                </span>{" "}
-                is added to <span className="font-medium">{displayName}</span>'s
-                udhaar
-              </p>
-              <p className="text-[10px] text-muted-foreground leading-snug">
-                Due after this bill{" "}
-                <span className="font-semibold text-foreground">
-                  {inrFromPaise(PREV_UDHAAR_DUE_PAISE + net)}
-                </span>
-              </p>
-            </div>
-          )}
+          {payment.method === "udhaar" ? udhaarSlot : null}
 
           {payment.method === "split" && (
             <div className="space-y-1">
@@ -406,7 +392,7 @@ function Row({
 }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground">{tr(label)}</span>
       <span className={cn("tabular-nums", valueClass)}>{value}</span>
     </div>
   );

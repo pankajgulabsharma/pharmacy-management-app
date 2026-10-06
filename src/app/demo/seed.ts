@@ -48,9 +48,38 @@ import {
   nextSaleReturnNo,
 } from "@/features/billing/utils/saleReturn";
 import { DEFAULT_SETTINGS } from "@/features/settings/utils/defaults";
+import type { Customer, CustomerPayment } from "@/features/customers/types";
+import {
+  customerSummaries,
+  nextReceiptNo,
+} from "@/features/customers/utils/ledger";
 
 const DOCTORS = DEFAULT_SETTINGS.doctors;
 const COUNTERS = DEFAULT_SETTINGS.counters;
+
+/** Demo customer accounts (khata) — named customers get one */
+export const DEMO_CUSTOMER_LIST: Customer[] = [
+  ["c_ramesh", "Ramesh Sharma", "9820011223", 500_000],
+  ["c_sneha", "Sneha Patel", "9867012345", 300_000], // limit lowered later → over limit
+  ["c_amit", "Amit Verma", "9930045678", 300_000],
+  ["c_neha", "Neha Gupta", "9819087654", 0],
+  ["c_suresh", "Suresh Yadav", "9773012398", 200_000],
+  ["c_kavita", "Kavita Joshi", "9821456789", 0],
+  ["c_imran", "Imran Shaikh", "9892234567", 400_000],
+  ["c_pooja", "Pooja Nair", "9769123456", 0],
+  ["c_anita", "Anita Desai", "9833456712", 0], // new account, no udhaar yet
+  ["c_mahesh", "Mahesh Kulkarni", "9821987654", 0], // inactive
+].map(([id, name, phone, limit]) => ({
+  id: id as string,
+  name: name as string,
+  phone: phone as string,
+  address: "Thane",
+  creditLimitPaise: limit as number,
+  notes: "",
+  status: (id === "c_mahesh" ? "inactive" : "active") as "active" | "inactive",
+  createdAt: "2026-06-01T10:00:00.000Z",
+}));
+const customerIdByName = new Map(DEMO_CUSTOMER_LIST.map((c) => [c.name, c.id]));
 
 const CUSTOMERS = [
   "Ramesh Sharma",
@@ -155,6 +184,13 @@ function buildDemo() {
   const sales: Sale[] = [];
   const nowMs = Date.now();
   const SALE_COUNT = 18;
+  /** Live demo bills are this far apart (oldest ≈ 2.8 days ago) */
+  const LIVE_GAP_MS = 3.7 * 3_600_000;
+  const today0Ms = () => {
+    const d = new Date(nowMs);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
 
   /*
    * 3a) ~3 months of IMPORTED sales history, older than the live demo days.
@@ -177,7 +213,12 @@ function buildDemo() {
     }));
     const WEEKDAY = [0.55, 1.3, 1.05, 1.0, 0.95, 1.1, 1.2]; // Sun … Sat
     const FIRST_DAY = 92;
-    const LAST_DAY = 4; // newer days come from the live demo sales below
+    // History must run right up to the day the live demo bills start —
+    // a fixed "4 days ago" left an empty day depending on the time of day.
+    const firstLive = new Date(nowMs - SALE_COUNT * LIVE_GAP_MS - 20 * 60_000);
+    firstLive.setHours(0, 0, 0, 0);
+    const LAST_DAY =
+      Math.round((today0Ms() - firstLive.getTime()) / 86_400_000) + 1;
     const today0 = new Date(nowMs);
     today0.setHours(0, 0, 0, 0);
 
@@ -225,6 +266,10 @@ function buildDemo() {
           {
             cart,
             customerName: method === "udhaar" ? named : hpick(CUSTOMERS),
+            customerId:
+              method === "udhaar"
+                ? (customerIdByName.get(named) ?? null)
+                : null,
             doctor: hpick(DOCTORS),
             counter: hpick(COUNTERS),
             payment: {
@@ -255,9 +300,7 @@ function buildDemo() {
 
   for (let i = 0; i < SALE_COUNT; i++) {
     // Oldest ~3 days ago, newest ~20 minutes ago
-    const at = new Date(
-      nowMs - (SALE_COUNT - i) * 3.7 * 3_600_000 - 20 * 60_000,
-    );
+    const at = new Date(nowMs - (SALE_COUNT - i) * LIVE_GAP_MS - 20 * 60_000);
     const cart: CartLine[] = [];
     const lineCount = 1 + Math.floor(rand() * 3);
     for (let n = 0; n < lineCount * 3 && cart.length < lineCount; n++) {
@@ -301,6 +344,7 @@ function buildDemo() {
       {
         cart,
         customerName,
+        customerId: customerIdByName.get(customerName) ?? null,
         doctor: pick(DOCTORS),
         counter: pick(COUNTERS),
         payment,
@@ -459,6 +503,82 @@ function buildDemo() {
     returnable.returnedPaise += ret.refundPaise;
   }
 
+  // 4b) Udhaar bill for Kavita, part returned and adjusted in her khata
+  {
+    const at = new Date(nowMs - 50 * 60_000);
+    const m = active.find(
+      (x) =>
+        x.unit === "STP" &&
+        stockLimits(sellableBatches(batches, x.id, at), x, 0).maxStrip >= 3,
+    );
+    if (m) {
+      const built = buildSale(
+        {
+          cart: [
+            {
+              lineId: "kavita_1",
+              medicineId: m.id,
+              qtyStrip: 2,
+              qtyLoose: 0,
+              discountPercent: 0,
+            },
+          ],
+          customerName: "Kavita Joshi",
+          customerId: "c_kavita",
+          doctor: DOCTORS[0],
+          counter: COUNTERS[0],
+          payment: {
+            method: "udhaar",
+            received: "",
+            reference: "",
+            split: { cash: "", upi: "", card: "" },
+          },
+        },
+        medicinesById,
+        batches,
+        nextBillNo(sales),
+        at,
+      );
+      const r1 = applyChange(batches, {
+        refId: built.sale.id,
+        type: "sale",
+        note: `Sale ${built.sale.billNo} · Kavita Joshi`,
+        at,
+        lines: built.change,
+      });
+      batches = r1.batches;
+      movements.push(...r1.movements);
+      sales.push(built.sale);
+      const retAt = new Date(nowMs - 40 * 60_000);
+      const { ret, change } = buildSaleReturn(
+        built.sale,
+        {
+          saleId: built.sale.id,
+          reason: "Excess quantity",
+          refundMode: "udhaar_adjust",
+          notes: "",
+          lines: [
+            { saleLineId: built.sale.lines[0].id, qtyStrip: 1, qtyLoose: 0 },
+          ],
+        },
+        saleReturns,
+        nextSaleReturnNo(saleReturns),
+        retAt,
+      );
+      const r2 = applyChange(batches, {
+        refId: ret.id,
+        type: "sale_return",
+        note: `Sales return ${ret.returnNo} · ${built.sale.billNo}`,
+        at: retAt,
+        lines: change,
+      });
+      batches = r2.batches;
+      movements.push(...r2.movements);
+      saleReturns.push(ret);
+      built.sale.returnedPaise += ret.refundPaise;
+    }
+  }
+
   // 5) One parked bill
   const heldMeds = active.filter((m) => m.unit === "STP").slice(0, 2);
   const held: HeldBill[] = [
@@ -481,11 +601,27 @@ function buildDemo() {
   // Movement log is stored newest first
   movements.sort((a, b) => b.at.localeCompare(a.at));
 
+  // Every supplier / purchase status appears at least once in the demo
+  shapeSupplierStates(purchases, new Date(nowMs));
+
   return {
     inventory: { batches, movements, receivedRefs },
     purchases,
     returns,
     sales: sales.reverse(),
+    customerPayments: (() => {
+      const pays = seedCustomerPayments(sales, saleReturns, nowMs);
+      // Sneha's limit was "lowered later": ~80% of what she owes → Over limit,
+      // whatever the generated sales come to
+      const sneha = DEMO_CUSTOMER_LIST.find((c) => c.id === "c_sneha");
+      const owes = sneha
+        ? (customerSummaries([sneha], sales, saleReturns, pays).get(sneha.id)
+            ?.balancePaise ?? 0)
+        : 0;
+      if (sneha && owes > 10_000)
+        sneha.creditLimitPaise = Math.floor((owes * 0.8) / 10_000) * 10_000;
+      return pays;
+    })(),
     saleReturns,
     held,
   };
@@ -499,3 +635,102 @@ export const demoReturns = demo.returns;
 export const demoSales = demo.sales;
 export const demoSaleReturns = demo.saleReturns;
 export const demoHeldBills = demo.held;
+export const demoCustomers = DEMO_CUSTOMER_LIST;
+export const demoCustomerPayments = demo.customerPayments;
+
+/** Some customers paid part of their udhaar (always ≤ what they owed) */
+function seedCustomerPayments(
+  sales: readonly Sale[],
+  saleReturns: readonly SaleReturn[],
+  nowMs: number,
+): CustomerPayment[] {
+  const sums = customerSummaries(DEMO_CUSTOMER_LIST, sales, saleReturns, []);
+  const out: CustomerPayment[] = [];
+  // full = cleared the whole udhaar; a fraction = part payment; missing = nothing paid
+  const plan: Record<string, number> = {
+    c_ramesh: 1,
+    c_amit: 0.6,
+    c_suresh: 0.5,
+    c_imran: 0.6,
+  };
+  DEMO_CUSTOMER_LIST.forEach((c, i) => {
+    const owed = sums.get(c.id)?.balancePaise ?? 0;
+    const share = plan[c.id];
+    if (!share || owed <= 0) return;
+    const amountPaise =
+      share === 1 ? owed : Math.floor((owed * share) / 10_000) * 10_000; // ₹100s
+    if (amountPaise <= 0) return;
+    out.push({
+      id: `pay_${c.id}`,
+      receiptNo: nextReceiptNo(out),
+      customerId: c.id,
+      at: new Date(nowMs - (i + 1) * 3_600_000).toISOString(),
+      amountPaise,
+      method: i % 2 === 0 ? "cash" : "upi",
+      reference: "",
+      note: share === 1 ? "Full payment" : "Part payment",
+    });
+  });
+  return out;
+}
+
+/**
+ * Make each status visible in the demo — Settled, Due (not yet overdue),
+ * Credit (supplier holds our money) and one Cancelled invoice — by adjusting
+ * only paid amounts / the cancel flag (no stock is touched).
+ */
+function shapeSupplierStates(purchases: Purchase[], today: Date) {
+  const isoToday = toISODate(today);
+  const bySupplier = new Map<string, Purchase[]>();
+  for (const p of purchases)
+    bySupplier.set(p.supplierId, [...(bySupplier.get(p.supplierId) ?? []), p]);
+  const owed = (p: Purchase) =>
+    Math.max(0, p.totals.netPaise - p.returnedPaise);
+  const payAll = (list: Purchase[]) =>
+    list.forEach((p) => (p.paidPaise = owed(p)));
+  // Smallest suppliers first, so the big ones keep showing overdue dues
+  const ids = [...bySupplier.keys()].sort(
+    (a, b) => bySupplier.get(a)!.length - bySupplier.get(b)!.length,
+  );
+  const used = new Set<string>();
+
+  // Due (not overdue): has an unpaid invoice that is not yet past its due date
+  const dueId = ids.find((id) =>
+    bySupplier
+      .get(id)!
+      .some((p) => p.dueDate >= isoToday && p.paidPaise < owed(p)),
+  );
+  if (dueId) {
+    used.add(dueId);
+    bySupplier.get(dueId)!.forEach((p) => {
+      if (p.dueDate < isoToday) p.paidPaise = owed(p);
+    });
+  }
+  // Settled: everything paid
+  const settledId = ids.find((id) => !used.has(id));
+  if (settledId) {
+    used.add(settledId);
+    payAll(bySupplier.get(settledId)!);
+  }
+  // Credit: everything paid, plus ₹500 paid extra on the last invoice
+  const creditId = ids.find((id) => !used.has(id));
+  if (creditId) {
+    used.add(creditId);
+    const list = bySupplier.get(creditId)!;
+    payAll(list);
+    list[list.length - 1].paidPaise += 50_000;
+  }
+  // Cancelled: one old imported invoice that was never paid or returned
+  const cancel = purchases.find(
+    (p) =>
+      !p.stockPosted &&
+      !used.has(p.supplierId) &&
+      p.returnedPaise === 0 &&
+      p.paidPaise === 0,
+  );
+  if (cancel) {
+    cancel.status = "cancelled";
+    cancel.cancelledAt = cancel.createdAt;
+    cancel.cancelReason = "Duplicate invoice sent by supplier";
+  }
+}

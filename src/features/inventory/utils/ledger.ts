@@ -7,7 +7,7 @@
  * must never trust their callers.
  */
 import { newId } from "@/lib/id";
-import { compareExpiry, isValidExpiry } from "@/lib/expiry";
+import { compareExpiry, isValidExpiry, isExpiryPast } from "@/lib/expiry";
 import type { MedicineStock, PackUnit } from "@/features/medicines/types";
 import type {
   StockBatch,
@@ -237,6 +237,7 @@ export function openingMovements(
 /** Per-medicine totals + nearest expiry, in one pass over all batches */
 export function summarizeStock(
   batches: readonly StockBatch[],
+  now = new Date(),
 ): Map<string, MedicineStock> {
   const map = new Map<string, MedicineStock>();
   for (const b of batches) {
@@ -246,9 +247,15 @@ export function summarizeStock(
       stockLoose: 0,
       nearestExpiry: null,
       batchCount: 0,
+      sellableStrip: 0,
+      sellableLoose: 0,
     };
     s.stockStrip += b.qtyStrip;
     s.stockLoose += b.qtyLoose;
+    if (!isExpiryPast(b.expiry, now)) {
+      s.sellableStrip += b.qtyStrip;
+      s.sellableLoose += b.qtyLoose;
+    }
     if (hasStock) {
       s.batchCount += 1;
       if (

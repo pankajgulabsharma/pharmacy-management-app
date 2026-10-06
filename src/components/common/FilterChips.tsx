@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 export type FilterChipOption<T extends string> = {
   id: T;
@@ -23,6 +24,7 @@ function FilterChipsInner<T extends string>({
   ariaLabel,
   wrap = true,
 }: Props<T>) {
+  const tr = useTr();
   return (
     <div
       role="group"
@@ -47,7 +49,7 @@ function FilterChipsInner<T extends string>({
                 : "border-border bg-card text-muted-foreground hover:bg-muted",
             )}
           >
-            {o.label}
+            {tr(o.label)}
             {o.count !== undefined ? (
               <span
                 className={cn(

@@ -48,7 +48,11 @@ function sale(medicineId: string, qtyStrip: number): SaleInput {
 describe("demo seed", () => {
   it("has sales, a sales return and a held bill", () => {
     expect(store().sales.length).toBeGreaterThan(10);
-    expect(store().saleReturns).toHaveLength(1);
+    // one cash refund + one adjusted in a customer's udhaar khata
+    expect(store().saleReturns).toHaveLength(2);
+    expect(
+      store().saleReturns.some((r) => r.refundMode === "udhaar_adjust"),
+    ).toBe(true);
     expect(store().held).toHaveLength(1);
     for (const s of store().sales) expect(s.billNo).toMatch(/^INV-\d{4}$/);
   });
@@ -111,5 +115,45 @@ describe("held bills", () => {
     expect(inv().batches).toBe(batches);
     expect(store().takeHeld(h.id).lines).toHaveLength(1);
     expect(store().held.find((x) => x.id === h.id)).toBeUndefined();
+  });
+});
+
+describe("today's sales after a return", () => {
+  it("a refund counts on the day the money goes back, not on the bill's day", async () => {
+    const { salesReport } = await import("@/features/reports/utils/reports");
+    const { presetRange } = await import("@/features/reports/utils/period");
+    const old = store().sales.find(
+      (s) =>
+        !s.imported &&
+        new Date(s.createdAt).toDateString() !== new Date().toDateString() &&
+        s.lines.some((l) => l.qtyStrip > 0) &&
+        s.returnedPaise === 0,
+    )!;
+    const before = salesReport(
+      store().sales,
+      store().saleReturns,
+      inv().batches,
+      presetRange("today"),
+    ).netAfterReturnsPaise;
+    const ret = store().createSaleReturn({
+      saleId: old.id,
+      reason: "Wrong medicine",
+      refundMode: "cash",
+      notes: "",
+      lines: [
+        {
+          saleLineId: old.lines.find((l) => l.qtyStrip > 0)!.id,
+          qtyStrip: 1,
+          qtyLoose: 0,
+        },
+      ],
+    });
+    const after = salesReport(
+      store().sales,
+      store().saleReturns,
+      inv().batches,
+      presetRange("today"),
+    ).netAfterReturnsPaise;
+    expect(after).toBe(before - ret.refundPaise);
   });
 });

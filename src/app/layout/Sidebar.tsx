@@ -5,6 +5,8 @@ import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { KEYS, NAV_ITEMS, type NavItem } from "@/app/shortcuts/registry";
+import { useTr } from "@/hooks/useTr";
+import { tr } from "@/lib/i18n";
 
 const keyText = (keys: string | readonly string[]) =>
   formatCombo(preferredCombo(keys)).join(" ");
@@ -75,7 +77,7 @@ export function Sidebar() {
               }),
             )
           }
-          title={`Keyboard shortcuts (${keyText(KEYS.help)})`}
+          title={`${tr("Keyboard shortcuts")} (${keyText(KEYS.help)})`}
           className={cn(
             "group w-full flex items-center rounded-lg text-[12.5px] text-slate-400 transition-colors",
             "hover:bg-white/[0.05] hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60",
@@ -86,7 +88,7 @@ export function Sidebar() {
           {open ? (
             <>
               <span className="flex-1 text-left truncate">
-                Keyboard shortcuts
+                {tr("Keyboard shortcuts")}
               </span>
               <span className="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
                 {keyText(KEYS.help)}
@@ -100,12 +102,13 @@ export function Sidebar() {
 }
 
 function NavItemLink({ item, open }: { item: NavItem; open: boolean }) {
+  const tr = useTr();
   const Icon = item.icon;
   const hint = keyText(item.keys);
   return (
     <NavLink
       to={item.to}
-      title={`${item.label} (${hint})`}
+      title={`${tr(item.label)} (${hint})`}
       className={({ isActive }) =>
         cn(
           "group relative flex items-center rounded-lg text-[12.5px] font-medium transition-colors",
@@ -136,7 +139,7 @@ function NavItemLink({ item, open }: { item: NavItem; open: boolean }) {
           />
           {open ? (
             <>
-              <span className="truncate flex-1">{item.label}</span>
+              <span className="truncate flex-1">{tr(item.label)}</span>
               <span className="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity shrink-0">
                 {hint}
               </span>

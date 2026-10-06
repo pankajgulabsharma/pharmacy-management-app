@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 export type TableColumn = {
   key: string;
@@ -40,6 +41,7 @@ export function TableShell({
   headerCellClass = "px-3",
   children,
 }: Props) {
+  const tr = useTr();
   return (
     <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-auto">
@@ -74,7 +76,7 @@ export function TableShell({
                     c.align ?? "text-left",
                   )}
                 >
-                  {c.label}
+                  {tr(c.label)}
                 </th>
               ))}
             </tr>

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { FitRow } from "@/components/common/FitRow";
 import type { DashboardData } from "../hooks/useDashboardData";
 import { ViewAll } from "./DashLink";
+import { tr } from "@/lib/i18n";
 
 /** Medicines below their minimum — click one to see its batches in Inventory */
 export function LowStockAlerts({ d }: { d: DashboardData }) {
@@ -15,11 +16,11 @@ export function LowStockAlerts({ d }: { d: DashboardData }) {
             ({d.lowStockList.length})
           </span>
         </h3>
-        <ViewAll to="/inventory?status=low" />
+        <ViewAll to="/medicines?status=low_only" />
       </div>
       {d.lowStockList.length === 0 ? (
         <p className="text-[10px] text-muted-foreground">
-          Everything is above minimum.
+          {tr("Everything is above minimum.")}
         </p>
       ) : (
         <FitRow
@@ -51,7 +52,7 @@ export function LowStockAlerts({ d }: { d: DashboardData }) {
           }}
           renderMore={(n) => (
             <Link
-              to="/inventory?status=low"
+              to="/medicines?status=low_only"
               className="inline-flex whitespace-nowrap items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-muted"
             >
               +{n} more

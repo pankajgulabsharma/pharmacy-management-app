@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTr } from "@/hooks/useTr";
 
 export type SegmentedTab<T extends string> = {
   id: T;
@@ -22,6 +23,7 @@ function SegmentedTabsInner<T extends string>({
   onChange,
   ariaLabel,
 }: Props<T>) {
+  const tr = useTr();
   return (
     <div
       role="tablist"
@@ -46,7 +48,7 @@ function SegmentedTabsInner<T extends string>({
             )}
           >
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
-            {label}
+            {tr(label)}
             {count !== undefined ? (
               <span
                 className={cn(

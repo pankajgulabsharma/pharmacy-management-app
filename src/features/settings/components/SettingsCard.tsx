@@ -1,5 +1,6 @@
 import type { FormEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { useTr } from "@/hooks/useTr";
 
 type Props = {
   title: string;
@@ -20,6 +21,7 @@ export function SettingsCard({
   onSubmit,
   onDiscard,
 }: Props) {
+  const tr = useTr();
   const handle = (e: FormEvent) => {
     e.preventDefault();
     onSubmit?.();
@@ -32,9 +34,9 @@ export function SettingsCard({
       className="rounded-xl border border-border bg-card"
     >
       <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{tr(title)}</h2>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          {description}
+          {tr(description)}
         </p>
       </div>
       <div className="p-4 space-y-3">{children}</div>
