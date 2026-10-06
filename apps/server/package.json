@@ -1,0 +1,20 @@
+{
+  "name": "@medicare/server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Local server: owns the database and applies the shop's rules",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@medicare/domain": "*",
+    "fastify": "^5.12.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
