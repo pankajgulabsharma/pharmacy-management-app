@@ -1,0 +1,246 @@
+/**
+ * MediCare Pharmacy — the installed Windows app.
+ *
+ * One program, two ways to use it (chosen once, on the first start):
+ *  • MAIN computer: keeps the shop's data. Runs the server inside the app
+ *    (database, daily backups) and shows the screens. Can share itself on
+ *    the shop network so other counters can connect.
+ *  • Extra COUNTER: keeps no data; opens the main computer's address.
+ *
+ * Nothing else to install: no separate server, no Node.js, no database.
+ */
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { startServer } from "../../apps/server/src/server";
+
+type Config = {
+  role: "main" | "counter";
+  /** Counter: the main computer, e.g. http://192.168.1.10:4000 */
+  mainUrl?: string;
+  /** Main: share on the shop network */
+  lan?: boolean;
+  /** Main: start with the demo shop (to try the app) */
+  demo?: boolean;
+};
+type Server = Awaited<ReturnType<typeof startServer>>;
+
+const PORT = 4000;
+const HERE = dirname(fileURLToPath(import.meta.url));
+/** Files shipped next to the app (screens, table updates, setup page) */
+const res = (...p: string[]) =>
+  app.isPackaged
+    ? join(process.resourcesPath, ...p)
+    : join(HERE, "..", "res", ...p);
+const DATA = () => join(app.getPath("userData"), "data");
+const CONFIG = () => join(app.getPath("userData"), "config.json");
+
+let win: BrowserWindow | null = null;
+let server: Server | null = null;
+let config: Config | null = null;
+
+function readConfig(): Config | null {
+  try {
+    const c = JSON.parse(readFileSync(CONFIG(), "utf8")) as Config;
+    return c.role === "main" || (c.role === "counter" && c.mainUrl) ? c : null;
+  } catch {
+    return null;
+  }
+}
+function saveConfig(c: Config) {
+  mkdirSync(dirname(CONFIG()), { recursive: true });
+  writeFileSync(CONFIG(), JSON.stringify(c, null, 2));
+  config = c;
+}
+
+/** Start (or restart) the built-in server for the MAIN computer */
+async function runServer(c: Config) {
+  await server?.close();
+  server = null;
+  process.env.MIGRATIONS_DIR = res("drizzle");
+  server = await startServer({
+    dbFile: join(DATA(), "medicare.sqlite"),
+    backupDir: join(DATA(), "backups"),
+    host: c.lan ? "0.0.0.0" : "127.0.0.1",
+    port: PORT,
+    appDir: res("app-ui"),
+    demo: c.demo === true,
+    // Settings → Shop network: switch sharing on/off
+    setLan: async (on) => {
+      saveConfig({ ...c, lan: on });
+      await runServer(config!);
+    },
+  });
+}
+
+function openSetup() {
+  win?.loadFile(res("setup.html"));
+}
+
+/** Show the shop: local server (main) or the main computer (counter) */
+async function openShop() {
+  if (!win || !config) return;
+  if (config.role === "main") {
+    try {
+      if (!server) await runServer(config);
+    } catch (err) {
+      const busy = /EADDRINUSE/.test(String(err));
+      dialog.showErrorBox(
+        "MediCare could not start",
+        busy
+          ? `Port ${PORT} is already in use. Is MediCare (or its server) already running on this computer?`
+          : String(err instanceof Error ? err.message : err),
+      );
+      app.quit();
+      return;
+    }
+    await win.loadURL(`http://127.0.0.1:${PORT}/`);
+  } else {
+    await win.loadURL(config.mainUrl!).catch(() => {});
+  }
+}
+
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1366,
+    height: 860,
+    minWidth: 1100,
+    minHeight: 680,
+    show: false,
+    title: "MediCare Pharmacy",
+    icon: res("icon.png"),
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: join(HERE, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+  win.removeMenu();
+  win.once("ready-to-show", () => {
+    win?.maximize();
+    win?.show();
+  });
+
+  // Counter can't reach the main computer → friendly page with Retry
+  win.webContents.on("did-fail-load", (_e, code, _desc, url, isMain) => {
+    if (!isMain || code === -3 || url.startsWith("file:")) return;
+    void win?.loadFile(res("setup.html"), {
+      query: { offline: url },
+    });
+  });
+
+  // Links to other sites open in the normal browser, never inside the app
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    void shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  // A few keys a desktop app needs (there is no menu bar)
+  win.webContents.on("before-input-event", (e, input) => {
+    if (input.type !== "keyDown") return;
+    const ctrl = input.control || input.meta;
+    const k = input.key.toLowerCase();
+    const wc = win!.webContents;
+    if (input.key === "F5" || (ctrl && k === "r")) wc.reload();
+    else if (ctrl && input.shift && k === "i") wc.toggleDevTools();
+    else if (ctrl && (k === "=" || k === "+"))
+      wc.setZoomLevel(wc.getZoomLevel() + 0.5);
+    else if (ctrl && k === "-") wc.setZoomLevel(wc.getZoomLevel() - 0.5);
+    else if (ctrl && k === "0") wc.setZoomLevel(0);
+    else if (input.key === "F11") win!.setFullScreen(!win!.isFullScreen());
+    else if (ctrl && input.shift && k === "s") openSetup();
+    else return;
+    e.preventDefault();
+  });
+
+  // Main computer sharing with counters: closing would stop them all
+  win.on("close", (e) => {
+    if (config?.role !== "main" || !config.lan) return;
+    const choice = dialog.showMessageBoxSync(win!, {
+      type: "warning",
+      buttons: ["Minimize instead", "Close anyway"],
+      defaultId: 0,
+      cancelId: 0,
+      title: "Other counters are connected",
+      message: "This is the main computer.",
+      detail:
+        "Other counters on the shop network use this computer. If you close MediCare here, they stop working until it is opened again.",
+    });
+    if (choice === 0) {
+      e.preventDefault();
+      win?.minimize();
+    }
+  });
+}
+
+/* ---- Setup page (first start, or "Change setup") ---- */
+
+ipcMain.handle("setup:get", () => ({
+  config,
+  dataDir: DATA(),
+}));
+
+ipcMain.handle("setup:test", async (_e, url: string) => {
+  try {
+    const r = await fetch(new URL("/health", url), {
+      signal: AbortSignal.timeout(4000),
+    });
+    const body = (await r.json()) as { service?: string };
+    return body.service === "medicare-server"
+      ? { ok: true }
+      : { ok: false, error: "That address is not a MediCare main computer." };
+  } catch {
+    return {
+      ok: false,
+      error:
+        "Can't reach it. Is MediCare open on the main computer, with shop-network sharing on?",
+    };
+  }
+});
+
+ipcMain.handle("setup:save", async (_e, c: Config) => {
+  const clean: Config =
+    c.role === "counter"
+      ? { role: "counter", mainUrl: new URL(String(c.mainUrl)).origin }
+      : { role: "main", lan: c.lan === true, demo: c.demo === true };
+  if (clean.role !== config?.role && server) {
+    await server.close();
+    server = null;
+  }
+  saveConfig(clean);
+  await openShop();
+});
+
+ipcMain.handle("app:open-setup", () => openSetup());
+ipcMain.handle("app:open-data-folder", () => shell.openPath(DATA()));
+ipcMain.handle("app:retry", () => openShop());
+
+/* ---- Start ---- */
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit(); // already open → the first window comes to the front
+} else {
+  app.on("second-instance", () => {
+    if (win?.isMinimized()) win.restore();
+    win?.focus();
+  });
+  app.setAppUserModelId("in.medicare.pharmacy");
+  void app.whenReady().then(async () => {
+    createWindow();
+    config = readConfig();
+    if (config) await openShop();
+    else openSetup();
+  });
+  app.on("window-all-closed", () => app.quit());
+  // Close the database cleanly before the app exits
+  app.on("before-quit", (e) => {
+    if (!server) return;
+    e.preventDefault();
+    const s = server;
+    server = null;
+    void s.close().finally(() => app.quit());
+  });
+}

@@ -77,8 +77,9 @@ export class EventBus {
       });
     });
 
-    // Close open streams on shutdown, or the server would wait for them forever
-    app.addHook("onClose", async () => {
+    // Close open streams BEFORE the server stops listening — it waits for
+    // every open connection, so a live stream would keep it open forever
+    app.addHook("preClose", async () => {
       for (const res of this.clients) res.end();
       this.clients.clear();
     });

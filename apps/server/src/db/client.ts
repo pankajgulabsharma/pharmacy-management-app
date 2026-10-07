@@ -10,10 +10,7 @@ export type Db = SqliteRemoteDatabase<typeof schema>;
 export type Database = { db: Db; raw: DatabaseSync; close: () => void };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-/** Table-layout updates (the installed app points this at its own copy) */
-export const MIGRATIONS_DIR = resolve(
-  process.env.MIGRATIONS_DIR ?? resolve(HERE, "../../drizzle"),
-);
+export const MIGRATIONS_DIR = resolve(HERE, "../../drizzle");
 export const DEFAULT_DB_FILE = resolve(
   process.env.DB_FILE ?? resolve(HERE, "../../data/medicare.sqlite"),
 );
@@ -27,9 +24,7 @@ export const DEFAULT_BACKUP_DIR = resolve(
  * Uses Node's built-in SQLite — nothing native to install or compile.
  * Pass ":memory:" for a throw-away database (tests).
  */
-export async function openDatabase(
-  file = DEFAULT_DB_FILE,
-): Promise<Database> {
+export async function openDatabase(file = DEFAULT_DB_FILE): Promise<Database> {
   if (file !== ":memory:") mkdirSync(dirname(file), { recursive: true });
   const raw = new DatabaseSync(file);
 
@@ -71,7 +66,8 @@ export async function openDatabase(
         throw err;
       }
     },
-    { migrationsFolder: MIGRATIONS_DIR },
+    // The installed app ships its own copy (MIGRATIONS_DIR)
+    { migrationsFolder: process.env.MIGRATIONS_DIR ?? MIGRATIONS_DIR },
   );
 
   return { db, raw, close: () => raw.close() };

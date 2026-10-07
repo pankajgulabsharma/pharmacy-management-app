@@ -1,0 +1,31 @@
+# Windows installer for MediCare Pharmacy (build on Windows, or with GitHub
+# Actions — see .github/workflows/installer.yml)
+appId: in.medicare.pharmacy
+productName: MediCare Pharmacy
+copyright: MediCare
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+extraResources:
+  - from: res
+    to: .
+    filter: ["**/*"]
+asar: true
+# Only the languages the app speaks (smaller download)
+electronLanguages: [en-US, hi]
+win:
+  icon: build/icon.ico
+  target: nsis
+  artifactName: MediCare-Pharmacy-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: MediCare Pharmacy
+  # Uninstalling never deletes the shop's data (kept in AppData\Roaming)
+  deleteAppDataOnUninstall: false

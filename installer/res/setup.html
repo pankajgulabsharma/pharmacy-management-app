@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MediCare Pharmacy — Set up this computer</title>
+<style>
+  :root { --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --primary:#4f46e5; --primary-2:#7c3aed; --ok:#059669; --bad:#dc2626; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b1020; --card:#111827; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2937; } }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--text); font:14px/1.5 "Segoe UI", system-ui, sans-serif; padding:24px; }
+  .wrap { width:100%; max-width:720px; }
+  .brand { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .brand img { width:44px; height:44px; }
+  h1 { font-size:20px; margin:0; } .sub { color:var(--muted); margin:2px 0 0; font-size:13px; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .choice { background:var(--card); border:2px solid var(--border); border-radius:14px; padding:16px; cursor:pointer; text-align:left; color:inherit; font:inherit; }
+  .choice:hover { border-color:#a5b4fc; } .choice[aria-pressed="true"] { border-color:var(--primary); box-shadow:0 0 0 3px #6366f133; }
+  .choice b { display:block; font-size:15px; margin-bottom:4px; } .choice span { color:var(--muted); font-size:12.5px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:14px; }
+  label.check { display:flex; gap:10px; align-items:flex-start; margin:8px 0; cursor:pointer; }
+  label.check input { margin-top:3px; width:16px; height:16px; }
+  label.check small { display:block; color:var(--muted); }
+  .row { display:flex; gap:8px; margin-top:6px; }
+  input[type=text] { flex:1; height:38px; border-radius:10px; border:1px solid var(--border); background:transparent; color:inherit; padding:0 12px; font:inherit; }
+  button.btn { height:38px; padding:0 16px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:inherit; font:inherit; cursor:pointer; }
+  button.primary { background:linear-gradient(135deg,var(--primary),var(--primary-2)); color:#fff; border:none; font-weight:600; }
+  button:disabled { opacity:.6; cursor:default; }
+  .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .msg { font-size:12.5px; margin-top:8px; min-height:18px; } .msg.ok { color:var(--ok); } .msg.bad { color:var(--bad); }
+  .hint { color:var(--muted); font-size:12px; margin-top:6px; }
+  [hidden] { display:none !important; }
+  @media (max-width: 640px) { .choices { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">
+    <img src="icon.png" alt="" />
+    <div>
+      <h1 id="title">Set up this computer</h1>
+      <p class="sub" id="subtitle">Choose once — you can change it later (Ctrl+Shift+S).</p>
+    </div>
+  </div>
+
+  <!-- Counter can't reach the main computer -->
+  <section id="offline" class="panel" hidden>
+    <b>Can't reach the main computer</b>
+    <p class="hint" id="offline-url"></p>
+    <p class="hint">Check that MediCare is open on the main computer, that “Share on the shop network” is on there (Settings → This computer), and that both computers are on the same Wi-Fi / network.</p>
+    <div class="actions">
+      <button class="btn" id="change">Change setup</button>
+      <button class="btn primary" id="retry">Try again</button>
+    </div>
+  </section>
+
+  <section id="setup">
+    <div class="choices" role="group" aria-label="This computer is">
+      <button class="choice" id="pick-main" aria-pressed="false">
+        <b>Main computer</b>
+        <span>Keeps the shop's data and daily backups. Use this on ONE computer — usually the owner's or the main billing counter.</span>
+      </button>
+      <button class="choice" id="pick-counter" aria-pressed="false">
+        <b>Extra counter</b>
+        <span>Another billing computer in the same shop. Connects to the main computer — keeps no data of its own.</span>
+      </button>
+    </div>
+
+    <div class="panel" id="main-panel" hidden>
+      <label class="check"><input type="checkbox" id="lan" />
+        <span>Share on the shop network<small>Other counters can connect to this computer. Windows may ask once to allow MediCare on the network — choose “Private networks”.</small></span>
+      </label>
+      <label class="check"><input type="checkbox" id="demo" />
+        <span>Start with demo data<small>A sample shop to try things out. Leave off for your real shop. (Only used when there is no data yet.)</small></span>
+      </label>
+      <p class="hint">Data folder: <span id="data-dir"></span></p>
+    </div>
+
+    <div class="panel" id="counter-panel" hidden>
+      <b>Main computer's address</b>
+      <p class="hint">Shown on the main computer in Settings → This computer, e.g. http://192.168.1.10:4000</p>
+      <div class="row">
+        <input type="text" id="url" placeholder="http://192.168.1.10:4000" autocomplete="off" />
+        <button class="btn" id="test">Test</button>
+      </div>
+      <p class="msg" id="test-msg" role="status"></p>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="save" disabled>Continue</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const api = window.medicareDesktop;
+  const $ = (id) => document.getElementById(id);
+  let role = null;
+  const params = new URLSearchParams(location.search);
+
+  function pick(r) {
+    role = r;
+    $("pick-main").setAttribute("aria-pressed", r === "main");
+    $("pick-counter").setAttribute("aria-pressed", r === "counter");
+    $("main-panel").hidden = r !== "main";
+    $("counter-panel").hidden = r !== "counter";
+    $("save").disabled = false;
+    if (r === "counter") $("url").focus();
+  }
+  function normalize(v) {
+    v = v.trim();
+    if (!v) return "";
+    if (!/^https?:\/\//i.test(v)) v = "http://" + v;
+    try { const u = new URL(v); if (!u.port) u.port = "4000"; return u.origin; } catch { return ""; }
+  }
+  async function test() {
+    const url = normalize($("url").value);
+    const msg = $("test-msg");
+    if (!url) { msg.className = "msg bad"; msg.textContent = "Type the main computer's address."; return false; }
+    $("url").value = url;
+    msg.className = "msg"; msg.textContent = "Checking…";
+    const r = await api.testConnection(url);
+    msg.className = "msg " + (r.ok ? "ok" : "bad");
+    msg.textContent = r.ok ? "Connected — that's the main computer." : r.error;
+    return r.ok;
+  }
+
+  $("pick-main").onclick = () => pick("main");
+  $("pick-counter").onclick = () => pick("counter");
+  $("test").onclick = () => void test();
+  $("url").addEventListener("keydown", (e) => { if (e.key === "Enter") void test(); });
+  $("save").onclick = async () => {
+    $("save").disabled = true;
+    try {
+      if (role === "counter") {
+        if (!(await test())) return;
+        await api.saveSetup({ role: "counter", mainUrl: $("url").value });
+      } else {
+        await api.saveSetup({ role: "main", lan: $("lan").checked, demo: $("demo").checked });
+      }
+    } finally { $("save").disabled = false; }
+  };
+  $("retry").onclick = () => api.retry();
+  $("change").onclick = () => { $("offline").hidden = true; $("setup").hidden = false; };
+
+  api.getSetup().then(({ config, dataDir }) => {
+    $("data-dir").textContent = dataDir;
+    if (config) {
+      pick(config.role);
+      $("lan").checked = !!config.lan;
+      $("demo").checked = !!config.demo;
+      if (config.mainUrl) $("url").value = config.mainUrl;
+    }
+    if (params.get("offline")) {
+      $("offline").hidden = false;
+      $("setup").hidden = true;
+      $("offline-url").textContent = "Address: " + params.get("offline");
+      $("title").textContent = "MediCare Pharmacy";
+      $("subtitle").textContent = "Extra counter";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "medicare-pharmacy",
+  "productName": "MediCare Pharmacy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MediCare Pharmacy — billing, stock, purchases and udhaar for a medical shop",
+  "author": "MediCare",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "bundle": "node scripts/bundle.mjs",
+    "start": "npm run bundle && electron .",
+    "dist": "npm run bundle && electron-builder --win nsis --x64",
+    "dist:dir": "npm run bundle && electron-builder --win dir --x64",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "electron": "44.6.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "typescript": "~6.0.2",
+    "@types/node": "^24.13.3"
+  }
+}

@@ -1,0 +1,31 @@
+# Builds the Windows installer (MediCare-Pharmacy-Setup-x.y.z.exe).
+# Run it from GitHub → Actions → "Windows installer" → Run workflow,
+# then download the .exe from the run's "Artifacts".
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm ci
+        working-directory: installer
+      - run: npm run dist
+        working-directory: installer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediCare-Pharmacy-Setup
+          path: installer/release/*.exe

@@ -59,8 +59,39 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 9. ✅ Stock core: Inventory + Purchases + Billing + Returns + Udhaar (one ledger, moved together)
 10. ✅ Real sign-in, roles & users; Settings on the database (one copy for every counter); Reports from database data
 11. ✅ Daily backup & restore; bell (alerts) & header search; bills show counter + staff; tabs keep their work
-12. Desktop installer (Tauri)
-13. Several counters on the shop LAN + final checks
+12. ✅ Windows installer (Electron: the server runs inside the app — nothing else to install)
+13. ✅ Several counters on the shop network (main computer + extra counters) + final checks
+
+## Windows installer
+
+`MediCare-Pharmacy-Setup-x.y.z.exe` — double-click, Next, Install. No admin
+rights, no Node.js, no separate server: the app contains everything.
+
+**Build it** (any of these):
+- GitHub → Actions → *Windows installer* → *Run workflow* → download the
+  `.exe` from the run's Artifacts (works from any computer, even a Mac);
+- on a Windows PC: `npm run installer` → `installer/release/`.
+
+On the first start the app asks what this computer is:
+
+| Choice | What it does |
+|---|---|
+| **Main computer** | Keeps the data (`%APPDATA%\MediCare Pharmacy\data`) and the daily backups. Starts empty with one account `admin` / `admin` (must be changed), or with the demo shop if you tick it. |
+| **Extra counter** | Keeps no data — connects to the main computer's address. |
+
+Change it later with **Ctrl+Shift+S** (or Settings → This computer & network).
+Uninstalling never deletes the shop's data.
+
+## Several counters (shop network)
+
+1. Main computer: Settings → **This computer & network** → *Share with
+   other counters*. Windows may ask once — allow **Private networks**.
+   The screen shows the address, e.g. `http://192.168.1.10:4000`.
+2. Each other counter: install the same app → *Extra counter* → type that
+   address (or just open it in Chrome / Edge).
+3. Every counter signs in with its own user; bills, stock and udhaar are
+   the same everywhere and update live. Keep the app open on the main
+   computer while the shop is open (closing it asks first).
 
 ## Where is the data?
 

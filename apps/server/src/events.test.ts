@@ -94,3 +94,24 @@ describe("live updates — no refresh needed", () => {
     b.close();
   });
 });
+
+describe("shutdown", () => {
+  it("stops promptly even while apps are listening (restart / sharing switch)", async () => {
+    const db = await openDatabase(":memory:");
+    await seedDemoData(db);
+    const other = buildApp({ database: db });
+    await other.listen({ port: 0, host: "127.0.0.1" });
+    const addr = other.server.address();
+    const url = `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}`;
+    const h = await signIn(other);
+    const ctrl = new AbortController();
+    await fetch(`${url}/api/events?token=${h.authorization.slice(7)}`, {
+      signal: ctrl.signal,
+    });
+    const started = Date.now();
+    await other.close();
+    expect(Date.now() - started).toBeLessThan(2000);
+    ctrl.abort();
+    db.close();
+  });
+});

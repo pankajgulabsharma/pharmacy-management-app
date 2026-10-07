@@ -1,0 +1,6 @@
+node_modules
+dist
+release
+res/app-ui
+res/drizzle
+res/icon.png

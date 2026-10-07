@@ -652,4 +652,34 @@ export const HI_UI: Record<string, string> = {
   "Your data is safe on the server. Try opening the screen again.":
     "आपका डेटा सर्वर पर सुरक्षित है। स्क्रीन फिर से खोलें।",
   "Try again": "फिर से कोशिश करें",
+  // This computer & shop network (step 13)
+  "This computer & network": "यह कंप्यूटर और नेटवर्क",
+  "This computer & shop network": "यह कंप्यूटर और दुकान का नेटवर्क",
+  "This is the main computer: it keeps the data. Other billing counters in the shop connect to it over the shop's Wi-Fi / network.":
+    "यह मुख्य कंप्यूटर है: डेटा इसी में रहता है। दुकान के दूसरे बिलिंग काउंटर दुकान के वाई-फ़ाई / नेटवर्क से इससे जुड़ते हैं।",
+  "Shared on the shop network": "दुकान के नेटवर्क पर शेयर",
+  "This computer only": "सिर्फ यह कंप्यूटर",
+  "Stop sharing": "शेयर बंद करें",
+  "Share with other counters": "दूसरे काउंटरों से शेयर करें",
+  "Sharing switched off — only this computer can use MediCare":
+    "शेयर बंद — अब सिर्फ यही कंप्यूटर मेडीकेयर चला सकता है",
+  "Sharing on — other counters can connect now":
+    "शेयर चालू — दूसरे काउंटर अब जुड़ सकते हैं",
+  "To share, start the server with HOST=0.0.0.0 (the installed app has a switch here).":
+    "शेयर करने के लिए सर्वर HOST=0.0.0.0 से चलाएँ (इंस्टॉल किए ऐप में यहाँ स्विच है)।",
+  "Address for the other counters": "दूसरे काउंटरों के लिए पता",
+  "No network found — connect this computer to the shop Wi-Fi / cable.":
+    "नेटवर्क नहीं मिला — इस कंप्यूटर को दुकान के वाई-फ़ाई / केबल से जोड़ें।",
+  Copied: "कॉपी हो गया",
+  Copy: "कॉपी",
+  "On the other computer, install MediCare Pharmacy.":
+    "दूसरे कंप्यूटर पर मेडीकेयर फ़ार्मेसी इंस्टॉल करें।",
+  "On its first start choose “Extra counter” and type the address above.":
+    "पहली बार खोलने पर “Extra counter” चुनें और ऊपर वाला पता लिखें।",
+  "Or simply open the address in Chrome / Edge on that computer.":
+    "या उस कंप्यूटर पर Chrome / Edge में यह पता खोल लें।",
+  "Keep MediCare open on this computer while the shop is open.":
+    "दुकान खुली रहने तक इस कंप्यूटर पर मेडीकेयर खुला रखें।",
+  "Open data folder": "डेटा फ़ोल्डर खोलें",
+  "Change setup of this computer": "इस कंप्यूटर का सेटअप बदलें",
 };

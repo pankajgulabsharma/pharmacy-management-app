@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth";
 import { settingsRoutes } from "./routes/settings";
 import { backupRoutes } from "./routes/backups";
 import { serveApp } from "./static";
+import { systemRoutes, type SystemHooks } from "./routes/system";
 import { AuthError, authGuard } from "./auth/guard";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
@@ -23,6 +24,7 @@ export function buildApp({
   bus = new EventBus(),
   backupDir = DEFAULT_BACKUP_DIR,
   appDir,
+  system = { lanEnabled: () => process.env.HOST === "0.0.0.0" },
 }: {
   database: Database;
   bus?: EventBus;
@@ -30,6 +32,8 @@ export function buildApp({
   backupDir?: string;
   /** Built app screens to serve (installed app / shop network) */
   appDir?: string;
+  /** Shop-network sharing (the installed app can switch it) */
+  system?: SystemHooks;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
   cors(app);
@@ -56,6 +60,7 @@ export function buildApp({
   authRoutes(app, database);
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir);
+  systemRoutes(app, system);
   catalogRoutes(app, database);
   supplierRoutes(app, database);
   shopRoutes(app, database, bus);
