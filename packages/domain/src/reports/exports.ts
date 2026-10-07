@@ -6,10 +6,7 @@ import type { StockBatch } from "../inventory/types";
 import type { Medicine } from "../medicines/types";
 import { PAYMENT_METHOD_LABELS, type Sale } from "../billing/types";
 import { toCsv } from "../lib/csv";
-import {
-  batchCostPaise,
-  batchMrpPaise,
-} from "../inventory/stock";
+import { batchCostPaise, batchMrpPaise } from "../inventory/stock";
 import { splitCgstSgst } from "../lib/gst";
 import { inRange, type DateRange } from "./period";
 import type { GstReport, PurchaseReport } from "./reports";
@@ -38,6 +35,7 @@ export function salesCsv(sales: readonly Sale[], range: DateRange): string {
     { header: "Customer", value: (s) => s.customerName },
     { header: "Doctor", value: (s) => s.doctor },
     { header: "Counter", value: (s) => s.counter },
+    { header: "Billed by", value: (s) => s.billedBy ?? "" },
     {
       header: "Payment",
       value: (s) => PAYMENT_METHOD_LABELS[s.payment.method],

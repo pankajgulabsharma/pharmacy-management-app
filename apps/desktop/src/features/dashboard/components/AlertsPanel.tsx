@@ -1,71 +1,12 @@
 import { Link } from "react-router-dom";
-import {
-  CalendarClock,
-  CalendarX,
-  CheckCircle2,
-  HandCoins,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { inrRounded } from "@medicare/domain/lib/money";
-import type { DashboardData } from "../hooks/useDashboardData";
 import { tr } from "@/lib/i18n";
-
-type Alert = {
-  key: string;
-  title: string;
-  desc: string;
-  icon: LucideIcon;
-  tone: string;
-  to: string;
-};
+import { ALERT_TONE, useShopAlerts } from "@/features/alerts/useShopAlerts";
 
 /** Things that need attention today — each opens the place to act on it */
-export function AlertsPanel({ d }: { d: DashboardData }) {
-  const alerts: Alert[] = [];
-  if (d.stock.expired.length) {
-    alerts.push({
-      key: "expired",
-      title: `${d.stock.expired.length} ${tr(d.stock.expired.length === 1 ? "batch expired" : "batches expired")}`,
-      desc: `${inrRounded(d.stock.expiredValuePaise)} ${tr("at cost — not sellable. Return to supplier or dispose.")}`,
-      icon: CalendarX,
-      tone: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
-      to: "/inventory?status=expired",
-    });
-  }
-  if (d.supplier.overdueCount) {
-    alerts.push({
-      key: "overdue",
-      title: `${d.supplier.overdueCount} ${tr(d.supplier.overdueCount === 1 ? "invoice overdue" : "invoices overdue")}`,
-      desc: `${inrRounded(d.supplier.overduePaise)} ${tr("past the due date.")}`,
-      icon: Wallet,
-      tone: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
-      to: "/purchases?status=overdue",
-    });
-  }
-  if (d.stock.expiring.length) {
-    alerts.push({
-      key: "expiring",
-      title: `${d.stock.expiring.length} ${tr(d.stock.expiring.length === 1 ? "batch expiring soon" : "batches expiring soon")}`,
-      desc: tr("Within {{days}} days — sell first or return in time.", {
-        days: d.expiringDays,
-      }),
-      icon: CalendarClock,
-      tone: "bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400",
-      to: "/inventory?status=expiring",
-    });
-  }
-  if (d.udhaarPaise > 0) {
-    alerts.push({
-      key: "udhaar",
-      title: `${inrRounded(d.udhaarPaise)} ${tr("udhaar to collect")}`,
-      desc: tr("Customers who bought on credit — open their accounts."),
-      icon: HandCoins,
-      tone: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
-      to: "/customers", // all, most owed first
-    });
-  }
+export function AlertsPanel() {
+  const alerts = useShopAlerts();
 
   if (alerts.length === 0) {
     return (
@@ -91,7 +32,7 @@ export function AlertsPanel({ d }: { d: DashboardData }) {
           <div
             className={cn(
               "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-              a.tone,
+              ALERT_TONE[a.level],
             )}
           >
             <a.icon className="h-4 w-4" />

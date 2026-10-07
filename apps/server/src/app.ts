@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { RuleError } from "@medicare/domain/lib/errors";
-import type { Database } from "./db/client";
+import { DEFAULT_BACKUP_DIR, type Database } from "./db/client";
 import { cors } from "./cors";
 import { EventBus } from "./events";
 import { catalogRoutes } from "./routes/catalog";
@@ -8,6 +8,8 @@ import { supplierRoutes } from "./routes/suppliers";
 import { shopRoutes } from "./routes/shop";
 import { authRoutes } from "./routes/auth";
 import { settingsRoutes } from "./routes/settings";
+import { backupRoutes } from "./routes/backups";
+import { serveApp } from "./static";
 import { AuthError, authGuard } from "./auth/guard";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
@@ -19,9 +21,15 @@ import { InputError } from "./schemas/medicine";
 export function buildApp({
   database,
   bus = new EventBus(),
+  backupDir = DEFAULT_BACKUP_DIR,
+  appDir,
 }: {
   database: Database;
   bus?: EventBus;
+  /** Where backups are kept (default: next to the database) */
+  backupDir?: string;
+  /** Built app screens to serve (installed app / shop network) */
+  appDir?: string;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
   cors(app);
@@ -47,6 +55,7 @@ export function buildApp({
   bus.routes(app); // GET /api/events + "something changed" after every save
   authRoutes(app, database);
   settingsRoutes(app, database);
+  backupRoutes(app, database, bus, backupDir);
   catalogRoutes(app, database);
   supplierRoutes(app, database);
   shopRoutes(app, database, bus);
@@ -75,9 +84,11 @@ export function buildApp({
       error: status < 500 ? (err as Error).message : "Something went wrong",
     });
   });
-  app.setNotFoundHandler((_req, reply) =>
-    reply.code(404).send({ error: "Not found" }),
-  );
+  if (appDir) serveApp(app, appDir);
+  else
+    app.setNotFoundHandler((_req, reply) =>
+      reply.code(404).send({ error: "Not found" }),
+    );
 
   return app;
 }

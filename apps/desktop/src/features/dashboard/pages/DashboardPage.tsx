@@ -64,7 +64,7 @@ export default function DashboardPage() {
         {/* Side column: alerts scroll, Quick Actions always fully visible */}
         <div className="xl:col-span-3 xl:h-full flex flex-col gap-2 min-h-0 min-w-0 justify-start">
           <div className="shrink-0 max-h-[50%] overflow-y-auto">
-            <AlertsPanel d={d} />
+            <AlertsPanel />
           </div>
           <div className="shrink-0">
             <QuickActions />

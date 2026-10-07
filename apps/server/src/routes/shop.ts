@@ -104,7 +104,13 @@ export function shopRoutes(
     reply
       .code(201)
       .send(
-        write(() => sales.completeSale(raw, s.parse(s.saleInput, req.body))),
+        write(() =>
+          sales.completeSale(
+            raw,
+            s.parse(s.saleInput, req.body),
+            req.user!.name,
+          ),
+        ),
       ),
   );
   app.post("/api/sale-returns", async (req, reply) =>
@@ -112,7 +118,11 @@ export function shopRoutes(
       .code(201)
       .send(
         write(() =>
-          sales.createSaleReturn(raw, s.parse(s.saleReturnInput, req.body)),
+          sales.createSaleReturn(
+            raw,
+            s.parse(s.saleReturnInput, req.body),
+            req.user!.name,
+          ),
         ),
       ),
   );

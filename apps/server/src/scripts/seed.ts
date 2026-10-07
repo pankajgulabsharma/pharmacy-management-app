@@ -6,7 +6,7 @@ import { rmSync } from "node:fs";
 import { DEFAULT_DB_FILE, openDatabase } from "../db/client";
 import { hasData, seedDemoData } from "../db/seed";
 
-const file = process.env.DB_FILE ?? DEFAULT_DB_FILE;
+const file = DEFAULT_DB_FILE;
 if (process.argv.includes("--reset")) {
   // A running server keeps writing to the OLD file after it is deleted —
   // everything saved after the reset would be lost. Refuse instead.

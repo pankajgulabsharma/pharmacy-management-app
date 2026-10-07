@@ -601,4 +601,55 @@ export const HI_UI: Record<string, string> = {
   "Your role can't do this — ask the owner":
     "आपकी भूमिका यह नहीं कर सकती — मालिक से पूछें",
   "Please sign in again": "कृपया फिर से लॉगिन करें",
+
+  // Bell, search, backup (step 11)
+  "Needs attention": "ध्यान दें",
+  "Nothing found": "कुछ नहीं मिला",
+  Customers: "ग्राहक",
+  "medicine out of stock": "दवा स्टॉक में नहीं",
+  "medicines out of stock": "दवाइयाँ स्टॉक में नहीं",
+  "Order these before the next customer asks.":
+    "अगला ग्राहक माँगे उससे पहले मँगवा लें।",
+  "medicine running low": "दवा कम बची है",
+  "medicines running low": "दवाइयाँ कम बची हैं",
+  "Below the minimum stock you set.": "आपके तय किए न्यूनतम स्टॉक से कम।",
+  "customer over credit limit": "ग्राहक उधार सीमा से ऊपर",
+  "customers over credit limit": "ग्राहक उधार सीमा से ऊपर",
+  "Collect before giving more udhaar.": "और उधार देने से पहले वसूली करें।",
+  "Waiting to be finished — open Held bills on Billing.":
+    "पूरा होना बाकी — बिलिंग में होल्ड बिल खोलें।",
+  "Search medicine, bill, customer, supplier, invoice…":
+    "दवा, बिल, ग्राहक, सप्लायर, इनवॉइस खोजें…",
+  "Backup & restore": "बैकअप और रिस्टोर",
+  "A full copy of the shop's data. Made automatically every day — keep one on a pen drive too.":
+    "दुकान के पूरे डेटा की कॉपी। रोज़ अपने आप बनती है — एक कॉपी पेन ड्राइव में भी रखें।",
+  "Last automatic backup": "पिछला ऑटोमैटिक बैकअप",
+  "not yet": "अभी नहीं",
+  "the last {{n}} are kept": "आखिरी {{n}} रखे जाते हैं",
+  Folder: "फ़ोल्डर",
+  "Backup now": "अभी बैकअप लें",
+  "Bring a backup file": "बैकअप फ़ाइल लाएँ",
+  "Backup file": "बैकअप फ़ाइल",
+  "Made on": "कब बना",
+  Type: "प्रकार",
+  Size: "साइज़",
+  "No backups yet": "अभी कोई बैकअप नहीं",
+  Download: "डाउनलोड",
+  Restore: "रिस्टोर",
+  "Backup saved": "बैकअप सेव हो गया",
+  "Backup file added — you can restore it from the list":
+    "बैकअप फ़ाइल जुड़ गई — लिस्ट से रिस्टोर कर सकते हैं",
+  "Restore the backup of {{date}}?": "{{date}} का बैकअप रिस्टोर करें?",
+  "All data — bills, stock, purchases, customers, settings, users — goes back to that moment, on every counter. A safety copy of today's data is made first, so this can be undone.":
+    "सारा डेटा — बिल, स्टॉक, खरीद, ग्राहक, सेटिंग्स, यूज़र — हर काउंटर पर उसी समय जैसा हो जाएगा। पहले आज के डेटा की सुरक्षा कॉपी बनती है, इसलिए इसे वापस भी किया जा सकता है।",
+  "Restored — every counter now shows the backup's data":
+    "रिस्टोर हो गया — हर काउंटर पर अब बैकअप का डेटा है",
+  Automatic: "ऑटोमैटिक",
+  Manual: "मैन्युअल",
+  "Before restore": "रिस्टोर से पहले",
+  "From file": "फ़ाइल से",
+  "This screen ran into a problem": "इस स्क्रीन में दिक्कत आई",
+  "Your data is safe on the server. Try opening the screen again.":
+    "आपका डेटा सर्वर पर सुरक्षित है। स्क्रीन फिर से खोलें।",
+  "Try again": "फिर से कोशिश करें",
 };

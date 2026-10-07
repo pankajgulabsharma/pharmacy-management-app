@@ -10,6 +10,7 @@ import { PauseCircle, ShoppingCart } from "lucide-react";
 import { Kbd } from "@/components/common/Kbd";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useUrlIntent } from "@/hooks/useUrlIntent";
+import { usePageActive } from "@/hooks/usePageActive";
 import { isTyping } from "@/lib/hotkeys";
 import { KEYS } from "@/app/shortcuts/registry";
 import { BatchHistoryDialog } from "@/features/inventory/components/BatchHistoryDialog";
@@ -114,9 +115,11 @@ export default function BillingPage() {
   // Opening Billing (sidebar, Alt+2, F2, Dashboard…) puts the cursor straight
   // in the medicine search — the cashier can start typing immediately.
   useUrlIntent(); // clears ?focus=search from the URL
+  // Coming back to this tab (it stays alive in the background) also counts
+  const pageActive = usePageActive();
   useEffect(() => {
-    if (mode === "billing") searchRef.current?.focus();
-  }, [mode]);
+    if (pageActive && mode === "billing") searchRef.current?.focus();
+  }, [mode, pageActive]);
 
   /** Ready for the next customer: cursor back in the medicine search */
   const focusSearch = useCallback(() => {

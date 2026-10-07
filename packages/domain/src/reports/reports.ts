@@ -11,10 +11,7 @@ import { GST_RATES, splitInclusive } from "../lib/gst";
 import { compareExpiry, isExpiringWithin, isExpiryPast } from "../lib/expiry";
 import { toISODate } from "../lib/date";
 import { rupeesToPaise, type Paise } from "../lib/money";
-import {
-  batchCostPaise,
-  batchMrpPaise,
-} from "../inventory/stock";
+import { batchCostPaise, batchMrpPaise } from "../inventory/stock";
 import { daysIn, inRange, type DateRange } from "./period";
 
 /* ------------------------------------------------------------------ */

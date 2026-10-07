@@ -145,6 +145,8 @@ export type Sale = {
   customerName: string;
   doctor: string;
   counter: string;
+  /** Staff member signed in when the bill was saved (set by the server) */
+  billedBy?: string;
   lines: SaleLine[];
   totals: SaleTotals;
   payment: SalePayment;
@@ -232,6 +234,8 @@ export type SaleReturn = {
   reason: string;
   refundMode: RefundMode;
   notes: string;
+  /** Staff member who took the return back (set by the server) */
+  billedBy?: string;
   lines: SaleReturnLine[];
   roundOffPaise: Paise;
   /** Amount given back to the customer (rounded to the rupee) */

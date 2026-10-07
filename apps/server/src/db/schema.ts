@@ -331,6 +331,8 @@ export const sales = sqliteTable(
     customerName: text("customer_name").notNull(),
     doctor: text("doctor").notNull().default(""),
     counter: text("counter").notNull().default(""),
+    /** Who was signed in when the bill was saved */
+    billedBy: text("billed_by").notNull().default(""),
     status: text("status", { enum: ["paid", "udhaar"] }).notNull(),
     imported: bool("imported"),
     // totals
@@ -436,6 +438,7 @@ export const saleReturns = sqliteTable(
       enum: ["cash", "upi", "udhaar_adjust"],
     }).notNull(),
     notes: text("notes").notNull().default(""),
+    billedBy: text("billed_by").notNull().default(""),
     roundOffPaise: paise("round_off_paise"),
     refundPaise: paise("refund_paise"),
   },

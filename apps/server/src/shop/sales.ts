@@ -42,6 +42,8 @@ import { NotFoundError } from "./errors";
 export function completeSale(
   raw: DatabaseSync,
   input: SaleInput,
+  /** Signed-in staff name — printed on the bill */
+  billedBy = "",
   now = new Date(),
 ) {
   return writeTx(raw, () => {
@@ -63,13 +65,15 @@ export function completeSale(
     const billNos = raw
       .prepare("SELECT bill_no AS billNo FROM sales")
       .all() as { billNo: string }[];
-    const { sale, change } = buildSale(
+    const built = buildSale(
       { ...input, customerName },
       medicines,
       before,
       nextBillNo(billNos),
       now,
     );
+    const { change } = built;
+    const sale: Sale = billedBy ? { ...built.sale, billedBy } : built.sale;
 
     if (
       customer &&
@@ -99,19 +103,16 @@ export function completeSale(
 export function createSaleReturn(
   raw: DatabaseSync,
   input: SaleReturnInput,
+  billedBy = "",
   now = new Date(),
 ) {
   return writeTx(raw, () => {
     const [sale] = loadSales(raw, "id = ?", [input.saleId]);
     if (!sale) throw new NotFoundError("Bill not found");
     const all = loadSaleReturns(raw);
-    const { ret, change } = buildSaleReturn(
-      sale,
-      input,
-      all,
-      nextSaleReturnNo(all),
-      now,
-    );
+    const built = buildSaleReturn(sale, input, all, nextSaleReturnNo(all), now);
+    const { change } = built;
+    const ret = billedBy ? { ...built.ret, billedBy } : built.ret;
     const before = loadBatches(raw);
     const r = applyChange(before, {
       refId: ret.id,

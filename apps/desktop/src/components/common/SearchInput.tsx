@@ -1,4 +1,4 @@
-import { memo, type Ref } from "react";
+import { memo, type ComponentProps, type Ref } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,8 @@ type Props = {
   shortcut?: string;
   inputRef?: Ref<HTMLInputElement>;
   className?: string;
+  /** Extra attributes for the input (e.g. combobox ARIA, focus/keys handlers) */
+  inputProps?: Omit<ComponentProps<"input">, "value" | "onChange" | "ref">;
 };
 
 /** Search box with icon, one clear (×) button and an optional shortcut hint */
@@ -41,6 +43,7 @@ export const SearchInput = memo(function SearchInput({
   shortcut,
   inputRef,
   className,
+  inputProps,
 }: Props) {
   const tr = useTr();
   const s = SIZE[size];
@@ -55,6 +58,7 @@ export const SearchInput = memo(function SearchInput({
         )}
       />
       <Input
+        {...inputProps}
         ref={inputRef}
         // type="text" (not "search") so the browser doesn't add its own second ×
         type="text"
@@ -63,6 +67,8 @@ export const SearchInput = memo(function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
+          inputProps?.onKeyDown?.(e);
+          if (e.defaultPrevented) return;
           if (e.key === "Escape" && hasValue) {
             e.stopPropagation();
             onChange("");

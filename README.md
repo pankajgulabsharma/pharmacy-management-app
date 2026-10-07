@@ -58,11 +58,18 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 8. ✅ Live updates (no refresh, auto-reconnect) + Suppliers tab on the database
 9. ✅ Stock core: Inventory + Purchases + Billing + Returns + Udhaar (one ledger, moved together)
 10. ✅ Real sign-in, roles & users; Settings on the database (one copy for every counter); Reports from database data
-11. Daily backup & restore
+11. ✅ Daily backup & restore; bell (alerts) & header search; bills show counter + staff; tabs keep their work
 12. Desktop installer (Tauri)
 13. Several counters on the shop LAN + final checks
 
 ## Where is the data?
 
 `apps/server/data/medicare.sqlite` — one file, never committed to git.
-Copy it (with the server stopped) and you have a full backup.
+
+**Backups** — `apps/server/data/backups/`:
+- made automatically once a day (the last 30 are kept), and with
+  Settings → Backup & restore → *Backup now*;
+- *Download* saves a copy (keep one on a pen drive); *Bring a backup file*
+  adds one back from a pen drive / another PC;
+- *Restore* puts every counter back to that moment — a safety copy of the
+  current data is made first, so a restore can itself be undone.

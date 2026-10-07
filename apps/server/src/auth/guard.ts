@@ -35,7 +35,7 @@ const WRITE_RULES: [RegExp, Permission][] = [
     /^\/api\/(medicines|suppliers|purchases|purchase-returns|stock)(\/|$)/,
     "stock",
   ],
-  [/^\/api\/(settings|users)(\/|$)/, "admin"],
+  [/^\/api\/(settings|users|backups)(\/|$)/, "admin"],
 ];
 
 /** null = any signed-in user */
@@ -44,7 +44,8 @@ export function requiredPermission(
   path: string,
 ): Permission | null {
   if (path.startsWith("/api/auth/")) return null;
-  if (method === "GET") return path.startsWith("/api/users") ? "admin" : null;
+  if (method === "GET")
+    return /^\/api\/(users|backups)(\/|$)/.test(path) ? "admin" : null;
   return WRITE_RULES.find(([re]) => re.test(path))?.[1] ?? "admin";
 }
 

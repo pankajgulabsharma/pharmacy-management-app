@@ -283,6 +283,7 @@ export function saleRows(s: Sale) {
       paymentReference: p.reference,
       customerId: s.customerId ?? null,
       imported: s.imported ?? false,
+      billedBy: s.billedBy ?? "",
     },
     lines: s.lines.map((l, position) => ({ ...l, saleId: s.id, position })),
     allocations: s.lines.flatMap((l) =>
@@ -373,12 +374,13 @@ export function loadSales(
       ) as SaleLine[],
     };
     if (h.imported) sale.imported = true;
+    if (h.billedBy) sale.billedBy = h.billedBy;
     return sale as unknown as Sale;
   });
 }
 
 export function insertSaleReturn(raw: DatabaseSync, r: SaleReturn) {
-  insertRows(raw, t.saleReturns, [r]);
+  insertRows(raw, t.saleReturns, [{ ...r, billedBy: r.billedBy ?? "" }]);
   insertRows(
     raw,
     t.saleReturnLines,
@@ -426,6 +428,7 @@ export function loadSaleReturns(
     (h) =>
       ({
         ...h,
+        billedBy: (h.billedBy as string) || undefined,
         lines: (lines.get(h.id as string) ?? []).map(
           ({ returnId: _r, ...l }) => ({
             ...l,

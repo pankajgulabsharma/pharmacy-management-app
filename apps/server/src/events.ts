@@ -2,7 +2,8 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { allowedOrigins } from "./cors";
 
 /** What changed — every open app reloads just that part */
-export type Topic = "medicines" | "suppliers" | "settings" | "users";
+/** "all" = everything changed (a backup was restored) — reload it all */
+export type Topic = "medicines" | "suppliers" | "settings" | "users" | "all";
 
 const TOPICS: readonly Topic[] = [
   "medicines",

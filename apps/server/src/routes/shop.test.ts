@@ -263,6 +263,20 @@ describe("billing on the server", () => {
     const before = (await qtyOf(b.batchNo))!;
     const { sale } = await ok(call("POST", "/api/sales", input));
     expect(sale.billNo).toMatch(/^INV-\d{4}$/);
+    // Who made it comes from the sign-in, and is kept with the bill
+    expect(sale.billedBy).toBe("Pankaj Sharma");
+    const saved = (await ok(call("GET", "/api/sales"))).sales.find(
+      (x: Sale) => x.id === sale.id,
+    );
+    expect(saved).toMatchObject({
+      billedBy: "Pankaj Sharma",
+      counter: input.counter,
+    });
+    // The app can't claim someone else made it
+    expect(
+      (await call("POST", "/api/sales", { ...input, billedBy: "Boss" }))
+        .statusCode,
+    ).toBe(400);
     expect(
       (await stock())
         .filter((x) => x.medicineId === b.medicineId)
@@ -321,6 +335,7 @@ describe("billing on the server", () => {
       }),
     );
     expect(ret.returnNo).toMatch(/^SR-\d{4}$/);
+    expect(ret.billedBy).toBe("Pankaj Sharma");
     expect(patch.sales[0].returnedPaise).toBe(ret.refundPaise);
     expect(
       (await stock())

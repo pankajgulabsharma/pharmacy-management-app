@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
-  Bell,
   Calendar,
   ChevronDown,
   KeyRound,
@@ -37,14 +36,10 @@ function initials(name: string): string {
 import { useUIStore } from "@/stores/useUIStore";
 import { KEYS } from "@/app/shortcuts/registry";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
-import { SearchInput } from "@/components/common/SearchInput";
 import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
 import { ServerStatus } from "./ServerStatus";
-
-const IS_MAC =
-  typeof navigator !== "undefined" &&
-  /Mac|iPhone|iPad/.test(navigator.userAgent);
-const SHORTCUT_LABEL = IS_MAC ? "⌘K" : "Ctrl K";
+import { NotificationBell } from "./NotificationBell";
+import { GlobalSearch } from "./GlobalSearch";
 
 export function Header() {
   const user = useCurrentUser();
@@ -55,22 +50,6 @@ export function Header() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const toggleHint = formatCombo(preferredCombo(KEYS.toggleSidebar)).join("+");
-  // TODO(search): wire this to a global search (medicines, invoices, suppliers)
-  const [query, setQuery] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  // ⌘K / Ctrl+K focuses the global search from anywhere
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "short",
@@ -97,17 +76,8 @@ export function Header() {
         )}
       </button>
 
-      {/* Search */}
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        placeholder="Search medicine, invoice, supplier, etc..."
-        ariaLabel="Search everything"
-        size="lg"
-        shortcut={SHORTCUT_LABEL}
-        inputRef={searchRef}
-        className="max-w-xl 2xl:max-w-2xl"
-      />
+      {/* Search everything (Ctrl/⌘+K) */}
+      <GlobalSearch />
 
       {/* Right side (ml-auto pushes it to the far right) */}
       <div className="ml-auto flex items-center gap-3 shrink-0">
@@ -115,15 +85,8 @@ export function Header() {
         <ServerStatus />
         <ThemeLanguageSwitcher />
 
-        {/* Notifications */}
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative h-9 w-9 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
-        >
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-red-500" />
-        </button>
+        {/* Notifications — same list as the Dashboard alerts */}
+        <NotificationBell />
 
         {/* Date */}
         <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">

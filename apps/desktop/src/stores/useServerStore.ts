@@ -122,8 +122,12 @@ export const useServerStore = create<ServerState>()((set, get) => ({
     };
     stream.addEventListener("change", (e) => {
       const topic = (
-        JSON.parse((e as MessageEvent<string>).data) as { topic?: Topic }
+        JSON.parse((e as MessageEvent<string>).data) as {
+          topic?: Topic | "all";
+        }
       ).topic;
+      // "all" = a backup was restored → reload everything
+      if (topic === "all") return void get().sync();
       const load = topic ? LOADERS[topic] : undefined;
       load?.().catch(() => void get().sync());
     });

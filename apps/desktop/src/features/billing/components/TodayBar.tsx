@@ -1,3 +1,4 @@
+import { usePageActive } from "@/hooks/usePageActive";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -287,6 +288,12 @@ function RecentBillsPopover({
   const ref = useRef<HTMLDivElement>(null);
 
   // Close on Esc or a click outside; focus the list for keyboard users
+  // Leaving the Billing tab closes this list (it must not catch Esc elsewhere)
+  const active = usePageActive();
+  useEffect(() => {
+    if (!active) onClose();
+  }, [active, onClose]);
+
   useEffect(() => {
     ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -346,7 +353,9 @@ function RecentBillsPopover({
                   </span>
                 </p>
                 <p className="text-[10.5px] text-muted-foreground truncate">
-                  {s.customerName}
+                  {[s.customerName, s.counter, s.billedBy]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
               </div>
               <StatusBadge tone={st.tone} size="xs">

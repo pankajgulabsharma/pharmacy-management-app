@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { isTopModal, popModal, pushModal } from "@/lib/modalStack";
+import { usePageActive } from "@/hooks/usePageActive";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -39,8 +40,12 @@ export function ModalShell({
     onCloseRef.current = onClose;
   }, [onClose]);
 
+  // A dialog on a background screen waits (hidden) until you come back
+  const pageActive = usePageActive();
+  const live = open && pageActive;
+
   useEffect(() => {
-    if (!open) return;
+    if (!live) return;
     const token = pushModal();
     const panel = panelRef.current;
     const previouslyFocused =
@@ -100,7 +105,7 @@ export function ModalShell({
       popModal(token);
       previouslyFocused?.focus();
     };
-  }, [open]);
+  }, [live]);
 
   if (!open) return null;
 

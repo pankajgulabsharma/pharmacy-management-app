@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Building2,
   Database,
+  HardDriveDownload,
   Palette,
   Receipt,
   Settings as SettingsIcon,
@@ -23,10 +24,18 @@ import {
   ShopProfileSection,
 } from "../components/SettingsSections";
 import { UsersSection } from "../components/UsersSection";
+import { BackupSection } from "../components/BackupSection";
 import { tr } from "@/lib/i18n";
 
 type SectionId =
-  "shop" | "billing" | "inventory" | "lists" | "users" | "appearance" | "data";
+  | "shop"
+  | "billing"
+  | "inventory"
+  | "lists"
+  | "users"
+  | "backup"
+  | "appearance"
+  | "data";
 
 const SECTIONS: {
   id: SectionId;
@@ -60,6 +69,12 @@ const SECTIONS: {
     Component: UsersSection,
   },
   {
+    id: "backup",
+    label: "Backup & restore",
+    icon: HardDriveDownload,
+    Component: BackupSection,
+  },
+  {
     id: "appearance",
     label: "Appearance",
     icon: Palette,
@@ -88,7 +103,7 @@ export default function SettingsPage() {
       <PageHeader
         icon={SettingsIcon}
         title="Settings"
-        subtitle="Shop profile · billing · stock · lists · users · appearance"
+        subtitle="Shop profile · billing · stock · lists · users · backup · appearance"
       />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">

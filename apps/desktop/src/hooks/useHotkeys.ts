@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { isAnyModalOpen } from "@/lib/modalStack";
+import { usePageActive } from "./usePageActive";
 import { isTyping, matchesCombo } from "@/lib/hotkeys";
 
 export type HotkeyBinding = {
@@ -25,6 +26,9 @@ const SAFE_IN_INPUT = /^(F\d{1,2}|Mod\+|Alt\+|Escape$)/;
  */
 export function useHotkeys(bindings: readonly HotkeyBinding[], enabled = true) {
   const ref = useRef(bindings);
+  // A screen kept alive in the background doesn't take keys
+  const active = usePageActive();
+  enabled = enabled && active;
   useEffect(() => {
     ref.current = bindings;
   });

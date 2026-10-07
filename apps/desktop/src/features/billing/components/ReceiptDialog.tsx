@@ -18,30 +18,22 @@ type Props = {
   /** Open the print dialog as soon as the bill is shown */
   autoPrint: boolean;
   onClose: () => void;
+  /** Reprint from search: "Bill INV-0042" instead of "… saved" */
+  reprint?: boolean;
 };
 
 /** Printable tax invoice (fits an 80 mm thermal roll; prints fine on A4) */
-export function ReceiptDialog({ sale, autoPrint, onClose }: Props) {
+export function ReceiptDialog({ sale, ...rest }: Props) {
   if (!sale) return null;
-  return (
-    <Receipt
-      key={sale.id}
-      sale={sale}
-      autoPrint={autoPrint}
-      onClose={onClose}
-    />
-  );
+  return <Receipt key={sale.id} sale={sale} {...rest} />;
 }
 
 function Receipt({
   sale,
   autoPrint,
   onClose,
-}: {
-  sale: Sale;
-  autoPrint: boolean;
-  onClose: () => void;
-}) {
+  reprint = false,
+}: Omit<Props, "sale"> & { sale: Sale }) {
   const titleId = useId();
   const shop = useSettingsStore((s) => s.shop);
   const footer = useSettingsStore((s) => s.billing.receiptFooter);
@@ -72,7 +64,8 @@ function Receipt({
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 shrink-0 print:hidden">
         <h2 id={titleId} className="text-sm font-semibold">
-          Bill {sale.billNo} saved
+          Bill {sale.billNo}
+          {reprint ? "" : " saved"}
         </h2>
         <button
           type="button"
@@ -100,6 +93,8 @@ function Receipt({
           <Kv k="Date" v={when} />
           <Kv k="Customer" v={sale.customerName} />
           {sale.doctor ? <Kv k="Doctor" v={sale.doctor} /> : null}
+          {sale.counter ? <Kv k="Counter" v={sale.counter} /> : null}
+          {sale.billedBy ? <Kv k="Billed by" v={sale.billedBy} /> : null}
           <Rule />
 
           <table className="w-full">
