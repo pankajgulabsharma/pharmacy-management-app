@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Database } from "./db/client";
+import { catalogRoutes } from "./routes/catalog";
 
 /**
  * Builds the server without starting it — tests call this directly,
@@ -28,6 +29,22 @@ export function buildApp({
       time: new Date().toISOString(),
     };
   });
+
+  catalogRoutes(app, database);
+
+  // Any unexpected failure → a plain message, never internal details
+  app.setErrorHandler((err, _req, reply) => {
+    const status = (err as { statusCode?: number }).statusCode ?? 500;
+    if (status >= 500) console.error(err);
+    reply
+      .code(status)
+      .send({
+        error: status < 500 ? (err as Error).message : "Something went wrong",
+      });
+  });
+  app.setNotFoundHandler((_req, reply) =>
+    reply.code(404).send({ error: "Not found" }),
+  );
 
   return app;
 }
