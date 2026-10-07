@@ -8,9 +8,9 @@ import { useServerStore } from "@/stores/useServerStore";
 
 export function AppLayout() {
   const { i18n } = useTranslation();
-  // Connect to the server once, when the app opens (signed-in area)
+  // Live connection to the server, opened once (signed-in area)
   useEffect(() => {
-    void useServerStore.getState().sync();
+    useServerStore.getState().connect();
   }, []);
   return (
     <div className="h-screen flex overflow-hidden bg-background">

@@ -1,8 +1,11 @@
 import Fastify, { type FastifyInstance } from "fastify";
+import { RuleError } from "@medicare/domain/lib/errors";
 import type { Database } from "./db/client";
-import { catalogRoutes } from "./routes/catalog";
-import { InputError } from "./schemas/medicine";
 import { cors } from "./cors";
+import { EventBus } from "./events";
+import { catalogRoutes } from "./routes/catalog";
+import { supplierRoutes } from "./routes/suppliers";
+import { InputError } from "./schemas/medicine";
 
 /**
  * Builds the server without starting it — tests call this directly,
@@ -10,8 +13,10 @@ import { cors } from "./cors";
  */
 export function buildApp({
   database,
+  bus = new EventBus(),
 }: {
   database: Database;
+  bus?: EventBus;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
   cors(app);
@@ -33,17 +38,27 @@ export function buildApp({
     };
   });
 
+  bus.routes(app); // GET /api/events + "something changed" after every save
   catalogRoutes(app, database);
+  supplierRoutes(app, database);
 
-  // Any unexpected failure → a plain message, never internal details
   app.setErrorHandler((err, _req, reply) => {
-    if (err instanceof InputError)
+    // Bad input / a broken shop rule → 400 with a plain message
+    if (err instanceof InputError || err instanceof RuleError) {
       return reply.code(400).send({ error: err.message });
+    }
+    // Two counters saving the same thing at once — the database index caught it
+    if (/UNIQUE constraint failed/.test(String((err as Error).message))) {
+      return reply.code(409).send({ error: "This already exists" });
+    }
+    // Anything unexpected → a plain message, never internal details
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) console.error(err);
-    reply.code(status).send({
-      error: status < 500 ? (err as Error).message : "Something went wrong",
-    });
+    return reply
+      .code(status)
+      .send({
+        error: status < 500 ? (err as Error).message : "Something went wrong",
+      });
   });
   app.setNotFoundHandler((_req, reply) =>
     reply.code(404).send({ error: "Not found" }),

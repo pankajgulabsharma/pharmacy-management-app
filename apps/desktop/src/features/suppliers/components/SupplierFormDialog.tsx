@@ -15,7 +15,10 @@ import {
   type SupplierFormValues,
 } from "@medicare/domain/suppliers/types";
 import { checkGstin, toGstinInput } from "@medicare/domain/lib/gstin";
-import { validateSupplierForm, type SupplierErrors } from "@medicare/domain/suppliers/validation";
+import {
+  validateSupplierForm,
+  type SupplierErrors,
+} from "@medicare/domain/suppliers/validation";
 
 type Props = {
   open: boolean;
@@ -23,7 +26,7 @@ type Props = {
   existing: readonly Supplier[];
   onClose: () => void;
   /** Return false if saving failed so the form stays open */
-  onSave: (values: SupplierFormValues, editId: string | null) => boolean;
+  onSave: (values: SupplierFormValues, editId: string | null) => void;
 };
 
 /** Mounted per supplier (keyed) so the form always starts from fresh values */

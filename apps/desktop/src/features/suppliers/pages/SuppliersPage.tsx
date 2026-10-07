@@ -32,9 +32,14 @@ import {
 import { startOfDay } from "@medicare/domain/lib/date";
 import { inrFromPaise } from "@medicare/domain/lib/money";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { SupplierError, useSupplierStore } from "../store/useSupplierStore";
+import { tr } from "@/lib/i18n";
+import { ServerBanner } from "@/components/feedback/ServerBanner";
+import { useSupplierStore } from "../store/useSupplierStore";
 import { useSupplierSummaries } from "../hooks/useSupplierSummaries";
-import type { SupplierFormValues, SupplierWithSummary } from "@medicare/domain/suppliers/types";
+import type {
+  SupplierFormValues,
+  SupplierWithSummary,
+} from "@medicare/domain/suppliers/types";
 import { formToSupplierInput } from "@medicare/domain/suppliers/validation";
 import { supplierMatchesQuery } from "@medicare/domain/suppliers/search";
 import { SupplierTable } from "../components/SupplierTable";
@@ -62,6 +67,7 @@ export default function SuppliersPage() {
   const items = useSupplierSummaries(today);
   const suppliers = useSupplierStore((s) => s.suppliers);
   const addSupplier = useSupplierStore((s) => s.addSupplier);
+  const savingRef = useRef(false);
   const updateSupplier = useSupplierStore((s) => s.updateSupplier);
   const removeSupplier = useSupplierStore((s) => s.removeSupplier);
   const purchases = usePurchaseStore((s) => s.purchases);
@@ -164,22 +170,25 @@ export default function SuppliersPage() {
   const closeDelete = useCallback(() => setDeleteId(null), []);
 
   const handleSave = useCallback(
-    (values: SupplierFormValues, editId: string | null): boolean => {
-      try {
-        const input = formToSupplierInput(values);
-        if (editId) updateSupplier(editId, input);
-        else addSupplier(input);
-        setForm({ open: false, editId: null });
-        toast.success(editId ? "Supplier updated" : "Supplier added");
-        return true;
-      } catch (err) {
-        toast.error(
-          err instanceof SupplierError
-            ? err.message
-            : "Could not save supplier",
-        );
-        return false;
-      }
+    (values: SupplierFormValues, editId: string | null) => {
+      if (savingRef.current) return; // ignore a double Enter / double click
+      savingRef.current = true;
+      void (async () => {
+        try {
+          const input = formToSupplierInput(values);
+          if (editId) await updateSupplier(editId, input);
+          else await addSupplier(input);
+          // Close only after the database has saved it
+          setForm({ open: false, editId: null });
+          toast.success(editId ? "Supplier updated" : "Supplier added");
+        } catch (err) {
+          toast.error(
+            err instanceof Error ? tr(err.message) : tr("Could not save"),
+          ); // form stays open
+        } finally {
+          savingRef.current = false;
+        }
+      })();
     },
     [addSupplier, updateSupplier],
   );
@@ -195,10 +204,18 @@ export default function SuppliersPage() {
       return;
     }
     const name = byId.get(deleteId)?.name ?? "Supplier";
-    removeSupplier(deleteId);
-    setDeleteId(null);
-    setViewingId(null);
-    toast.success(`${name} deleted`);
+    void (async () => {
+      try {
+        await removeSupplier(deleteId);
+        setDeleteId(null);
+        setViewingId(null);
+        toast.success(`${name} deleted`);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? tr(err.message) : tr("Could not save"),
+        );
+      }
+    })();
   }, [deleteId, purchases, returns, byId, removeSupplier]);
 
   const editing = form.editId
@@ -240,6 +257,8 @@ export default function SuppliersPage() {
           </Button>
         }
       />
+
+      <ServerBanner />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
         <StatCard

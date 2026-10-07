@@ -62,3 +62,12 @@ export async function apiRequest<T>(
 
 export const apiGet = <T>(path: string, timeoutMs?: number) =>
   apiRequest<T>("GET", path, undefined, timeoutMs);
+
+/** Saving needs the database — refuse clearly when it isn't connected */
+export function requireServer(source: "demo" | "server") {
+  if (source !== "server")
+    throw new ApiError(
+      "Server offline — start the server to save changes",
+      "offline",
+    );
+}

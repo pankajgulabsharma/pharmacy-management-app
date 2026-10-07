@@ -1,96 +1,70 @@
 import { create } from "zustand";
-import { newId } from "@medicare/domain/lib/id";
-import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
 import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
-import { SUPPLIER_LIMITS, type Supplier, type SupplierInput } from "@medicare/domain/suppliers/types";
-import { checkGstin } from "@medicare/domain/lib/gstin";
-import { normalizePhone } from "@medicare/domain/suppliers/validation";
-
-export class SupplierError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "SupplierError";
-  }
-}
+import {
+  assertUniqueSupplier,
+  cleanSupplierInput,
+} from "@medicare/domain/suppliers/clean";
+import type { Supplier, SupplierInput } from "@medicare/domain/suppliers/types";
+import { apiGet, apiRequest, requireServer } from "@/lib/api";
 
 /**
- * Supplier master. In memory for now. TODO(api): backend.
- * Deleting is guarded by the caller (a supplier with invoices can only be
- * made inactive) — see SuppliersPage.
+ * Supplier master. The database (server) is the source of truth: every
+ * change goes to the server first and the screen shows what it saved.
+ * The same rules run here first (instant message) and again on the server.
  */
 type SupplierState = {
   suppliers: Supplier[];
-  addSupplier: (input: SupplierInput) => Supplier;
-  updateSupplier: (id: string, input: SupplierInput) => void;
-  removeSupplier: (id: string) => void;
+  source: "demo" | "server";
+  loadFromServer: () => Promise<void>;
+  addSupplier: (input: SupplierInput) => Promise<Supplier>;
+  updateSupplier: (id: string, input: SupplierInput) => Promise<Supplier>;
+  /** The server refuses if the supplier has invoices */
+  removeSupplier: (id: string) => Promise<void>;
 };
-
-/** Never trust callers: normalise, bound and re-check every field */
-function sanitize(input: SupplierInput): SupplierInput {
-  const gstin = input.gstin.trim().toUpperCase();
-  if (!checkGstin(gstin).ok) throw new SupplierError("Invalid GSTIN");
-  const days = Math.trunc(Number(input.creditDays));
-  return {
-    name: cleanText(input.name, SUPPLIER_LIMITS.nameMax),
-    gstin,
-    drugLicenseNo: cleanText(
-      input.drugLicenseNo,
-      SUPPLIER_LIMITS.drugLicenseMax,
-    ).toUpperCase(),
-    contactPerson: cleanText(input.contactPerson, SUPPLIER_LIMITS.contactMax),
-    phone: normalizePhone(input.phone).slice(0, 11),
-    email: cleanCode(input.email, SUPPLIER_LIMITS.emailMax).toLowerCase(),
-    address: cleanText(input.address, SUPPLIER_LIMITS.addressMax),
-    city: cleanText(input.city, SUPPLIER_LIMITS.cityMax),
-    creditDays: Number.isFinite(days)
-      ? Math.min(SUPPLIER_LIMITS.maxCreditDays, Math.max(0, days))
-      : 0,
-    status: input.status === "inactive" ? "inactive" : "active",
-  };
-}
-
-function assertUnique(
-  list: readonly Supplier[],
-  s: SupplierInput,
-  exceptId?: string,
-) {
-  for (const other of list) {
-    if (other.id === exceptId) continue;
-    if (other.gstin === s.gstin)
-      throw new SupplierError("GSTIN already used by another supplier");
-    if (other.name.toLowerCase() === s.name.toLowerCase()) {
-      throw new SupplierError("A supplier with this name already exists");
-    }
-  }
-}
 
 export const useSupplierStore = create<SupplierState>()((set, get) => ({
   suppliers: mockSuppliers,
+  source: "demo",
 
-  addSupplier: (input) => {
-    const clean = sanitize(input);
-    if (!clean.name) throw new SupplierError("Name is required");
-    assertUnique(get().suppliers, clean);
-    const supplier: Supplier = {
-      id: newId("sup"),
-      ...clean,
-      createdAt: new Date().toISOString(),
-    };
-    set((s) => ({ suppliers: [supplier, ...s.suppliers] }));
-    return supplier;
+  loadFromServer: async () => {
+    const { items } = await apiGet<{ items: Supplier[] }>("/api/suppliers");
+    if (!Array.isArray(items))
+      throw new Error("Unexpected answer from the server");
+    set({ suppliers: items, source: "server" });
   },
 
-  updateSupplier: (id, input) => {
-    const clean = sanitize(input);
-    if (!clean.name) throw new SupplierError("Name is required");
-    const list = get().suppliers;
-    if (!list.some((s) => s.id === id))
-      throw new SupplierError("Supplier not found");
-    assertUnique(list, clean, id);
-    set({ suppliers: list.map((s) => (s.id === id ? { ...s, ...clean } : s)) });
+  addSupplier: async (input) => {
+    requireServer(get().source);
+    const clean = cleanSupplierInput(input);
+    assertUniqueSupplier(get().suppliers, clean);
+    const saved = await apiRequest<Supplier>("POST", "/api/suppliers", clean);
+    set((s) => ({
+      suppliers: [saved, ...s.suppliers.filter((x) => x.id !== saved.id)],
+    }));
+    return saved;
   },
 
-  removeSupplier: (id) => {
+  updateSupplier: async (id, input) => {
+    requireServer(get().source);
+    const clean = cleanSupplierInput(input);
+    assertUniqueSupplier(get().suppliers, clean, id);
+    const saved = await apiRequest<Supplier>(
+      "PUT",
+      `/api/suppliers/${encodeURIComponent(id)}`,
+      clean,
+    );
+    set((s) => ({
+      suppliers: s.suppliers.map((x) => (x.id === id ? saved : x)),
+    }));
+    return saved;
+  },
+
+  removeSupplier: async (id) => {
+    requireServer(get().source);
+    await apiRequest<void>(
+      "DELETE",
+      `/api/suppliers/${encodeURIComponent(id)}`,
+    );
     set((s) => ({ suppliers: s.suppliers.filter((x) => x.id !== id) }));
   },
 }));

@@ -4,7 +4,7 @@ import {
   MAX_MEDICINE_IMPORT,
 } from "@medicare/domain/medicines/clean";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
-import { ApiError, apiGet, apiRequest } from "@/lib/api";
+import { apiGet, apiRequest, requireServer } from "@/lib/api";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
 /**
@@ -25,16 +25,6 @@ type MedicineState = {
   removeMedicine: (id: string) => Promise<void>;
   importMedicines: (rows: readonly MedicineInput[]) => Promise<number>;
 };
-
-/** Writes need the database — refuse clearly when it isn't connected */
-function requireServer(source: MedicineState["source"]) {
-  if (source !== "server") {
-    throw new ApiError(
-      "Server offline — start the server to save changes",
-      "offline",
-    );
-  }
-}
 
 export const useMedicineStore = create<MedicineState>()((set, get) => ({
   medicines: mockMedicines,

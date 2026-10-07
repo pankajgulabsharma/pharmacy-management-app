@@ -73,7 +73,7 @@ export function parseImport(body: unknown): MedicineInput[] {
 }
 
 /** First problem in plain words, e.g. "mrp: Invalid input…" */
-function describe(err: z.ZodError): string {
+export function describe(err: z.ZodError): string {
   const i = err.issues[0];
   return i ? `${i.path.join(".") || "body"}: ${i.message}` : "Invalid data";
 }

@@ -536,4 +536,11 @@ export const HI_UI: Record<string, string> = {
   "MRP must be more than 0": "MRP 0 से ज़्यादा होना चाहिए",
   "This medicine still has stock — sell, return or adjust it first": "इस दवाई का स्टॉक बाकी है — पहले बेचें, लौटाएँ या सुधारें",
   "This medicine has stock or bill history — mark it Inactive instead": "इस दवाई का स्टॉक या बिल इतिहास है — इसे बंद (Inactive) करें",
+
+  "showing demo data; changes can't be saved. The app reconnects by itself — or start the server with": "डेमो डेटा दिख रहा है; बदलाव सेव नहीं होंगे। ऐप खुद दोबारा जुड़ जाएगा — या सर्वर चालू करें:",
+  "Invalid GSTIN": "GSTIN गलत है",
+  "GSTIN already used by another supplier": "यह GSTIN किसी और सप्लायर का है",
+  "A supplier with this name already exists": "इस नाम का सप्लायर पहले से है",
+  "This supplier has invoices — set it Inactive instead": "इस सप्लायर के इनवॉइस हैं — इसे बंद (Inactive) करें",
+  "This already exists": "यह पहले से मौजूद है",
 };

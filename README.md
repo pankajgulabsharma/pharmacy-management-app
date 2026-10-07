@@ -43,12 +43,13 @@ Demo login: `admin` / `admin` (owner) or `cashier` / `cashier`.
 5. ✅ First API (read): `/api/medicines`, `/api/medicines/:id`, `/api/inventory/batches`
 6. ✅ Desktop reads medicines from the server (header light shows the connection; offline = clear banner + Retry)
 7. ✅ Medicines saved to the database (add, edit, delete, CSV import) — checked on the server with Zod + the shared rules
-8. Purchases → Billing → Returns → Udhaar payments
-9. Reports from the database
-10. Real login, roles
-11. Daily backup & restore
-12. Desktop installer (Tauri)
-13. Several counters on the shop LAN
+8. ✅ Live updates (no refresh, auto-reconnect) + Suppliers tab on the database
+9. Stock core: Inventory + Purchases + Billing + Returns + Udhaar (one ledger, moved together)
+10. Reports from the database
+11. Real login, roles
+12. Daily backup & restore
+13. Desktop installer (Tauri)
+14. Several counters on the shop LAN
 
 ## Where is the data?
 

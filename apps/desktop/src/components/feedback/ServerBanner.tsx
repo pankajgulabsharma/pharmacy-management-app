@@ -17,7 +17,7 @@ export function ServerBanner() {
       <p className="flex-1 min-w-0">
         <b>{tr(error ?? "Server not reachable")}</b> —{" "}
         {tr(
-          "showing demo medicines; changes can't be saved. Start the server with",
+          "showing demo data; changes can't be saved. The app reconnects by itself — or start the server with",
         )}{" "}
         <code className="rounded bg-red-100 px-1 dark:bg-red-900/50">
           npm run dev:server

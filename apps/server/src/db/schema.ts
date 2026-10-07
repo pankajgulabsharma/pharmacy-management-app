@@ -113,22 +113,32 @@ export const stockMovements = sqliteTable(
 /* Suppliers & purchases                                              */
 /* ------------------------------------------------------------------ */
 
-export const suppliers = sqliteTable("suppliers", {
-  id: id(),
-  name: text("name").notNull(),
-  gstin: text("gstin").notNull().default(""),
-  drugLicenseNo: text("drug_license_no").notNull().default(""),
-  contactPerson: text("contact_person").notNull().default(""),
-  phone: text("phone").notNull().default(""),
-  email: text("email").notNull().default(""),
-  address: text("address").notNull().default(""),
-  city: text("city").notNull().default(""),
-  creditDays: integer("credit_days").notNull().default(0),
-  status: text("status", { enum: ["active", "inactive"] })
-    .notNull()
-    .default("active"),
-  createdAt: createdAt(),
-});
+export const suppliers = sqliteTable(
+  "suppliers",
+  {
+    id: id(),
+    name: text("name").notNull(),
+    gstin: text("gstin").notNull().default(""),
+    drugLicenseNo: text("drug_license_no").notNull().default(""),
+    contactPerson: text("contact_person").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    email: text("email").notNull().default(""),
+    address: text("address").notNull().default(""),
+    city: text("city").notNull().default(""),
+    creditDays: integer("credit_days").notNull().default(0),
+    status: text("status", { enum: ["active", "inactive"] })
+      .notNull()
+      .default("active"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // One supplier per GSTIN, and per name (ignoring case)
+    uniqueIndex("suppliers_gstin_uq")
+      .on(t.gstin)
+      .where(sql`${t.gstin} <> ''`),
+    uniqueIndex("suppliers_name_uq").on(sql`lower(${t.name})`),
+  ],
+);
 
 /** Supplier invoice (header) */
 export const purchases = sqliteTable(
