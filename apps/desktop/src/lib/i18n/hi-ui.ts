@@ -520,7 +520,8 @@ export const HI_UI: Record<string, string> = {
   // Server connection
   "Server connected": "सर्वर जुड़ा है",
   "Connecting to server…": "सर्वर से जुड़ रहे हैं…",
-  "Server offline — click to retry": "सर्वर बंद — दोबारा जोड़ने के लिए क्लिक करें",
+  "Server offline — click to retry":
+    "सर्वर बंद — दोबारा जोड़ने के लिए क्लिक करें",
   Server: "सर्वर",
   Offline: "बंद",
   Connecting: "जुड़ रहे",
@@ -529,14 +530,75 @@ export const HI_UI: Record<string, string> = {
   Retry: "फिर कोशिश करें",
 
   // Saving medicines to the database
-  "Server offline — start the server to save changes": "सर्वर बंद है — बदलाव सेव करने के लिए सर्वर चालू करें",
+  "Not connected to the server yet": "सर्वर से अभी जुड़ा नहीं है",
   "Could not save": "सेव नहीं हो सका",
   "MRP must be more than 0": "MRP 0 से ज़्यादा होना चाहिए",
-  "This medicine still has stock — sell, return or adjust it first": "इस दवाई का स्टॉक बाकी है — पहले बेचें, लौटाएँ या सुधारें",
-  "This medicine has stock or bill history — mark it Inactive instead": "इस दवाई का स्टॉक या बिल इतिहास है — इसे बंद (Inactive) करें",
+  "This medicine still has stock — sell, return or adjust it first":
+    "इस दवाई का स्टॉक बाकी है — पहले बेचें, लौटाएँ या सुधारें",
+  "This medicine has stock or bill history — mark it Inactive instead":
+    "इस दवाई का स्टॉक या बिल इतिहास है — इसे बंद (Inactive) करें",
   "Invalid GSTIN": "GSTIN गलत है",
   "GSTIN already used by another supplier": "यह GSTIN किसी और सप्लायर का है",
   "A supplier with this name already exists": "इस नाम का सप्लायर पहले से है",
-  "This supplier has invoices — set it Inactive instead": "इस सप्लायर के इनवॉइस हैं — इसे बंद (Inactive) करें",
+  "This supplier has invoices — set it Inactive instead":
+    "इस सप्लायर के इनवॉइस हैं — इसे बंद (Inactive) करें",
   "This already exists": "यह पहले से मौजूद है",
+
+  // Sign-in, roles & users (step 10)
+  "Server not reachable — start the server and try again":
+    "सर्वर से कनेक्शन नहीं — सर्वर चालू करके फिर कोशिश करें",
+  "Loading shop data…": "दुकान का डेटा लोड हो रहा है…",
+  "No access": "अनुमति नहीं",
+  "Your role can't open this screen — ask the owner.":
+    "आपकी भूमिका यह स्क्रीन नहीं खोल सकती — मालिक से पूछें।",
+  "Change password": "पासवर्ड बदलें",
+  "Password changed": "पासवर्ड बदल गया",
+  "Other computers signed in as you will be signed out.":
+    "आपके नाम से दूसरे कंप्यूटर पर चल रहा लॉगिन बंद हो जाएगा।",
+  "Choose your own password": "अपना पासवर्ड चुनें",
+  "Hi {{name}} — you signed in with a starter password. Pick a new one that only you know.":
+    "नमस्ते {{name}} — आपने शुरुआती पासवर्ड से लॉगिन किया है। ऐसा नया पासवर्ड चुनें जो सिर्फ आपको पता हो।",
+  "Current password": "मौजूदा पासवर्ड",
+  "New password": "नया पासवर्ड",
+  "Repeat new password": "नया पासवर्ड दोबारा",
+  "At least 6 characters": "कम से कम 6 अक्षर",
+  "Passwords don't match": "पासवर्ड मेल नहीं खाते",
+  "Choose a different password": "कोई दूसरा पासवर्ड चुनें",
+  "Users & roles": "यूज़र और भूमिकाएँ",
+  "Who can sign in, and what each role may do. Changes apply on every counter at once.":
+    "कौन लॉगिन कर सकता है और हर भूमिका क्या कर सकती है। बदलाव हर काउंटर पर तुरंत लागू होते हैं।",
+  "Everything, incl. settings and users": "सब कुछ, सेटिंग्स और यूज़र भी",
+  "Billing, stock, purchases, suppliers, reports":
+    "बिलिंग, स्टॉक, खरीद, सप्लायर, रिपोर्ट",
+  "Billing, returns and customers only": "सिर्फ बिलिंग, रिटर्न और ग्राहक",
+  Name: "नाम",
+  Username: "यूज़रनेम",
+  Role: "भूमिका",
+  you: "आप",
+  "Loading…": "लोड हो रहा है…",
+  Saved: "सेव हो गया",
+  "Switched off": "बंद",
+  "New password due": "नया पासवर्ड बाकी",
+  "Reset password": "पासवर्ड रीसेट",
+  "Switch off": "बंद करें",
+  "Switch on": "चालू करें",
+  "Add a user": "नया यूज़र जोड़ें",
+  "Full name": "पूरा नाम",
+  "Starter password": "शुरुआती पासवर्ड",
+  "min. 6 characters": "कम से कम 6 अक्षर",
+  "Add user": "यूज़र जोड़ें",
+  "Enter name and username": "नाम और यूज़रनेम भरें",
+  "Tell them the starter password — at first sign-in they must choose their own.":
+    "उन्हें शुरुआती पासवर्ड बताएँ — पहली बार लॉगिन पर उन्हें अपना पासवर्ड चुनना होगा।",
+  "{{name}} can now sign in — they will choose their own password":
+    "{{name}} अब लॉगिन कर सकते हैं — वे अपना पासवर्ड खुद चुनेंगे",
+  "Reset password for {{name}}?": "{{name}} का पासवर्ड रीसेट करें?",
+  "They are signed out everywhere and must choose a new password after signing in with this one.":
+    "उनका हर जगह से लॉगआउट हो जाएगा; इस पासवर्ड से लॉगिन के बाद उन्हें नया पासवर्ड चुनना होगा।",
+  "Temporary password": "अस्थायी पासवर्ड",
+  "Password reset": "पासवर्ड रीसेट हो गया",
+  "Wrong username or password": "गलत यूज़रनेम या पासवर्ड",
+  "Your role can't do this — ask the owner":
+    "आपकी भूमिका यह नहीं कर सकती — मालिक से पूछें",
+  "Please sign in again": "कृपया फिर से लॉगिन करें",
 };

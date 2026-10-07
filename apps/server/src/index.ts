@@ -1,5 +1,6 @@
 import { buildApp } from "./app";
 import { DEFAULT_DB_FILE, openDatabase } from "./db/client";
+import { ensureOwner } from "./auth/store";
 
 /**
  * Starts the server. Listens on THIS computer only (127.0.0.1) by default —
@@ -10,6 +11,12 @@ const HOST = process.env.HOST ?? "127.0.0.1";
 const DB_FILE = process.env.DB_FILE ?? DEFAULT_DB_FILE;
 
 const database = await openDatabase(DB_FILE);
+// A brand-new shop gets one owner account to start with
+if (await ensureOwner(database.raw)) {
+  console.log(
+    'First start: sign in as "admin" with password "admin" — you will be asked to choose a new password.',
+  );
+}
 const app = buildApp({ database });
 
 try {

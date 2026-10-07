@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS } from "./defaults";
-import { cleanList, sanitizeSettings, validateShop } from "./validation";
+import {
+  applySettingsChange,
+  cleanList,
+  sanitizeSettings,
+  validateShop,
+} from "./validation";
 import { checkGstin } from "../lib/gstin";
 
 describe("settings", () => {
@@ -38,5 +43,28 @@ describe("settings", () => {
     expect(
       validateShop({ ...DEFAULT_SETTINGS.shop, gstin: "" }).gstin,
     ).toBeUndefined();
+  });
+});
+
+describe("saving a settings change (server)", () => {
+  it("refuses invalid shop details instead of silently replacing them", () => {
+    expect(() =>
+      applySettingsChange(DEFAULT_SETTINGS, {
+        shop: { ...DEFAULT_SETTINGS.shop, phone: "123" },
+      }),
+    ).toThrow(/10-digit/);
+    expect(() =>
+      applySettingsChange(DEFAULT_SETTINGS, {
+        inventory: { ...DEFAULT_SETTINGS.inventory, expiringSoonDays: 2 },
+      }),
+    ).toThrow(/days/);
+  });
+
+  it("changes only the section sent and cleans lists", () => {
+    const next = applySettingsChange(DEFAULT_SETTINGS, {
+      doctors: [" Dr. A ", "dr. a", ""],
+    });
+    expect(next.doctors).toEqual(["Dr. A"]);
+    expect(next.shop).toEqual(DEFAULT_SETTINGS.shop);
   });
 });

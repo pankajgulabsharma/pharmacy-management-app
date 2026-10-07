@@ -28,7 +28,8 @@ type Props = {
   items: InventoryBatch[];
   /** One status per batch, from batchStatuses() */
   statuses: ReadonlyMap<string, BatchStatus>;
-  onAdjust: (b: InventoryBatch) => void;
+  /** Left out when your role can't adjust stock — no adjust button */
+  onAdjust?: (b: InventoryBatch) => void;
   /** Open the batch's stock history */
   onHistory: (b: InventoryBatch) => void;
   /** Keyboard / click selection */
@@ -177,7 +178,7 @@ export function InventoryTable({
   onSelect,
 }: Props) {
   const handleHistory = useStableCallback(onHistory);
-  const handleAdjust = useStableCallback(onAdjust);
+  const handleAdjust = useStableCallback((b: InventoryBatch) => onAdjust?.(b));
 
   // Single pass: row views + footer totals
   const { rows, totalValue, attentionCount } = useMemo(() => {
@@ -262,7 +263,7 @@ export function InventoryTable({
           measureRef={measureElement}
           selected={rows[vr.index].batch.id === selectedId}
           onSelect={handleSelect}
-          onAdjust={handleAdjust}
+          onAdjust={onAdjust ? handleAdjust : undefined}
           onHistory={handleHistory}
         />
       ))}
@@ -280,7 +281,8 @@ type RowProps = {
   view: RowView;
   index: number;
   measureRef: (el: Element | null) => void;
-  onAdjust: (b: InventoryBatch) => void;
+  /** Left out when your role can't adjust stock — no adjust button */
+  onAdjust?: (b: InventoryBatch) => void;
   onHistory: (b: InventoryBatch) => void;
   selected: boolean;
   onSelect: (x: InventoryBatch) => void;
@@ -410,12 +412,14 @@ const InventoryRow = memo(function InventoryRow({
             title="Batch history (H)"
             onClick={() => onHistory(b)}
           />
-          <RowActionButton
-            icon={SlidersHorizontal}
-            label={`Adjust stock for ${b.medicineName} (${b.batchNo})`}
-            title="Adjust stock (Enter)"
-            onClick={() => onAdjust(b)}
-          />
+          {onAdjust ? (
+            <RowActionButton
+              icon={SlidersHorizontal}
+              label={`Adjust stock for ${b.medicineName} (${b.batchNo})`}
+              title="Adjust stock (Enter)"
+              onClick={() => onAdjust(b)}
+            />
+          ) : null}
         </div>
       </td>
     </tr>

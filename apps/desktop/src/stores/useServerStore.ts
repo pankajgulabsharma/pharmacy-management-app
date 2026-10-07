@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import { API_URL, ApiError } from "@/lib/api";
+import { API_URL, ApiError, apiToken } from "@/lib/api";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { useUserStore } from "@/features/settings/store/useUserStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
@@ -12,6 +15,7 @@ import { applyShopPatch } from "./applyShopPatch";
 /**
  * Live connection to the server — screens update by themselves, no refresh.
  *
+ *  • Opened after sign-in (the stream needs your token), closed on sign-out.
  *  • On connect: load everything that lives on the server.
  *  • The server announces every save over one open stream: masters
  *    ("medicines changed") reload; bills/purchases/returns arrive as a
@@ -22,12 +26,19 @@ import { applyShopPatch } from "./applyShopPatch";
  *    changes made outside the app (Drizzle Studio, sqlite3).
  */
 type ServerStatus = "checking" | "online" | "offline";
-type Topic = "medicines" | "suppliers";
+type Topic = "medicines" | "suppliers" | "settings" | "users";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
   medicines: () => useMedicineStore.getState().loadFromServer(),
   suppliers: () => useSupplierStore.getState().loadFromServer(),
+  settings: () => useSettingsStore.getState().loadFromServer(),
+  // My role may have changed; the owner's Users screen refreshes too
+  users: async () => {
+    await useAuthStore.getState().refreshMe();
+    const users = useUserStore.getState();
+    if (users.loaded) await users.load();
+  },
 };
 
 /** Stock & money: loaded on connect; after that, other counters' saves arrive as patches */
@@ -44,12 +55,16 @@ type ServerState = {
   lastSyncAt: number | null;
   /** Load everything now (also the Retry button) */
   sync: () => Promise<void>;
-  /** Open the live stream once, when the app starts */
+  /** Open the live stream (after sign-in) */
   connect: () => void;
+  /** Close it (sign-out) — the next person starts from a fresh load */
+  disconnect: () => void;
 };
 
 let inFlight: Promise<void> | null = null;
 let stream: EventSource | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let focusHooked = false;
 
 export const useServerStore = create<ServerState>()((set, get) => ({
   status: "checking",
@@ -85,12 +100,24 @@ export const useServerStore = create<ServerState>()((set, get) => ({
       void get().sync();
       return;
     }
-    if (stream) return;
-    stream = new EventSource(`${API_URL}/api/events`);
+    const token = apiToken();
+    if (stream || !token) return;
+    stream = new EventSource(
+      `${API_URL}/api/events?token=${encodeURIComponent(token)}`,
+    );
     stream.onopen = () => void get().sync(); // (re)connected → fresh data
     stream.onerror = () => {
-      if (stream?.readyState !== EventSource.OPEN) {
-        set({ status: "offline", error: "Server not reachable" });
+      if (stream?.readyState === EventSource.OPEN) return;
+      set({ status: "offline", error: "Server not reachable" });
+      // Refused (e.g. signed out elsewhere) → the browser gives up; we retry.
+      // A 401 on the next load signs this app out (and closes the stream).
+      if (stream?.readyState === EventSource.CLOSED) {
+        get().disconnect();
+        retryTimer = setTimeout(() => {
+          if (!apiToken()) return; // signed out meanwhile
+          void get().sync();
+          get().connect();
+        }, 3000);
       }
     };
     stream.addEventListener("change", (e) => {
@@ -110,8 +137,18 @@ export const useServerStore = create<ServerState>()((set, get) => ({
         void get().sync();
       }
     });
-    window.addEventListener("focus", () => {
-      if (get().status === "online") void get().sync();
-    });
+    if (!focusHooked) {
+      focusHooked = true;
+      window.addEventListener("focus", () => {
+        if (stream && get().status === "online") void get().sync();
+      });
+    }
+  },
+
+  disconnect: () => {
+    clearTimeout(retryTimer);
+    stream?.close();
+    stream = null;
+    set({ status: "checking", error: null, lastSyncAt: null });
   },
 }));

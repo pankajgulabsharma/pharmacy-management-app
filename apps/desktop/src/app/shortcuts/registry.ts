@@ -15,12 +15,16 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { can, type Permission } from "@medicare/domain/auth/permissions";
+import type { Role } from "@medicare/domain/auth/types";
 
 export type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
   keys: string;
+  /** Hidden for roles without this permission */
+  perm?: Permission;
 };
 
 /** Screens — Alt+1 … Alt+9, in the same order as the sidebar */
@@ -54,12 +58,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Purchases",
     icon: Truck,
     keys: "Alt+5",
+    perm: "stock",
   },
   {
     to: "/suppliers",
     label: "Suppliers",
     icon: Users,
     keys: "Alt+6",
+    perm: "stock",
   },
   {
     to: "/customers",
@@ -72,14 +78,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Reports",
     icon: BarChart3,
     keys: "Alt+8",
+    perm: "reports",
   },
   {
     to: "/settings",
     label: "Settings",
     icon: Settings,
     keys: "Alt+9",
+    perm: "admin",
   },
 ];
+
+/** The screens this role may open (sidebar + Alt+number keys) */
+export const navItemsFor = (role: Role | undefined) =>
+  NAV_ITEMS.filter((i) => !i.perm || can(role, i.perm));
 
 /**
  * Keys used in code — change a key here and it changes everywhere.

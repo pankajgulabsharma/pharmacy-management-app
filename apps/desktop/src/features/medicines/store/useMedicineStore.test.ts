@@ -4,7 +4,9 @@ import type { MedicineInput } from "@medicare/domain/medicines/types";
 import { useMedicineStore } from "./useMedicineStore";
 
 const initial = useMedicineStore.getState();
-beforeEach(() => useMedicineStore.setState(initial, true));
+beforeEach(() =>
+  useMedicineStore.setState({ ...initial, medicines: mockMedicines }, true),
+);
 afterEach(() => vi.unstubAllGlobals());
 
 const { id: _id, ...input } = mockMedicines[0];
@@ -21,9 +23,7 @@ describe("saving medicines goes through the server", () => {
   it("without a server connection, a change is refused — never 'saved' and lost", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
-    await expect(store().addMedicine(asInput)).rejects.toThrow(
-      /Server offline/,
-    );
+    await expect(store().addMedicine(asInput)).rejects.toThrow(/Not connected/);
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(store().medicines).toHaveLength(mockMedicines.length);
   });

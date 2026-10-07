@@ -19,6 +19,7 @@ export default function NotFoundPage() {
         </p>
         <div className="mt-5 flex justify-center gap-2">
           <Button
+            nativeButton={false}
             render={<Link to="/dashboard" />}
             className="h-9 rounded-lg text-[12px]"
           >
@@ -26,6 +27,7 @@ export default function NotFoundPage() {
           </Button>
           <Button
             variant="outline"
+            nativeButton={false}
             render={<Link to="/billing" />}
             className="h-9 rounded-lg text-[12px]"
           >

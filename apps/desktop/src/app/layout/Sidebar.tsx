@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { KEYS, NAV_ITEMS, type NavItem } from "@/app/shortcuts/registry";
+import { KEYS, navItemsFor, type NavItem } from "@/app/shortcuts/registry";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useTr } from "@/hooks/useTr";
 import { tr } from "@/lib/i18n";
 
@@ -18,6 +19,7 @@ const keyText = (keys: string | readonly string[]) =>
 export function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen);
   const shopName = useSettingsStore((s) => s.shop.name);
+  const role = useAuthStore((s) => s.session?.user.role);
 
   return (
     <aside
@@ -59,7 +61,7 @@ export function Sidebar() {
 
       {/* Screens, one after another */}
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
-        {NAV_ITEMS.map((item) => (
+        {navItemsFor(role).map((item) => (
           <NavItemLink key={item.to} item={item} open={open} />
         ))}
       </nav>

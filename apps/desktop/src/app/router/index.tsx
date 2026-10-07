@@ -12,6 +12,7 @@ import SettingsPage from "@/features/settings/pages/SettingsPage";
 import NotFoundPage from "@/app/pages/NotFoundPage";
 import CustomersPage from "@/features/customers/pages/CustomersPage";
 import { RequireAuth } from "@/features/auth/components/RequireAuth";
+import { Allowed } from "@/features/auth/components/Allowed";
 
 export const router = createBrowserRouter([
   {
@@ -33,10 +34,38 @@ export const router = createBrowserRouter([
       { path: "customers", element: <CustomersPage /> },
       { path: "medicines", element: <MedicinesPage /> },
       { path: "inventory", element: <InventoryPage /> },
-      { path: "purchases", element: <PurchasesPage /> },
-      { path: "suppliers", element: <SuppliersPage /> },
-      { path: "reports", element: <ReportsPage /> },
-      { path: "settings", element: <SettingsPage /> },
+      {
+        path: "purchases",
+        element: (
+          <Allowed perm="stock">
+            <PurchasesPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: "suppliers",
+        element: (
+          <Allowed perm="stock">
+            <SuppliersPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: "reports",
+        element: (
+          <Allowed perm="reports">
+            <ReportsPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: "settings",
+        element: (
+          <Allowed perm="admin">
+            <SettingsPage />
+          </Allowed>
+        ),
+      },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

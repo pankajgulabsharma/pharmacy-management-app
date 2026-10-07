@@ -1,3 +1,4 @@
+import { useCan } from "@/features/auth/store/useAuthStore";
 import {
   useCallback,
   useDeferredValue,
@@ -104,10 +105,12 @@ export default function InventoryPage() {
   }, [items, deferredQuery, statusFilter, statuses]);
 
   // Keyboard: ↑↓ select · Enter adjust · H history · / search
+  // Everyone sees stock; adjusting it is for pharmacist / owner
+  const canAdjust = useCan("stock");
   const nav = useListNavigation({
     items: filtered,
     getKey: (b: InventoryBatch) => b.id,
-    onOpen: setAdjustTarget,
+    onOpen: canAdjust ? setAdjustTarget : () => {},
   });
   useHotkeys([
     { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
@@ -118,7 +121,7 @@ export default function InventoryPage() {
     },
     {
       keys: KEYS.edit,
-      enabled: nav.selected !== null,
+      enabled: canAdjust && nav.selected !== null,
       handler: () => nav.selected && setAdjustTarget(nav.selected),
     },
   ]);
@@ -232,7 +235,7 @@ export default function InventoryPage() {
           hints={[
             { keys: "/", label: "Search" },
             { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
-            { keys: "Enter", label: "Adjust" },
+            ...(canAdjust ? [{ keys: "Enter", label: "Adjust" }] : []),
             { keys: "H", label: "History" },
           ]}
         />
@@ -241,7 +244,7 @@ export default function InventoryPage() {
       <InventoryTable
         items={filtered}
         statuses={statuses}
-        onAdjust={setAdjustTarget}
+        onAdjust={canAdjust ? setAdjustTarget : undefined}
         onHistory={openHistory}
         selectedId={nav.selectedKey}
         onSelect={nav.select}

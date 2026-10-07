@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { demoInventory } from "@medicare/demo/seed";
 import type {
   StockBatch,
   StockMovement,
@@ -17,7 +16,7 @@ type InventoryState = {
   batches: StockBatch[];
   /** Movement history, newest first */
   movements: StockMovement[];
-  source: "demo" | "server";
+  source: "none" | "server";
   loadFromServer: () => Promise<void>;
   /** Set a batch to a counted quantity. Resolves false when nothing changed. */
   adjust: (
@@ -28,9 +27,9 @@ type InventoryState = {
 };
 
 export const useInventoryStore = create<InventoryState>()((set, get) => ({
-  batches: demoInventory.batches,
-  movements: demoInventory.movements,
-  source: "demo",
+  batches: [],
+  movements: [],
+  source: "none",
 
   loadFromServer: async () => {
     const r = await apiGet<{

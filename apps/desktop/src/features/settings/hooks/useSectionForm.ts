@@ -38,16 +38,17 @@ export function useSectionForm<T extends object>(
     setSubmitted(false);
   }, [saved]);
 
-  /** Validates; calls onValid with the draft only when there are no errors */
+  /**
+   * Validates; saves the draft only when there are no errors.
+   * Resolves "invalid" (fix the fields), "saved", or throws the save error.
+   */
   const submit = useCallback(
-    (onValid: (value: T) => void) => {
+    async (save: (value: T) => Promise<void>) => {
       setSubmitted(true);
-      if (Object.keys(validate(draft)).length === 0) {
-        onValid(draft);
-        setSubmitted(false);
-        return true;
-      }
-      return false;
+      if (Object.keys(validate(draft)).length > 0) return "invalid" as const;
+      await save(draft);
+      setSubmitted(false);
+      return "saved" as const;
     },
     [draft, validate],
   );

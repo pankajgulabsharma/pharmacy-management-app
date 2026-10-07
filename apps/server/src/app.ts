@@ -6,6 +6,9 @@ import { EventBus } from "./events";
 import { catalogRoutes } from "./routes/catalog";
 import { supplierRoutes } from "./routes/suppliers";
 import { shopRoutes } from "./routes/shop";
+import { authRoutes } from "./routes/auth";
+import { settingsRoutes } from "./routes/settings";
+import { AuthError, authGuard } from "./auth/guard";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
 
@@ -40,12 +43,17 @@ export function buildApp({
     };
   });
 
+  authGuard(app, database.raw); // sign-in + role check before every /api call
   bus.routes(app); // GET /api/events + "something changed" after every save
+  authRoutes(app, database);
+  settingsRoutes(app, database);
   catalogRoutes(app, database);
   supplierRoutes(app, database);
   shopRoutes(app, database, bus);
 
   app.setErrorHandler((err, _req, reply) => {
+    if (err instanceof AuthError)
+      return reply.code(err.statusCode).send({ error: err.message });
     // Bad input / a broken shop rule → 400 with a plain message
     if (err instanceof NotFoundError)
       return reply.code(404).send({ error: err.message });

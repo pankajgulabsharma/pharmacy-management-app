@@ -6,6 +6,7 @@ import {
   Receipt,
   Settings as SettingsIcon,
   Stethoscope,
+  UserCog,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -21,10 +22,11 @@ import {
   ListsSection,
   ShopProfileSection,
 } from "../components/SettingsSections";
+import { UsersSection } from "../components/UsersSection";
 import { tr } from "@/lib/i18n";
 
 type SectionId =
-  "shop" | "billing" | "inventory" | "lists" | "appearance" | "data";
+  "shop" | "billing" | "inventory" | "lists" | "users" | "appearance" | "data";
 
 const SECTIONS: {
   id: SectionId;
@@ -50,6 +52,12 @@ const SECTIONS: {
     label: "Doctors & counters",
     icon: Stethoscope,
     Component: ListsSection,
+  },
+  {
+    id: "users",
+    label: "Users & roles",
+    icon: UserCog,
+    Component: UsersSection,
   },
   {
     id: "appearance",
@@ -80,7 +88,7 @@ export default function SettingsPage() {
       <PageHeader
         icon={SettingsIcon}
         title="Settings"
-        subtitle="Shop profile · billing · stock · lists · appearance"
+        subtitle="Shop profile · billing · stock · lists · users · appearance"
       />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">

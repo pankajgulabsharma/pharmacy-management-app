@@ -3,6 +3,7 @@ import {
   Bell,
   Calendar,
   ChevronDown,
+  KeyRound,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -17,9 +18,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   useAuthStore,
+  useCan,
   useCurrentUser,
 } from "@/features/auth/store/useAuthStore";
-import { ROLE_LABELS } from "@/features/auth/types";
+import { ChangePasswordDialog } from "@/features/auth/components/ChangePasswordDialog";
+import { ROLE_LABELS } from "@medicare/domain/auth/types";
 import { tr } from "@/lib/i18n";
 
 /** "Pankaj Sharma" → "PS" */
@@ -46,6 +49,8 @@ const SHORTCUT_LABEL = IS_MAC ? "⌘K" : "Ctrl K";
 export function Header() {
   const user = useCurrentUser();
   const logout = useAuthStore((st) => st.logout);
+  const canAdmin = useCan("admin");
+  const [pwOpen, setPwOpen] = useState(false);
   const navigate = useNavigate();
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -151,13 +156,19 @@ export function Header() {
             <ChevronDown className="hidden sm:block h-3.5 w-3.5 text-muted-foreground mr-1" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              <Settings className="h-3.5 w-3.5" />
-              {tr("Settings")}
+            {canAdmin ? (
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <Settings className="h-3.5 w-3.5" />
+                {tr("Settings")}
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem onClick={() => setPwOpen(true)}>
+              <KeyRound className="h-3.5 w-3.5" />
+              {tr("Change password")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                logout();
+                void logout();
                 navigate("/login", { replace: true });
               }}
               className="text-red-600 focus:text-red-600"
@@ -167,6 +178,7 @@ export function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
       </div>
     </header>
   );

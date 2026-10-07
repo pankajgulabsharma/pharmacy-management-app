@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { useSalesStore } from "@/features/billing/store/useSalesStore";
-import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
+import { mockMedicines as medicines } from "@medicare/demo/data/mockMedicines";
+import {
+  demoInventory,
+  demoPurchases as purchases,
+  demoReturns as debitNotes,
+  demoSaleReturns as saleReturns,
+  demoSales as sales,
+} from "@medicare/demo/seed";
 import { customRange, presetRange } from "@medicare/domain/reports/period";
 import {
   gstReport,
@@ -13,11 +17,7 @@ import {
 } from "@medicare/domain/reports/reports";
 
 const ALL = { from: new Date(2000, 0, 1), to: new Date(2100, 0, 1) };
-const sales = useSalesStore.getState().sales;
-const saleReturns = useSalesStore.getState().saleReturns;
-const { purchases, returns: debitNotes } = usePurchaseStore.getState();
-const { batches } = useInventoryStore.getState();
-const medicines = useMedicineStore.getState().medicines;
+const { batches } = demoInventory;
 
 describe("periods", () => {
   const now = new Date(2026, 9, 15, 14, 30); // 15 Oct 2026

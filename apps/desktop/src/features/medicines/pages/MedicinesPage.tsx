@@ -1,3 +1,4 @@
+import { useCan } from "@/features/auth/store/useAuthStore";
 import {
   useCallback,
   useDeferredValue,
@@ -257,22 +258,24 @@ export default function MedicinesPage() {
   );
 
   // Keyboard: ↑↓ select · Enter/E edit · N new · Delete · / search
+  // Cashiers see the list; changing it is for pharmacist / owner
+  const canEdit = useCan("stock");
   const nav = useListNavigation({
     items: filtered,
     getKey: (m: MedicineWithStock) => m.id,
-    onOpen: openEdit,
+    onOpen: canEdit ? openEdit : () => {},
   });
   useHotkeys([
     { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
-    { keys: KEYS.create, handler: openAdd },
+    { keys: KEYS.create, enabled: canEdit, handler: openAdd },
     {
       keys: KEYS.edit,
-      enabled: nav.selected !== null,
+      enabled: canEdit && nav.selected !== null,
       handler: () => nav.selected && openEdit(nav.selected),
     },
     {
       keys: KEYS.remove,
-      enabled: nav.selected !== null,
+      enabled: canEdit && nav.selected !== null,
       handler: () => nav.selected && setDeleteTarget(nav.selected),
     },
   ]);
@@ -284,25 +287,27 @@ export default function MedicinesPage() {
         title="Medicines"
         subtitle="Master list · category, pack, price & stock"
         actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 rounded-lg text-[12px] gap-1.5"
-              onClick={openImport}
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Import CSV
-            </Button>
-            <Button
-              type="button"
-              onClick={openAdd}
-              className="h-9 rounded-lg text-[12px] gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Medicine
-            </Button>
-          </>
+          canEdit ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-lg text-[12px] gap-1.5"
+                onClick={openImport}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Import CSV
+              </Button>
+              <Button
+                type="button"
+                onClick={openAdd}
+                className="h-9 rounded-lg text-[12px] gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Medicine
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -362,17 +367,21 @@ export default function MedicinesPage() {
           hints={[
             { keys: "/", label: "Search" },
             { keys: ["ArrowUp", "ArrowDown"], label: "Move" },
-            { keys: "Enter", label: "Edit" },
-            { keys: "N", label: "New" },
-            { keys: "Delete", label: "Delete" },
+            ...(canEdit
+              ? [
+                  { keys: "Enter", label: "Edit" },
+                  { keys: "N", label: "New" },
+                  { keys: "Delete", label: "Delete" },
+                ]
+              : []),
           ]}
         />
       </div>
 
       <MedicineTable
         items={filtered}
-        onEdit={openEdit}
-        onDelete={setDeleteTarget}
+        onEdit={canEdit ? openEdit : undefined}
+        onDelete={canEdit ? setDeleteTarget : undefined}
         selectedId={nav.selectedKey}
         onSelect={nav.select}
       />

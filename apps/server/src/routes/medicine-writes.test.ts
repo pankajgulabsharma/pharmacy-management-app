@@ -3,13 +3,16 @@ import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { buildApp } from "../app";
 import { openDatabase, type Database } from "../db/client";
 import { seedDemoData } from "../db/seed";
+import { signIn } from "../test/signIn";
 
 let database: Database;
 let app: ReturnType<typeof buildApp>;
+let auth: { authorization: string };
 beforeAll(async () => {
   database = await openDatabase(":memory:");
   await seedDemoData(database);
   app = buildApp({ database });
+  auth = await signIn(app);
 });
 afterAll(async () => {
   await app.close();
@@ -37,8 +40,8 @@ const send = (
   method: "POST" | "PUT" | "DELETE",
   url: string,
   payload?: object,
-) => app.inject({ method, url, payload });
-const get = (url: string) => app.inject({ method: "GET", url });
+) => app.inject({ method, url, payload, headers: auth });
+const get = (url: string) => app.inject({ method: "GET", url, headers: auth });
 const count = () =>
   (
     database.raw.prepare("SELECT count(*) n FROM medicines").get() as {

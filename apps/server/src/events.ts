@@ -2,9 +2,14 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { allowedOrigins } from "./cors";
 
 /** What changed — every open app reloads just that part */
-export type Topic = "medicines" | "suppliers";
+export type Topic = "medicines" | "suppliers" | "settings" | "users";
 
-const TOPICS: readonly Topic[] = ["medicines", "suppliers"];
+const TOPICS: readonly Topic[] = [
+  "medicines",
+  "suppliers",
+  "settings",
+  "users",
+];
 
 /** "/api/medicines/import" → "medicines" */
 export function topicOf(url: string): Topic | null {

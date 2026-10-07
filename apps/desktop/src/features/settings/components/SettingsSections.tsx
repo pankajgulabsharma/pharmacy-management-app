@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Monitor, Moon, RotateCcw, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,21 @@ import {
 import { SettingsCard } from "./SettingsCard";
 import { EditableList } from "./EditableList";
 
+/** Server refused / not reachable → its message */
+const showError = (err: unknown) =>
+  toast.error(err instanceof Error ? err.message : "Could not save");
+
+/** One save flow for every section: fix-fields / saved / server error */
+function saveSection(result: Promise<"invalid" | "saved">, savedMsg: string) {
+  result.then(
+    (r) =>
+      r === "saved"
+        ? toast.success(savedMsg)
+        : toast.error("Please fix the highlighted fields"),
+    showError,
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Shop profile                                                       */
 /* ------------------------------------------------------------------ */
@@ -47,10 +62,7 @@ export function ShopProfileSection() {
       description="Printed at the top of every bill. GSTIN and drug licence are legally required on pharmacy invoices."
       dirty={f.dirty}
       onDiscard={f.discard}
-      onSubmit={() => {
-        if (f.submit(updateShop)) toast.success("Shop profile saved");
-        else toast.error("Please fix the highlighted fields");
-      }}
+      onSubmit={() => saveSection(f.submit(updateShop), "Shop profile saved")}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FormField
@@ -173,7 +185,7 @@ export function BillingSection() {
       dirty={f.dirty}
       onDiscard={f.discard}
       onSubmit={() =>
-        f.submit(updateBilling) && toast.success("Billing settings saved")
+        saveSection(f.submit(updateBilling), "Billing settings saved")
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -265,10 +277,9 @@ export function InventorySection() {
       description="When batches start showing as “Expiring soon” in Inventory, Medicines and on bills."
       dirty={f.dirty}
       onDiscard={f.discard}
-      onSubmit={() => {
-        if (f.submit(updateInventory)) toast.success("Stock settings saved");
-        else toast.error("Please fix the highlighted fields");
-      }}
+      onSubmit={() =>
+        saveSection(f.submit(updateInventory), "Stock settings saved")
+      }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FormField
@@ -351,7 +362,7 @@ export function ListsSection() {
       <EditableList
         label="Doctors"
         items={doctors}
-        onChange={setDoctors}
+        onChange={(list) => void setDoctors(list).catch(showError)}
         placeholder="e.g. Dr. Kavita Shah, MBBS"
         maxItems={L.maxDoctors}
         maxLength={L.doctorMax}
@@ -360,7 +371,7 @@ export function ListsSection() {
         <EditableList
           label="Billing counters"
           items={counters}
-          onChange={setCounters}
+          onChange={(list) => void setCounters(list).catch(showError)}
           placeholder="e.g. Counter 4"
           maxItems={L.maxCounters}
           maxLength={L.counterMax}
@@ -458,33 +469,21 @@ export function DataSection() {
   const [confirm, setConfirm] = useState(false);
 
   return (
-    <SettingsCard
-      title="Data"
-      description="What is stored where while the app runs on demo data."
-    >
+    <SettingsCard title="Data" description="What is stored where.">
       <ul className="space-y-1.5 text-[11px] text-muted-foreground list-disc pl-4">
         <li>
-          <b className="text-foreground">Settings</b> (this page) are remembered
-          on this computer.
+          <b className="text-foreground">
+            Medicines, stock, bills, purchases, customers, settings and users
+          </b>{" "}
+          are saved in the shop database on the server — every counter sees the
+          same data.
         </li>
         <li>
-          <b className="text-foreground">
-            Medicines, stock, purchases and bills
-          </b>{" "}
-          are demo data kept in memory — a page refresh starts fresh. They will
-          be saved in the database once the backend is connected.
+          <b className="text-foreground">Theme and language</b> are remembered
+          on this computer only.
         </li>
       </ul>
       <div className="flex flex-wrap gap-2 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => window.location.reload()}
-          className="h-8 rounded-lg text-[11px] gap-1.5"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Restart with fresh demo data
-        </Button>
         <Button
           type="button"
           variant="outline"
@@ -500,9 +499,11 @@ export function DataSection() {
         description="Shop profile, billing defaults, expiry windows, doctors and counters go back to their original values."
         confirmLabel="Reset settings"
         onConfirm={() => {
-          resetToDefaults();
           setConfirm(false);
-          toast.success("Settings reset to defaults");
+          resetToDefaults().then(
+            () => toast.success("Settings reset to defaults"),
+            showError,
+          );
         }}
         onClose={() => setConfirm(false)}
       />

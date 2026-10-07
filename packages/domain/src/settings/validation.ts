@@ -1,8 +1,6 @@
-import {
-  PAYMENT_METHOD_LABELS,
-  type PaymentMethod,
-} from "../billing/types";
+import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../billing/types";
 import { checkGstin } from "../lib/gstin";
+import { RuleError } from "../lib/errors";
 import { cleanText } from "../lib/sanitize";
 import {
   SETTINGS_LIMITS as L,
@@ -166,3 +164,22 @@ export function sanitizeSettings(raw: unknown): Settings {
 }
 
 export type { BillingPrefs };
+
+/**
+ * A change sent by the app (one or more sections). Shop details and stock
+ * alerts must be valid — a wrong value is refused, not quietly replaced —
+ * then everything is cleaned exactly like sanitizeSettings().
+ */
+export function applySettingsChange(
+  current: Settings,
+  change: Partial<Settings>,
+): Settings {
+  const merged = { ...current, ...change };
+  const first = (e: Record<string, string | undefined>) =>
+    Object.values(e).find(Boolean);
+  const bad =
+    (change.shop && first(validateShop(merged.shop))) ||
+    (change.inventory && first(validateInventory(merged.inventory)));
+  if (bad) throw new RuleError(bad);
+  return sanitizeSettings(merged);
+}

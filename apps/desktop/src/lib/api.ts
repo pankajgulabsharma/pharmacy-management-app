@@ -20,6 +20,19 @@ export class ApiError extends Error {
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";
 
+/**
+ * Sign-in token, set by the auth store. Sent with every call; when the
+ * server says 401 (signed out elsewhere, account switched off, expired)
+ * the app goes back to the login screen.
+ */
+let token: string | null = null;
+let onSignedOut: () => void = () => {};
+export function setApiAuth(t: string | null, signedOut?: () => void) {
+  token = t;
+  if (signedOut) onSignedOut = signedOut;
+}
+export const apiToken = () => token;
+
 /** Any call to the server. 204 (no content) resolves to undefined. */
 export async function apiRequest<T>(
   method: Method,
@@ -34,10 +47,11 @@ export async function apiRequest<T>(
     res = await fetch(`${API_URL}${path}`, {
       method,
       signal: ctrl.signal,
-      headers:
-        body === undefined
-          ? { Accept: "application/json" }
-          : { Accept: "application/json", "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json",
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -48,6 +62,7 @@ export async function apiRequest<T>(
     clearTimeout(timer);
   }
   if (!res.ok) {
+    if (res.status === 401 && token) onSignedOut();
     const data = (await res.json().catch(() => ({}))) as { error?: unknown };
     throw new ApiError(
       typeof data.error === "string"
@@ -64,10 +79,7 @@ export const apiGet = <T>(path: string, timeoutMs?: number) =>
   apiRequest<T>("GET", path, undefined, timeoutMs);
 
 /** Saving needs the database — refuse clearly when it isn't connected */
-export function requireServer(source: "demo" | "server") {
+export function requireServer(source: "none" | "server") {
   if (source !== "server")
-    throw new ApiError(
-      "Server offline — start the server to save changes",
-      "offline",
-    );
+    throw new ApiError("Not connected to the server yet", "offline");
 }

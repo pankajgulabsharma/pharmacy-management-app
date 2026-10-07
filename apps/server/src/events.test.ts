@@ -3,14 +3,19 @@ import { buildApp } from "./app";
 import { openDatabase, type Database } from "./db/client";
 import { seedDemoData } from "./db/seed";
 import { topicOf } from "./events";
+import { signIn } from "./test/signIn";
 
 let database: Database;
 let app: ReturnType<typeof buildApp>;
 let base = "";
+let auth: { authorization: string };
+let token = "";
 beforeAll(async () => {
   database = await openDatabase(":memory:");
   await seedDemoData(database);
   app = buildApp({ database });
+  auth = await signIn(app);
+  token = auth.authorization.slice(7);
   await app.listen({ port: 0, host: "127.0.0.1" });
   const addr = app.server.address();
   base = `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}`;
@@ -23,7 +28,7 @@ afterAll(async () => {
 /** Opens the live stream and collects the topics it announces */
 async function listen() {
   const ctrl = new AbortController();
-  const res = await fetch(`${base}/api/events`, {
+  const res = await fetch(`${base}/api/events?token=${token}`, {
     signal: ctrl.signal,
     headers: { Origin: "http://localhost:5173" },
   });
@@ -67,15 +72,18 @@ describe("live updates — no refresh needed", () => {
         id: string;
       }
     ).id;
-    await fetch(`${base}/api/medicines/${id}`, { method: "DELETE" }); // has stock → 409, no news
-    await fetch(`${base}/api/suppliers`); // a read → no news
+    await fetch(`${base}/api/medicines/${id}`, {
+      method: "DELETE",
+      headers: auth,
+    }); // has stock → 409, no news
+    await fetch(`${base}/api/suppliers`, { headers: auth }); // a read → no news
     const body = (await (
-      await fetch(`${base}/api/medicines/${id}`)
+      await fetch(`${base}/api/medicines/${id}`, { headers: auth })
     ).json()) as Record<string, unknown>;
     delete body.id;
     await fetch(`${base}/api/medicines/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...auth, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     await wait();

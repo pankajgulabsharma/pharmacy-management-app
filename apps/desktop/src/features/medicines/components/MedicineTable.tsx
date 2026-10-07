@@ -18,8 +18,9 @@ import { isExpired, isExpiringSoon } from "@/features/inventory/utils/stock";
 
 type Props = {
   items: MedicineWithStock[];
-  onEdit: (m: MedicineWithStock) => void;
-  onDelete: (m: MedicineWithStock) => void;
+  /** Left out when your role can't change medicines — no edit/delete buttons */
+  onEdit?: (m: MedicineWithStock) => void;
+  onDelete?: (m: MedicineWithStock) => void;
   /** Keyboard / click selection */
   selectedId?: string | null;
   onSelect?: (m: MedicineWithStock) => void;
@@ -105,7 +106,7 @@ export function MedicineTable({
                   data-row-id={m.id}
                   aria-selected={m.id === selectedId}
                   onClick={() => onSelect?.(m)}
-                  onDoubleClick={() => onEdit(m)}
+                  onDoubleClick={() => onEdit?.(m)}
                   className={cn(
                     "border-b border-border/50 last:border-0 bg-card hover:bg-muted/30",
                     m.id === selectedId && SELECTED_ROW,
@@ -185,24 +186,26 @@ export function MedicineTable({
                     </StatusBadge>
                   </td>
                   <td className="px-2 py-2.5 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(m)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                        aria-label={`Edit ${m.name}`}
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(m)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                        aria-label={`Delete ${m.name}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    {onEdit && onDelete ? (
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(m)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label={`Edit ${m.name}`}
+                        >
+                          <PencilIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(m)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                          aria-label={`Delete ${m.name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               );

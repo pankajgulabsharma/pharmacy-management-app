@@ -69,6 +69,8 @@ export default function LoginPage() {
             sec: result.retryInSec ?? 30,
           }),
         );
+      } else if (result.reason === "offline") {
+        toast.error(tr(result.message));
       } else {
         toast.error(t("login.errorInvalid"));
       }

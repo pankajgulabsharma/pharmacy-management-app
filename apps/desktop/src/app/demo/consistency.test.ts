@@ -1,7 +1,11 @@
-import { useSalesStore } from "@/features/billing/store/useSalesStore";
-import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
-import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
-import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
+import { mockMedicines as medicines } from "@medicare/demo/data/mockMedicines";
+import {
+  demoInventory,
+  demoPurchases as purchases,
+  demoReturns as returns,
+  demoSaleReturns as saleReturns,
+  demoSales as sales,
+} from "@medicare/demo/seed";
 import {
   calcTotals,
   getDuePaise,
@@ -17,10 +21,7 @@ import {
 import { isSameDay } from "@medicare/domain/lib/date";
 import { summarizeStock } from "@medicare/domain/inventory/ledger";
 
-const { sales, saleReturns } = useSalesStore.getState();
-const { purchases, returns } = usePurchaseStore.getState();
-const { batches, movements } = useInventoryStore.getState();
-const medicines = useMedicineStore.getState().medicines;
+const { batches, movements } = demoInventory;
 import { describe, expect, it } from "vitest";
 
 /**

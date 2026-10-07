@@ -4,20 +4,23 @@ import { demoInventory } from "@medicare/demo/seed";
 import { buildApp } from "../app";
 import { openDatabase, type Database } from "../db/client";
 import { seedDemoData } from "../db/seed";
+import { signIn } from "../test/signIn";
 
 let database: Database;
 let app: ReturnType<typeof buildApp>;
+let auth: { authorization: string };
 beforeAll(async () => {
   database = await openDatabase(":memory:");
   await seedDemoData(database);
   app = buildApp({ database });
+  auth = await signIn(app);
 });
 afterAll(async () => {
   await app.close();
   database.close();
 });
 
-const get = (url: string) => app.inject({ method: "GET", url });
+const get = (url: string) => app.inject({ method: "GET", url, headers: auth });
 const byId = <T extends { id: string }>(list: T[]) =>
   [...list].sort((a, b) => a.id.localeCompare(b.id));
 

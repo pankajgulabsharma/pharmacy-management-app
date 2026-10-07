@@ -30,7 +30,7 @@ describe("loading medicines from the server", () => {
     expect(useMedicineStore.getState().medicines[0].name).toBe("Dolo 650 TEST");
   });
 
-  it("offline: says so clearly and keeps the demo list (nothing half-loaded)", async () => {
+  it("offline: says so clearly and loads nothing (nothing half-loaded)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))),
@@ -40,10 +40,9 @@ describe("loading medicines from the server", () => {
       status: "offline",
       error: "Server not reachable",
     });
-    expect(useMedicineStore.getState().source).toBe("demo");
-    expect(useMedicineStore.getState().medicines).toHaveLength(
-      mockMedicines.length,
-    );
+    expect(useMedicineStore.getState().source).toBe("none");
+    expect(useMedicineStore.getState().medicines).toHaveLength(0);
+    expect(useServerStore.getState().lastSyncAt).toBeNull();
   });
 
   it("server error: shows the server's message", async () => {

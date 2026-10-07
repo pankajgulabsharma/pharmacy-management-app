@@ -3,7 +3,6 @@ import {
   cleanMedicineInput,
   MAX_MEDICINE_IMPORT,
 } from "@medicare/domain/medicines/clean";
-import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { apiGet, apiRequest, requireServer } from "@/lib/api";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
@@ -15,8 +14,8 @@ import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
  */
 type MedicineState = {
   medicines: Medicine[];
-  /** "server" once loaded from the database; "demo" until then */
-  source: "demo" | "server";
+  /** "server" once loaded from the database; "none" until then */
+  source: "none" | "server";
   /** Replace the list with the server's (database) list */
   loadFromServer: () => Promise<void>;
   addMedicine: (input: MedicineInput) => Promise<Medicine>;
@@ -27,8 +26,8 @@ type MedicineState = {
 };
 
 export const useMedicineStore = create<MedicineState>()((set, get) => ({
-  medicines: mockMedicines,
-  source: "demo",
+  medicines: [],
+  source: "none",
 
   loadFromServer: async () => {
     const { items } = await apiGet<{ items: Medicine[] }>("/api/medicines");

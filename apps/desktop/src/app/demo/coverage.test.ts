@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
-import { useSalesStore } from "@/features/billing/store/useSalesStore";
+import { mockMedicines } from "@medicare/demo/data/mockMedicines";
+import {
+  demoCustomerPayments as payments,
+  demoCustomers as customers,
+  demoPurchases,
+  demoSaleReturns as saleReturns,
+  demoSales as sales,
+} from "@medicare/demo/seed";
 import { customerSummaries } from "@medicare/domain/customers/ledger";
 import { customerStatus } from "@medicare/domain/customers/status";
-import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { getPaymentStatus } from "@medicare/domain/purchases/calc";
-import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 
 /** The demo must show something under EVERY filter chip — an empty chip looks broken */
 describe("demo data covers every filter", () => {
   it("customers: due, over limit, clear, inactive", () => {
-    const { customers, payments } = useCustomerStore.getState();
-    const { sales, saleReturns } = useSalesStore.getState();
     const sums = customerSummaries(customers, sales, saleReturns, payments);
     const seen = new Set(
       customers.map((c) => customerStatus(c, sums.get(c.id)!)),
@@ -21,11 +23,7 @@ describe("demo data covers every filter", () => {
 
   it("purchases: due, partial, overdue, paid, cancelled", () => {
     const today = new Date();
-    const seen = new Set(
-      usePurchaseStore
-        .getState()
-        .purchases.map((p) => getPaymentStatus(p, today)),
-    );
+    const seen = new Set(demoPurchases.map((p) => getPaymentStatus(p, today)));
     expect([...seen].sort()).toEqual([
       "cancelled",
       "due",
@@ -36,10 +34,6 @@ describe("demo data covers every filter", () => {
   });
 
   it("medicines: at least one inactive", () => {
-    expect(
-      useMedicineStore
-        .getState()
-        .medicines.some((m) => m.status === "inactive"),
-    ).toBe(true);
+    expect(mockMedicines.some((m) => m.status === "inactive")).toBe(true);
   });
 });

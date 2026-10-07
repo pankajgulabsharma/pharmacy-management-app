@@ -17,6 +17,7 @@ import {
   demoSaleReturns,
   demoSales,
 } from "@medicare/demo/seed";
+import { hashPassword } from "../auth/password";
 import type { Database } from "./client";
 import * as t from "./schema";
 import { insertRows, writeTx } from "./sync";
@@ -30,6 +31,23 @@ import {
   movementToRow,
 } from "./mappers";
 
+/** Demo sign-ins (username = password). A real shop starts with only "admin" — see auth/store.ts */
+export const DEMO_USERS = [
+  { id: "u_admin", username: "admin", name: "Pankaj Sharma", role: "owner" },
+  {
+    id: "u_pharmacist",
+    username: "pharmacist",
+    name: "Anita Verma",
+    role: "pharmacist",
+  },
+  { id: "u_cashier", username: "cashier", name: "Ravi Kumar", role: "cashier" },
+] as const;
+
+/** Slow password hashes, made once per run (outside any transaction) */
+let hashes: Promise<string[]> | null = null;
+const demoHashes = () =>
+  (hashes ??= Promise.all(DEMO_USERS.map((u) => hashPassword(u.username))));
+
 /**
  * Puts the demo shop into the database in ONE transaction, using the same
  * mappers the server uses for every save — so seed and app can't disagree.
@@ -38,7 +56,17 @@ export async function seedDemoData({
   raw,
 }: Database): Promise<Record<string, number>> {
   const now = new Date().toISOString();
+  const users = (await demoHashes()).map((passwordHash, i) => ({
+    ...DEMO_USERS[i],
+    passwordHash,
+    createdAt: now,
+  }));
   writeTx(raw, () => {
+    // Accounts already made (e.g. the starter "admin") are kept as they are
+    const { n } = raw.prepare("SELECT count(*) n FROM users").get() as {
+      n: number;
+    };
+    if (n === 0) insertRows(raw, t.users, users);
     insertRows(
       raw,
       t.medicines,
@@ -88,6 +116,7 @@ export async function seedDemoData({
       "sale_lines",
       "sale_returns",
       "held_bills",
+      "users",
     ].map((n) => [n, count(n)]),
   );
 }

@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { demoCustomerPayments, demoCustomers } from "@medicare/demo/seed";
 import type {
   Customer,
   CustomerInput,
@@ -17,7 +16,7 @@ import { applyShopPatch } from "@/stores/applyShopPatch";
 type CustomerState = {
   customers: Customer[];
   payments: CustomerPayment[];
-  source: "demo" | "server";
+  source: "none" | "server";
   loadFromServer: () => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
   updateCustomer: (id: string, input: CustomerInput) => Promise<Customer>;
@@ -37,9 +36,9 @@ async function send<R extends { patch: ShopPatch }>(
 }
 
 export const useCustomerStore = create<CustomerState>()((set) => ({
-  customers: demoCustomers,
-  payments: demoCustomerPayments,
-  source: "demo",
+  customers: [],
+  payments: [],
+  source: "none",
 
   loadFromServer: async () => {
     const r = await apiGet<{

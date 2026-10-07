@@ -41,19 +41,24 @@ const reply = (body: unknown) =>
   Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
 const flush = () => new Promise((r) => setTimeout(r, 0));
 let calls: string[] = [];
+let auths: string[] = [];
+const TOKEN = "t".repeat(43);
 let medName = "Dolo 650 Tablet";
 
 beforeEach(async () => {
   vi.resetModules();
   calls = [];
+  auths = [];
   medName = "Dolo 650 Tablet";
   vi.stubGlobal("EventSource", FakeStream);
   vi.stubGlobal("window", { addEventListener: vi.fn() });
   vi.stubGlobal(
     "fetch",
-    vi.fn((url: string) => {
+    vi.fn((url: string, init?: RequestInit) => {
       const path = new URL(url).pathname;
       calls.push(path);
+      auths.push(new Headers(init?.headers).get("Authorization") ?? "");
+      if (path === "/api/settings") return reply({ settings: {} });
       if (path === "/api/medicines")
         return reply({ items: [{ ...mockMedicines[0], name: medName }] });
       if (path === "/api/suppliers") return reply({ items: mockSuppliers });
@@ -76,6 +81,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 async function connected() {
   const { useServerStore } = await import("./useServerStore");
+  (await import("@/lib/api")).setApiAuth(TOKEN); // signed in
   useServerStore.getState().connect();
   FakeStream.last.open();
   await flush();
@@ -84,7 +90,7 @@ async function connected() {
 }
 
 describe("live updates — no refresh", () => {
-  it("on connect: loads everything and turns green", async () => {
+  it("on connect: loads everything (signed in) and turns green", async () => {
     const srv = await connected();
     expect(srv.getState().status).toBe("online");
     expect(calls.sort()).toEqual([
@@ -93,9 +99,28 @@ describe("live updates — no refresh", () => {
       "/api/medicines",
       "/api/purchases",
       "/api/sales",
+      "/api/settings",
       "/api/stock",
       "/api/suppliers",
     ]);
+    // Every call and the live stream carry the sign-in token
+    expect(new Set(auths)).toEqual(new Set([`Bearer ${TOKEN}`]));
+    expect(FakeStream.last.url).toContain(`token=${TOKEN}`);
+  });
+
+  it("signed out: no live stream is opened", async () => {
+    const { useServerStore } = await import("./useServerStore");
+    const before = FakeStream.last;
+    useServerStore.getState().connect();
+    expect(FakeStream.last).toBe(before);
+  });
+
+  it("owner changed the shop settings → every counter reloads them", async () => {
+    await connected();
+    calls = [];
+    FakeStream.last.announce("settings");
+    await flush();
+    expect(calls).toEqual(["/api/settings"]);
   });
 
   it("a save announced by the server reloads ONLY that part, by itself", async () => {
@@ -120,21 +145,21 @@ describe("live updates — no refresh", () => {
     await flush();
     await flush();
     expect(srv.getState().status).toBe("online");
-    expect(calls.length).toBe(7);
+    expect(calls.length).toBe(8);
   });
 });
 
 describe("suppliers are saved through the server", () => {
   beforeEach(() => {
-    useSupplierStore.setState({ suppliers: mockSuppliers, source: "demo" });
-    useMedicineStore.setState({ source: "demo" });
+    useSupplierStore.setState({ suppliers: mockSuppliers, source: "none" });
+    useMedicineStore.setState({ source: "none" });
   });
 
   it("without a server, a save is refused (never lost on refresh)", async () => {
     const { id: _i, createdAt: _c, ...input } = mockSuppliers[0];
     await expect(
       useSupplierStore.getState().updateSupplier(mockSuppliers[0].id, input),
-    ).rejects.toThrow(/Server offline/);
+    ).rejects.toThrow(/Not connected/);
   });
 
   it("a duplicate name is refused at once, before any call to the server", async () => {

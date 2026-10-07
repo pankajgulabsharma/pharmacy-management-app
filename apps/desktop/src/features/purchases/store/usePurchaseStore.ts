@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { checkReversal } from "@medicare/domain/inventory/ledger";
-import { demoPurchases, demoReturns } from "@medicare/demo/seed";
 import type { Paise } from "@medicare/domain/lib/money";
 import type {
   Purchase,
@@ -23,7 +22,7 @@ type PurchaseState = {
   purchases: Purchase[];
   /** Debit notes, newest first */
   returns: PurchaseReturn[];
-  source: "demo" | "server";
+  source: "none" | "server";
   loadFromServer: () => Promise<void>;
   /** Send the form as typed; the server builds and checks the invoice. Resolves packs added. */
   addPurchase: (
@@ -66,9 +65,9 @@ async function send<R extends { patch: ShopPatch }>(
 }
 
 export const usePurchaseStore = create<PurchaseState>()((set) => ({
-  purchases: demoPurchases,
-  returns: demoReturns,
-  source: "demo",
+  purchases: [],
+  returns: [],
+  source: "none",
 
   loadFromServer: async () => {
     const r = await apiGet<{

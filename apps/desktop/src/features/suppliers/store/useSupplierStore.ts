@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
 import {
   assertUniqueSupplier,
   cleanSupplierInput,
@@ -14,7 +13,7 @@ import { apiGet, apiRequest, requireServer } from "@/lib/api";
  */
 type SupplierState = {
   suppliers: Supplier[];
-  source: "demo" | "server";
+  source: "none" | "server";
   loadFromServer: () => Promise<void>;
   addSupplier: (input: SupplierInput) => Promise<Supplier>;
   updateSupplier: (id: string, input: SupplierInput) => Promise<Supplier>;
@@ -23,8 +22,8 @@ type SupplierState = {
 };
 
 export const useSupplierStore = create<SupplierState>()((set, get) => ({
-  suppliers: mockSuppliers,
-  source: "demo",
+  suppliers: [],
+  source: "none",
 
   loadFromServer: async () => {
     const { items } = await apiGet<{ items: Supplier[] }>("/api/suppliers");

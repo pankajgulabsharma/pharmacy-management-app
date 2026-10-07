@@ -495,7 +495,7 @@ export const settings = sqliteTable("settings", {
   updatedAt: text("updated_at").notNull(),
 });
 
-/** People who can sign in. Passwords: slow hash only (Step 10), never plain text. */
+/** People who can sign in. Passwords: slow hash (scrypt) only, never plain text. */
 export const users = sqliteTable("users", {
   id: id(),
   username: text("username").notNull().unique(),
@@ -503,5 +503,26 @@ export const users = sqliteTable("users", {
   role: text("role", { enum: ["owner", "pharmacist", "cashier"] }).notNull(),
   passwordHash: text("password_hash").notNull(),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
+  /** Starter password (first owner / reset) → must choose a new one */
+  mustChangePassword: integer("must_change_password", { mode: "boolean" })
+    .notNull()
+    .default(false),
   createdAt: createdAt(),
 });
+
+/**
+ * Signed-in devices. Only a SHA-256 of the token is stored, so a copied
+ * database file can't be used to sign in. Deleted on sign-out.
+ */
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: text("created_at").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (s) => [index("sessions_user_idx").on(s.userId)],
+);

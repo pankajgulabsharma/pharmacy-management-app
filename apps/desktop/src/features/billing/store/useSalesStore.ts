@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { demoHeldBills, demoSaleReturns, demoSales } from "@medicare/demo/seed";
 import type {
   HeldBill,
   Sale,
@@ -20,7 +19,7 @@ type SalesState = {
   sales: Sale[];
   saleReturns: SaleReturn[];
   held: HeldBill[];
-  source: "demo" | "server";
+  source: "none" | "server";
   loadFromServer: () => Promise<void>;
   completeSale: (input: SaleInput) => Promise<Sale>;
   /** Park the cart (stock is not reserved) */
@@ -43,10 +42,10 @@ async function send<R extends { patch: ShopPatch }>(
 }
 
 export const useSalesStore = create<SalesState>()((set) => ({
-  sales: demoSales,
-  saleReturns: demoSaleReturns,
-  held: demoHeldBills,
-  source: "demo",
+  sales: [],
+  saleReturns: [],
+  held: [],
+  source: "none",
 
   loadFromServer: async () => {
     const [s, h] = await Promise.all([

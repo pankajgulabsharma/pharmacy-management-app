@@ -32,24 +32,35 @@ written once and can never disagree.
 | `npm run lint` | Lints the whole project |
 | `npm run build` | Production build of the desktop app |
 
-Demo login: `admin` / `admin` (owner) or `cashier` / `cashier`.
+## Sign-in & roles
+
+The server checks every password (stored only as a slow scrypt hash) and
+every action against the person's role — hiding a button is not enough.
+
+| Demo user (password = username) | Role | May change |
+|---|---|---|
+| `admin` | Owner | Everything, incl. Settings and Users |
+| `pharmacist` | Pharmacist | Bills, stock, purchases, suppliers, medicines; sees Reports |
+| `cashier` | Cashier | Bills, returns, held bills, customers & udhaar |
+
+A brand-new (empty) database gets one account, `admin` / `admin`, which must
+choose a new password at the first sign-in. Add people in Settings → Users.
 
 ## Backend roadmap
 
 1. ✅ Monorepo layout
 2. ✅ Business rules in `packages/domain` (app imports them directly)
 3. ✅ Server "hello" (Fastify) — `GET /health`, this computer only
-4. ✅ Database: SQLite (built into Node) + Drizzle — 19 tables, demo data, DB-level safety rules
+4. ✅ Database: SQLite (built into Node) + Drizzle — 20 tables, demo data, DB-level safety rules
 5. ✅ First API (read): `/api/medicines`, `/api/medicines/:id`, `/api/inventory/batches`
 6. ✅ Desktop reads medicines from the server (header light shows the connection; offline = clear banner + Retry)
 7. ✅ Medicines saved to the database (add, edit, delete, CSV import) — checked on the server with Zod + the shared rules
 8. ✅ Live updates (no refresh, auto-reconnect) + Suppliers tab on the database
-9. Stock core: Inventory + Purchases + Billing + Returns + Udhaar (one ledger, moved together)
-10. Reports from the database
-11. Real login, roles
-12. Daily backup & restore
-13. Desktop installer (Tauri)
-14. Several counters on the shop LAN
+9. ✅ Stock core: Inventory + Purchases + Billing + Returns + Udhaar (one ledger, moved together)
+10. ✅ Real sign-in, roles & users; Settings on the database (one copy for every counter); Reports from database data
+11. Daily backup & restore
+12. Desktop installer (Tauri)
+13. Several counters on the shop LAN + final checks
 
 ## Where is the data?
 

@@ -4,35 +4,50 @@ import {
   persist,
   type StateStorage,
 } from "zustand/middleware";
-import type { Role, Session, User } from "../types";
-import { verifyCredentials } from "../utils/credentials";
+import { ROLES, type Role, type User } from "@medicare/domain/auth/types";
+import { can, type Permission } from "@medicare/domain/auth/permissions";
+import { ApiError, apiGet, apiRequest, setApiAuth } from "@/lib/api";
 import { useNow } from "@/hooks/useNow";
 
-/** Sessions end after this long, even if the app stays open */
-export const SESSION_HOURS = 12;
-/** After this many wrong tries, sign-in pauses briefly (slows guessing) */
-export const MAX_ATTEMPTS = 5;
-export const LOCK_SECONDS = 30;
+/**
+ * Who is signed in. The SERVER checks the password and issues a token;
+ * the app only keeps that token (never the password) and sends it with
+ * every call. Wrong-password pauses, expiry and roles are all decided by
+ * the server — the app just hides what your role can't use.
+ */
+export type Session = {
+  user: User;
+  token: string;
+  /** Epoch ms — the server ends the session here */
+  expiresAt: number;
+};
 
 export type LoginResult =
   | { ok: true; user: User }
-  | { ok: false; reason: "invalid" | "locked"; retryInSec?: number };
+  | {
+      ok: false;
+      reason: "invalid" | "locked" | "offline";
+      message: string;
+      retryInSec?: number;
+    };
 
 type AuthState = {
   session: Session | null;
   /** "Remember me": keep the session after closing the app (until it expires) */
   remember: boolean;
-  failedAttempts: number;
-  lockedUntil: number;
   login: (
     username: string,
     password: string,
     remember: boolean,
   ) => Promise<LoginResult>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  /** Re-read my name / role from the server (the owner may have changed it) */
+  refreshMe: () => Promise<void>;
+  changePassword: (current: string, next: string) => Promise<void>;
 };
 
-const ROLES: readonly Role[] = ["owner", "pharmacist", "cashier"];
+/** Longest a server session can last (remember me) — anything longer is not ours */
+const MAX_SESSION_MS = 8 * 24 * 3_600_000;
 
 /** Anything read back from storage is checked before it is trusted */
 export function isValidSession(raw: unknown, now = Date.now()): raw is Session {
@@ -40,20 +55,23 @@ export function isValidSession(raw: unknown, now = Date.now()): raw is Session {
   const s = raw as Partial<Session>;
   const u = s.user as Partial<User> | undefined;
   return (
+    typeof s.token === "string" &&
+    s.token.length > 20 &&
     typeof s.expiresAt === "number" &&
     s.expiresAt > now &&
-    s.expiresAt <= now + SESSION_HOURS * 3_600_000 &&
+    s.expiresAt <= now + MAX_SESSION_MS &&
     !!u &&
     typeof u.id === "string" &&
     typeof u.username === "string" &&
     typeof u.name === "string" &&
+    typeof u.mustChangePassword === "boolean" &&
     ROLES.includes(u.role as Role)
   );
 }
 
 /**
  * Remembered sessions live in localStorage, others in sessionStorage
- * (gone when the app closes). TODO(api): the server issues the session.
+ * (gone when the app closes).
  */
 const splitStorage: StateStorage = {
   getItem: (k) => {
@@ -94,49 +112,83 @@ function memoryStorage(): StateStorage {
   };
 }
 
+/** Server said "not signed in" (401) → back to the login screen */
+const signedOut = () => {
+  setApiAuth(null);
+  useAuthStore.setState({ session: null, remember: false });
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       session: null,
       remember: false,
-      failedAttempts: 0,
-      lockedUntil: 0,
 
       login: async (username, password, remember) => {
-        const now = Date.now();
-        if (get().lockedUntil > now) {
-          return {
-            ok: false,
-            reason: "locked",
-            retryInSec: Math.ceil((get().lockedUntil - now) / 1000),
-          };
-        }
-        const user = await verifyCredentials(username, password);
-        if (!user) {
-          const failed = get().failedAttempts + 1;
-          const lock = failed >= MAX_ATTEMPTS;
+        try {
+          const r = await apiRequest<{
+            token: string;
+            expiresAt: number;
+            user: User;
+          }>("POST", "/api/auth/login", { username, password, remember });
+          setApiAuth(r.token, signedOut);
           set({
-            failedAttempts: lock ? 0 : failed,
-            lockedUntil: lock ? Date.now() + LOCK_SECONDS * 1000 : 0,
+            session: { user: r.user, token: r.token, expiresAt: r.expiresAt },
+            remember,
           });
-          return lock
-            ? { ok: false, reason: "locked", retryInSec: LOCK_SECONDS }
-            : { ok: false, reason: "invalid" };
+          return { ok: true, user: r.user };
+        } catch (err) {
+          const e = err as ApiError;
+          if (e.kind !== "http")
+            return {
+              ok: false,
+              reason: "offline",
+              message: "Server not reachable — start the server and try again",
+            };
+          if (e.status === 429)
+            return {
+              ok: false,
+              reason: "locked",
+              message: e.message,
+              retryInSec: Number(/(\d+) seconds/.exec(e.message)?.[1] ?? 30),
+            };
+          return { ok: false, reason: "invalid", message: e.message };
         }
-        set({
-          session: { user, expiresAt: Date.now() + SESSION_HOURS * 3_600_000 },
-          remember,
-          failedAttempts: 0,
-          lockedUntil: 0,
-        });
-        return { ok: true, user };
       },
 
-      logout: () => set({ session: null, remember: false }),
+      logout: async () => {
+        // Tell the server (ends the token there); sign out here even if it's offline
+        if (get().session)
+          await apiRequest("POST", "/api/auth/logout", {}, 3000).catch(
+            () => {},
+          );
+        signedOut();
+      },
+
+      refreshMe: async () => {
+        if (!get().session) return;
+        const r = await apiGet<{ user: User; expiresAt: number }>(
+          "/api/auth/me",
+        );
+        const s = get().session;
+        if (s) set({ session: { ...s, user: r.user, expiresAt: r.expiresAt } });
+      },
+
+      changePassword: async (current, next) => {
+        const r = await apiRequest<{ user: User }>(
+          "POST",
+          "/api/auth/password",
+          { current, next },
+        );
+        const s = get().session;
+        if (s) set({ session: { ...s, user: r.user } });
+      },
     }),
     {
       name: "medicare-session",
-      version: 1,
+      version: 2,
+      // Sessions from the old demo sign-in (v1) are not valid on the server
+      migrate: () => ({ session: null, remember: false }),
       // Outside a browser (tests) keep the session in memory — no storage warnings
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? splitStorage : memoryStorage(),
@@ -144,11 +196,9 @@ export const useAuthStore = create<AuthState>()(
       partialize: (s) => ({ session: s.session, remember: s.remember }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AuthState>;
-        return {
-          ...current,
-          session: isValidSession(p.session) ? p.session : null,
-          remember: p.remember === true,
-        };
+        const session = isValidSession(p.session) ? p.session : null;
+        setApiAuth(session?.token ?? null, signedOut);
+        return { ...current, session, remember: p.remember === true };
       },
     },
   ),
@@ -162,4 +212,9 @@ export function useCurrentUser(): User | null {
   const session = useAuthStore((s) => s.session);
   const now = useNow();
   return session && session.expiresAt > now ? session.user : null;
+}
+
+/** May the signed-in person do this? (hides buttons — the server enforces it) */
+export function useCan(p: Permission): boolean {
+  return useAuthStore((s) => can(s.session?.user.role, p));
 }

@@ -9,10 +9,12 @@ import { buildApp } from "../app";
 import { openDatabase, type Database } from "../db/client";
 import { seedDemoData } from "../db/seed";
 import { EventBus } from "../events";
+import { signIn } from "../test/signIn";
 
 let database: Database;
 let app: ReturnType<typeof buildApp>;
 let published: object[] = [];
+let auth: { authorization: string };
 
 // A fresh shop for every test — tests never affect each other
 beforeEach(async () => {
@@ -24,6 +26,7 @@ beforeEach(async () => {
   published = [];
   bus.publish = (p) => void published.push(p);
   app = buildApp({ database, bus });
+  auth = await signIn(app);
 });
 afterAll(async () => {
   await app.close();
@@ -36,7 +39,12 @@ const call = (
   url: string,
   payload?: object,
 ): Promise<Res> =>
-  app.inject({ method, url, payload }) as unknown as Promise<Res>;
+  app.inject({
+    method,
+    url,
+    payload,
+    headers: auth,
+  }) as unknown as Promise<Res>;
 const ok = async (p: Promise<Res>) => {
   const r = await p;
   if (r.statusCode >= 300)
