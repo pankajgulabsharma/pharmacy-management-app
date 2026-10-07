@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import type { Database } from "./db/client";
 import { catalogRoutes } from "./routes/catalog";
+import { InputError } from "./schemas/medicine";
 import { cors } from "./cors";
 
 /**
@@ -36,6 +37,8 @@ export function buildApp({
 
   // Any unexpected failure → a plain message, never internal details
   app.setErrorHandler((err, _req, reply) => {
+    if (err instanceof InputError)
+      return reply.code(400).send({ error: err.message });
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) console.error(err);
     reply.code(status).send({

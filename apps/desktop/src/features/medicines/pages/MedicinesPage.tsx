@@ -25,6 +25,7 @@ import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { ServerBanner } from "../components/ServerBanner";
+import { tr } from "@/lib/i18n";
 import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { FilterSelect } from "@/components/common/FilterSelect";
 import {
@@ -93,10 +94,16 @@ function formToInput(v: MedicineFormValues): MedicineInput {
   };
 }
 
+/** The server's own message ("Name is required", "still has stock"…) */
+function saveError(err: unknown): string {
+  return err instanceof Error ? tr(err.message) : tr("Could not save");
+}
+
 export default function MedicinesPage() {
   // Master data + live stock from inventory (single source of truth)
   const items = useMedicinesWithStock();
   const addMedicine = useMedicineStore((s) => s.addMedicine);
+  const savingRef = useRef(false);
   const updateMedicine = useMedicineStore((s) => s.updateMedicine);
   const removeMedicine = useMedicineStore((s) => s.removeMedicine);
   const importMedicines = useMedicineStore((s) => s.importMedicines);
@@ -198,29 +205,54 @@ export default function MedicinesPage() {
         toast.error("This medicine still has stock and can't be deleted");
         return;
       }
-      removeMedicine(id);
-      setDeleteTarget(null);
-      toast.success(target ? `"${target.name}" deleted` : "Medicine deleted");
+      void (async () => {
+        try {
+          await removeMedicine(id);
+          setDeleteTarget(null);
+          toast.success(
+            target ? `"${target.name}" deleted` : "Medicine deleted",
+          );
+        } catch (err) {
+          toast.error(saveError(err));
+        }
+      })();
     },
     [items, removeMedicine],
   );
 
   const handleSave = useCallback(
     (values: MedicineFormValues, editId: string | null) => {
-      const input = formToInput(values);
-      if (editId) updateMedicine(editId, input);
-      else addMedicine(input);
-      setDialogOpen(false);
-      setEditing(null);
-      toast.success(editId ? "Medicine updated" : "Medicine added");
+      if (savingRef.current) return; // ignore a double Enter / double click
+      savingRef.current = true;
+      void (async () => {
+        try {
+          const input = formToInput(values);
+          if (editId) await updateMedicine(editId, input);
+          else await addMedicine(input);
+          // Close only after the database has saved it
+          setDialogOpen(false);
+          setEditing(null);
+          toast.success(editId ? "Medicine updated" : "Medicine added");
+        } catch (err) {
+          toast.error(saveError(err)); // dialog stays open — nothing typed is lost
+        } finally {
+          savingRef.current = false;
+        }
+      })();
     },
     [addMedicine, updateMedicine],
   );
 
   const handleImport = useCallback(
     (rows: MedicineInput[]) => {
-      const count = importMedicines(rows);
-      toast.success(`${count} medicine(s) imported`);
+      void (async () => {
+        try {
+          const count = await importMedicines(rows);
+          toast.success(`${count} medicine(s) imported`);
+        } catch (err) {
+          toast.error(saveError(err));
+        }
+      })();
     },
     [importMedicines],
   );

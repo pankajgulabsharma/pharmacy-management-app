@@ -18,14 +18,27 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string, timeoutMs = 8000): Promise<T> {
+type Method = "GET" | "POST" | "PUT" | "DELETE";
+
+/** Any call to the server. 204 (no content) resolves to undefined. */
+export async function apiRequest<T>(
+  method: Method,
+  path: string,
+  body?: unknown,
+  timeoutMs = 8000,
+): Promise<T> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}`, {
+      method,
       signal: ctrl.signal,
-      headers: { Accept: "application/json" },
+      headers:
+        body === undefined
+          ? { Accept: "application/json" }
+          : { Accept: "application/json", "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw ctrl.signal.aborted
@@ -35,14 +48,17 @@ export async function apiGet<T>(path: string, timeoutMs = 8000): Promise<T> {
     clearTimeout(timer);
   }
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: unknown };
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
     throw new ApiError(
-      typeof body.error === "string"
-        ? body.error
+      typeof data.error === "string"
+        ? data.error
         : `Server error ${res.status}`,
       "http",
       res.status,
     );
   }
-  return (await res.json()) as T;
+  return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
+
+export const apiGet = <T>(path: string, timeoutMs?: number) =>
+  apiRequest<T>("GET", path, undefined, timeoutMs);

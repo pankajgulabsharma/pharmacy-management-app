@@ -16,7 +16,9 @@ export function ServerBanner() {
       <WifiOff className="h-4 w-4 shrink-0" />
       <p className="flex-1 min-w-0">
         <b>{tr(error ?? "Server not reachable")}</b> —{" "}
-        {tr("showing demo medicines. Start the server with")}{" "}
+        {tr(
+          "showing demo medicines; changes can't be saved. Start the server with",
+        )}{" "}
         <code className="rounded bg-red-100 px-1 dark:bg-red-900/50">
           npm run dev:server
         </code>

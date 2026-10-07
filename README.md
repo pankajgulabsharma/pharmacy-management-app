@@ -42,7 +42,7 @@ Demo login: `admin` / `admin` (owner) or `cashier` / `cashier`.
 4. ✅ Database: SQLite (built into Node) + Drizzle — 19 tables, demo data, DB-level safety rules
 5. ✅ First API (read): `/api/medicines`, `/api/medicines/:id`, `/api/inventory/batches`
 6. ✅ Desktop reads medicines from the server (header light shows the connection; offline = clear banner + Retry)
-7. Writes with transactions (add/edit medicine, stock adjust)
+7. ✅ Medicines saved to the database (add, edit, delete, CSV import) — checked on the server with Zod + the shared rules
 8. Purchases → Billing → Returns → Udhaar payments
 9. Reports from the database
 10. Real login, roles

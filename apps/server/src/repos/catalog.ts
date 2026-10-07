@@ -3,9 +3,11 @@
  * shape the app already uses (@medicare/domain types). The database stores
  * paise; these types use rupees — converted here, in one place.
  */
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
+import { newId } from "@medicare/domain/lib/id";
+import { rupeesToPaise } from "@medicare/domain/lib/money";
 import type { StockBatch } from "@medicare/domain/inventory/types";
-import type { Medicine } from "@medicare/domain/medicines/types";
+import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 import type { Db } from "../db/client";
 import { batches, medicines } from "../db/schema";
 
@@ -54,4 +56,80 @@ export async function listBatches(db: Db): Promise<StockBatch[]> {
       .from(batches)
       .orderBy(asc(batches.medicineId), asc(batches.expiry))
   ).map(toBatch);
+}
+
+/* ------------------------------------------------------------------ */
+/* Writes                                                             */
+/* ------------------------------------------------------------------ */
+
+function toRow(m: MedicineInput) {
+  const { mrp, salePrice, ...rest } = m;
+  return {
+    ...rest,
+    mrpPaise: rupeesToPaise(mrp),
+    salePricePaise: rupeesToPaise(salePrice),
+  };
+}
+
+export async function createMedicine(
+  db: Db,
+  input: MedicineInput,
+): Promise<Medicine> {
+  const row = { id: newId("med"), ...toRow(input) };
+  await db.insert(medicines).values(row);
+  return toMedicine(row);
+}
+
+/** null when there is no such medicine */
+export async function updateMedicine(
+  db: Db,
+  id: string,
+  input: MedicineInput,
+): Promise<Medicine | null> {
+  if (!(await getMedicine(db, id))) return null;
+  await db.update(medicines).set(toRow(input)).where(eq(medicines.id, id));
+  return getMedicine(db, id);
+}
+
+/** Many at once — all or nothing */
+export async function importMedicines(
+  db: Db,
+  rows: MedicineInput[],
+): Promise<Medicine[]> {
+  const created = rows.map((r) => ({ id: newId("med"), ...toRow(r) }));
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < created.length; i += 100)
+      await tx.insert(medicines).values(created.slice(i, i + 100));
+  });
+  return created.map(toMedicine);
+}
+
+export type DeleteResult =
+  "deleted" | "not_found" | "has_stock" | "has_history";
+
+/**
+ * Only a medicine that was never stocked or sold can be deleted.
+ * Otherwise its history must stay — mark it Inactive instead.
+ */
+export async function deleteMedicine(
+  db: Db,
+  id: string,
+): Promise<DeleteResult> {
+  if (!(await getMedicine(db, id))) return "not_found";
+  const usage = await db
+    .select({
+      batches: sql<number>`count(*)`,
+      stock: sql<number>`coalesce(sum(${batches.qtyStrip} + ${batches.qtyLoose}), 0)`,
+    })
+    .from(batches)
+    .where(eq(batches.medicineId, id))
+    .get();
+  if (usage && usage.stock > 0) return "has_stock";
+  if (usage && usage.batches > 0) return "has_history";
+  try {
+    await db.delete(medicines).where(eq(medicines.id, id));
+  } catch {
+    return "has_history"; // still on a bill or purchase line (foreign key)
+  }
+  return "deleted";
 }

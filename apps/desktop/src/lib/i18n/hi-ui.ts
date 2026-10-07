@@ -528,4 +528,12 @@ export const HI_UI: Record<string, string> = {
   "The server took too long to answer": "सर्वर ने जवाब देने में बहुत देर की",
   "showing demo medicines. Start the server with": "डेमो दवाइयाँ दिख रही हैं। सर्वर चालू करें:",
   Retry: "फिर कोशिश करें",
+
+  // Saving medicines to the database
+  "showing demo medicines; changes can't be saved. Start the server with": "डेमो दवाइयाँ दिख रही हैं; बदलाव सेव नहीं होंगे। सर्वर चालू करें:",
+  "Server offline — start the server to save changes": "सर्वर बंद है — बदलाव सेव करने के लिए सर्वर चालू करें",
+  "Could not save": "सेव नहीं हो सका",
+  "MRP must be more than 0": "MRP 0 से ज़्यादा होना चाहिए",
+  "This medicine still has stock — sell, return or adjust it first": "इस दवाई का स्टॉक बाकी है — पहले बेचें, लौटाएँ या सुधारें",
+  "This medicine has stock or bill history — mark it Inactive instead": "इस दवाई का स्टॉक या बिल इतिहास है — इसे बंद (Inactive) करें",
 };

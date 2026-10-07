@@ -1,17 +1,17 @@
 import { create } from "zustand";
-import { newId } from "@medicare/domain/lib/id";
-import { DEFAULT_GST_RATE, isGstRate } from "@medicare/domain/lib/gst";
-import { cleanCode, cleanText } from "@medicare/domain/lib/sanitize";
+import {
+  cleanMedicineInput,
+  MAX_MEDICINE_IMPORT,
+} from "@medicare/domain/medicines/clean";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
-import { apiGet } from "@/lib/api";
+import { ApiError, apiGet, apiRequest } from "@/lib/api";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
 /**
- * Medicine master (catalogue) — single source of truth for product data.
- *
- * Kept in memory on purpose: business data must not live in localStorage
- * (unencrypted, readable by any injected script, not shared across
- * devices). TODO(api): replace the seed + actions with backend calls.
+ * Medicine master (catalogue). The database (server) is the source of truth:
+ * every change is sent to the server first, and the screen shows what the
+ * server actually saved. Without a server connection, changes are refused —
+ * never "saved" on screen and lost on refresh.
  */
 type MedicineState = {
   medicines: Medicine[];
@@ -19,46 +19,24 @@ type MedicineState = {
   source: "demo" | "server";
   /** Replace the list with the server's (database) list */
   loadFromServer: () => Promise<void>;
-  addMedicine: (input: MedicineInput) => Medicine;
-  updateMedicine: (id: string, input: MedicineInput) => void;
-  /** Caller must check stock first — see MedicinesPage / MedicineDeleteDialog */
-  removeMedicine: (id: string) => void;
-  importMedicines: (rows: readonly MedicineInput[]) => number;
+  addMedicine: (input: MedicineInput) => Promise<Medicine>;
+  updateMedicine: (id: string, input: MedicineInput) => Promise<Medicine>;
+  /** The server refuses if the medicine has stock or history */
+  removeMedicine: (id: string) => Promise<void>;
+  importMedicines: (rows: readonly MedicineInput[]) => Promise<number>;
 };
 
-const MAX_IMPORT = 5000;
-
-function clampNumber(n: number, min: number, max: number, fallback: number) {
-  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+/** Writes need the database — refuse clearly when it isn't connected */
+function requireServer(source: MedicineState["source"]) {
+  if (source !== "server") {
+    throw new ApiError(
+      "Server offline — start the server to save changes",
+      "offline",
+    );
+  }
 }
 
-/** Never trust callers: normalise and bound every field before storing */
-function sanitize(input: MedicineInput): MedicineInput {
-  const loosePossible = input.unit === "STP" || input.unit === "LSE";
-  const mrp = clampNumber(input.mrp, 0, 1_000_000, 0);
-  return {
-    name: cleanText(input.name, 120),
-    salt: cleanText(input.salt, 160),
-    brand: cleanText(input.brand, 80),
-    category: input.category,
-    hsn: input.hsn.replace(/\D/g, "").slice(0, 8),
-    barcode: cleanCode(input.barcode, 32),
-    rack: cleanCode(input.rack, 16),
-    unit: input.unit,
-    unitsPerStrip: Math.trunc(clampNumber(input.unitsPerStrip, 1, 500, 1)),
-    allowLoose: loosePossible ? input.allowLoose : false,
-    mrp,
-    // Selling above MRP is illegal in India — cap it
-    salePrice: Math.min(clampNumber(input.salePrice, 0, 1_000_000, 0), mrp),
-    minStock: Math.trunc(clampNumber(input.minStock, 0, 1_000_000, 0)),
-    gstPercent: isGstRate(input.gstPercent)
-      ? input.gstPercent
-      : DEFAULT_GST_RATE,
-    status: input.status === "inactive" ? "inactive" : "active",
-  };
-}
-
-export const useMedicineStore = create<MedicineState>()((set) => ({
+export const useMedicineStore = create<MedicineState>()((set, get) => ({
   medicines: mockMedicines,
   source: "demo",
 
@@ -69,28 +47,49 @@ export const useMedicineStore = create<MedicineState>()((set) => ({
     set({ medicines: items, source: "server" });
   },
 
-  addMedicine: (input) => {
-    const medicine: Medicine = { id: newId("med"), ...sanitize(input) };
-    set((s) => ({ medicines: [medicine, ...s.medicines] }));
-    return medicine;
+  addMedicine: async (input) => {
+    requireServer(get().source);
+    const saved = await apiRequest<Medicine>(
+      "POST",
+      "/api/medicines",
+      cleanMedicineInput(input),
+    );
+    set((s) => ({ medicines: [saved, ...s.medicines] }));
+    return saved;
   },
 
-  updateMedicine: (id, input) => {
-    const clean = sanitize(input);
+  updateMedicine: async (id, input) => {
+    requireServer(get().source);
+    const saved = await apiRequest<Medicine>(
+      "PUT",
+      `/api/medicines/${encodeURIComponent(id)}`,
+      cleanMedicineInput(input),
+    );
     set((s) => ({
-      medicines: s.medicines.map((m) => (m.id === id ? { ...m, ...clean } : m)),
+      medicines: s.medicines.map((m) => (m.id === id ? saved : m)),
     }));
+    return saved;
   },
 
-  removeMedicine: (id) => {
+  removeMedicine: async (id) => {
+    requireServer(get().source);
+    await apiRequest<void>(
+      "DELETE",
+      `/api/medicines/${encodeURIComponent(id)}`,
+    );
     set((s) => ({ medicines: s.medicines.filter((m) => m.id !== id) }));
   },
 
-  importMedicines: (rows) => {
-    const created = rows
-      .slice(0, MAX_IMPORT)
-      .map((r): Medicine => ({ id: newId("med"), ...sanitize(r) }));
-    set((s) => ({ medicines: [...created, ...s.medicines] }));
-    return created.length;
+  importMedicines: async (rows) => {
+    requireServer(get().source);
+    const { items } = await apiRequest<{ items: Medicine[] }>(
+      "POST",
+      "/api/medicines/import",
+      {
+        rows: rows.slice(0, MAX_MEDICINE_IMPORT).map(cleanMedicineInput),
+      },
+    );
+    set((s) => ({ medicines: [...items, ...s.medicines] }));
+    return items.length;
   },
 }));
