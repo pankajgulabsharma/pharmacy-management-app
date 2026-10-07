@@ -36,7 +36,10 @@ import {
   customerStatus,
   type CustomerStatus,
 } from "@medicare/domain/customers/status";
-import { totalUdhaar, type CustomerSummary } from "@medicare/domain/customers/ledger";
+import {
+  totalUdhaar,
+  type CustomerSummary,
+} from "@medicare/domain/customers/ledger";
 import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerFormDialog } from "../components/CustomerFormDialog";
 import { ReceivePaymentDialog } from "../components/ReceivePaymentDialog";

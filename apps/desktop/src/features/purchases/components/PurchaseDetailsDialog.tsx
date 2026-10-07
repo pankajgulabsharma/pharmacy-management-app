@@ -26,7 +26,11 @@ import {
   type Purchase,
   type PurchaseReturn,
 } from "@medicare/domain/purchases/types";
-import { calcLine, getCreditPaise, getDuePaise } from "@medicare/domain/purchases/calc";
+import {
+  calcLine,
+  getCreditPaise,
+  getDuePaise,
+} from "@medicare/domain/purchases/calc";
 import type { RuleResult } from "@medicare/domain/purchases/rules";
 import { validatePayment } from "@medicare/domain/purchases/validation";
 

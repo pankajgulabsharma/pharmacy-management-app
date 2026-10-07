@@ -44,7 +44,11 @@ import {
   type PaymentDraft,
   type Sale,
 } from "@medicare/domain/billing/types";
-import { SaleError, nextBillNo, validatePayment } from "@medicare/domain/billing/sale";
+import {
+  SaleError,
+  nextBillNo,
+  validatePayment,
+} from "@medicare/domain/billing/sale";
 import { tr } from "@/lib/i18n";
 
 /** Show domain errors as-is; hide anything unexpected behind a generic message */
@@ -232,12 +236,13 @@ export default function BillingPage() {
   /* ---------------- save / hold ---------------- */
 
   const handleSave = useCallback(
-    (print: boolean) => {
+    async (print: boolean) => {
       if (savingRef.current || blockReason) return; // double-submit guard
       savingRef.current = true;
       setSaving(true);
       try {
-        const sale = completeSale({
+        // The server checks stock, takes it (FEFO) and saves — all or nothing
+        const sale = await completeSale({
           cart,
           customerName,
           customerId: payment.method === "udhaar" ? udhaarCustomerId : null,
@@ -276,9 +281,9 @@ export default function BillingPage() {
     ],
   );
 
-  const holdCurrent = useCallback((): boolean => {
+  const holdCurrent = useCallback(async (): Promise<boolean> => {
     try {
-      holdBill({ customerName, doctor, counter, lines: cart });
+      await holdBill({ customerName, doctor, counter, lines: cart });
       resetBill();
       return true;
     } catch (err) {
@@ -287,17 +292,17 @@ export default function BillingPage() {
     }
   }, [holdBill, customerName, doctor, counter, cart, resetBill]);
 
-  const handleHold = useCallback(() => {
-    if (holdCurrent())
+  const handleHold = useCallback(async () => {
+    if (await holdCurrent())
       toast.success("Bill held", { description: "Find it under “Held bills”" });
   }, [holdCurrent]);
 
   const handleResume = useCallback(
-    (id: string) => {
+    async (id: string) => {
       // Never lose the bill on screen: hold it first
-      if (cart.length > 0 && !holdCurrent()) return;
+      if (cart.length > 0 && !(await holdCurrent())) return;
       try {
-        const h = takeHeld(id);
+        const h = await takeHeld(id);
         setCart(h.lines);
         setCustomerName(h.customerName);
         setDoctor(h.doctor || (doctors[0] ?? ""));
@@ -641,7 +646,11 @@ export default function BillingPage() {
         held={held}
         cartHasItems={cart.length > 0}
         onResume={handleResume}
-        onDiscard={discardHeld}
+        onDiscard={(id) =>
+          discardHeld(id).catch((err: unknown) =>
+            toast.error(errorMessage(err, "Could not discard the bill")),
+          )
+        }
         onClose={() => setHeldOpen(false)}
       />
 

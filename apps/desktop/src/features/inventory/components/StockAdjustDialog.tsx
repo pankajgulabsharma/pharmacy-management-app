@@ -8,7 +8,10 @@ import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { isIntInput } from "@medicare/domain/lib/sanitize";
 import { canSellLoose } from "@medicare/domain/medicines/types";
-import type { InventoryBatch, StockAdjustValues } from "@medicare/domain/inventory/types";
+import type {
+  InventoryBatch,
+  StockAdjustValues,
+} from "@medicare/domain/inventory/types";
 
 type Props = {
   open: boolean;

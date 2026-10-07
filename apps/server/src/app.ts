@@ -5,6 +5,8 @@ import { cors } from "./cors";
 import { EventBus } from "./events";
 import { catalogRoutes } from "./routes/catalog";
 import { supplierRoutes } from "./routes/suppliers";
+import { shopRoutes } from "./routes/shop";
+import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
 
 /**
@@ -41,10 +43,17 @@ export function buildApp({
   bus.routes(app); // GET /api/events + "something changed" after every save
   catalogRoutes(app, database);
   supplierRoutes(app, database);
+  shopRoutes(app, database, bus);
 
   app.setErrorHandler((err, _req, reply) => {
     // Bad input / a broken shop rule → 400 with a plain message
-    if (err instanceof InputError || err instanceof RuleError) {
+    if (err instanceof NotFoundError)
+      return reply.code(404).send({ error: err.message });
+    if (
+      err instanceof InputError ||
+      err instanceof RuleError ||
+      isRuleError(err)
+    ) {
       return reply.code(400).send({ error: err.message });
     }
     // Two counters saving the same thing at once — the database index caught it
@@ -54,11 +63,9 @@ export function buildApp({
     // Anything unexpected → a plain message, never internal details
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) console.error(err);
-    return reply
-      .code(status)
-      .send({
-        error: status < 500 ? (err as Error).message : "Something went wrong",
-      });
+    return reply.code(status).send({
+      error: status < 500 ? (err as Error).message : "Something went wrong",
+    });
   });
   app.setNotFoundHandler((_req, reply) =>
     reply.code(404).send({ error: "Not found" }),

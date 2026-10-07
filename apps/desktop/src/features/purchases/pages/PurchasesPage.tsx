@@ -34,22 +34,32 @@ import {
   SegmentedTabs,
   type SegmentedTab,
 } from "@/components/common/SegmentedTabs";
-import { diffInDays, parseISODate, startOfDay } from "@medicare/domain/lib/date";
-import { formatPaise, inrFromPaise, type Paise } from "@medicare/domain/lib/money";
+import {
+  diffInDays,
+  parseISODate,
+  startOfDay,
+} from "@medicare/domain/lib/date";
+import {
+  formatPaise,
+  inrFromPaise,
+  type Paise,
+} from "@medicare/domain/lib/money";
 import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
-import { StockError } from "@medicare/domain/inventory/ledger";
-import { PurchaseError, usePurchaseStore } from "../store/usePurchaseStore";
+import { usePurchaseStore } from "../store/usePurchaseStore";
 import type {
   PaymentStatus,
   Purchase,
+  PurchaseDraft,
   PurchaseReturn,
   PurchaseReturnInput,
   PurchaseStatusFilter,
 } from "@medicare/domain/purchases/types";
 import { getDuePaise, getPaymentStatus } from "@medicare/domain/purchases/calc";
-import { ReturnError } from "@medicare/domain/purchases/returns";
-import { purchaseMatchesQuery, returnMatchesQuery } from "@medicare/domain/purchases/search";
+import {
+  purchaseMatchesQuery,
+  returnMatchesQuery,
+} from "@medicare/domain/purchases/search";
 import { PurchaseTable } from "../components/PurchaseTable";
 import { PurchaseFormDialog } from "../components/PurchaseFormDialog";
 import { PurchaseDetailsDialog } from "../components/PurchaseDetailsDialog";
@@ -63,13 +73,9 @@ const RECENT_DAYS = 30;
 
 type Tab = "invoices" | "returns";
 
-/** Show domain errors as-is; hide anything unexpected behind a generic message */
+/** The server's own message ("Already entered…", "Server offline…") */
 function errorMessage(err: unknown, fallback: string) {
-  const known =
-    err instanceof PurchaseError ||
-    err instanceof StockError ||
-    err instanceof ReturnError;
-  return known ? err.message : fallback;
+  return err instanceof Error ? err.message : fallback;
 }
 
 export default function PurchasesPage() {
@@ -220,15 +226,18 @@ export default function PurchasesPage() {
   const closeReturnView = useCallback(() => setViewingReturnId(null), []);
 
   const handleSave = useCallback(
-    (p: Purchase, mode: "create" | "edit"): boolean => {
+    async (
+      draft: PurchaseDraft,
+      editing: { id: string; revision: number } | null,
+    ): Promise<boolean> => {
       try {
-        if (mode === "edit") {
-          updatePurchase(p);
+        if (editing) {
+          const p = await updatePurchase(editing.id, draft, editing.revision);
           toast.success(`Invoice ${p.invoiceNo} updated (rev ${p.revision})`, {
             description: "Stock was re-posted to match the corrected invoice",
           });
         } else {
-          const packs = addPurchase(p);
+          const { purchase: p, packs } = await addPurchase(draft);
           toast.success(`Purchase ${p.invoiceNo} saved`, {
             description: `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
           });
@@ -244,9 +253,9 @@ export default function PurchasesPage() {
   );
 
   const handleCancel = useCallback(
-    (id: string, reason: string) => {
+    async (id: string, reason: string) => {
       try {
-        cancelPurchase(id, reason);
+        await cancelPurchase(id, reason);
         setCancelId(null);
         toast.success("Invoice cancelled", {
           description: "Its stock was removed from inventory",
@@ -259,9 +268,9 @@ export default function PurchasesPage() {
   );
 
   const handleCreateReturn = useCallback(
-    (input: PurchaseReturnInput): boolean => {
+    async (input: PurchaseReturnInput): Promise<boolean> => {
       try {
-        const ret = createReturn(input);
+        const ret = await createReturn(input);
         setReturnForId(null);
         toast.success(`Debit note ${ret.returnNo} created`, {
           description: `${ret.totalQty} packs · ${inrFromPaise(ret.totalPaise)} credit`,
@@ -276,9 +285,9 @@ export default function PurchasesPage() {
   );
 
   const handleRecordPayment = useCallback(
-    (id: string, amountPaise: Paise) => {
+    async (id: string, amountPaise: Paise) => {
       try {
-        recordPayment(id, amountPaise);
+        await recordPayment(id, amountPaise);
         toast.success(`Payment of ₹${formatPaise(amountPaise)} recorded`);
       } catch (err) {
         toast.error(errorMessage(err, "Could not record payment"));

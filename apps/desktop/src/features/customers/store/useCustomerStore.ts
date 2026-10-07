@@ -1,117 +1,76 @@
 import { create } from "zustand";
 import { demoCustomerPayments, demoCustomers } from "@medicare/demo/seed";
-import { useSalesStore } from "@/features/billing/store/useSalesStore";
-import { newId } from "@medicare/domain/lib/id";
-import { cleanText } from "@medicare/domain/lib/sanitize";
-import {
-  CUSTOMER_LIMITS as L,
-  type Customer,
-  type CustomerInput,
-  type CustomerPayment,
-  type CustomerPaymentInput,
+import type {
+  Customer,
+  CustomerInput,
+  CustomerPayment,
+  CustomerPaymentInput,
 } from "@medicare/domain/customers/types";
-import { customerSummaries, nextReceiptNo } from "@medicare/domain/customers/ledger";
-import { digits, isValidPhone, validatePaymentIn } from "@medicare/domain/customers/validation";
+import type { ShopPatch } from "@medicare/domain/shop/patch";
+import { apiGet, apiRequest, requireServer } from "@/lib/api";
+import { applyShopPatch } from "@/stores/applyShopPatch";
 
-export class CustomerError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CustomerError";
-  }
-}
-
+/**
+ * Customer accounts (khata) and payments received. The SERVER checks the
+ * rules (one account per mobile, never more than owed) and saves.
+ */
 type CustomerState = {
   customers: Customer[];
   payments: CustomerPayment[];
-  addCustomer: (input: CustomerInput) => Customer;
-  updateCustomer: (id: string, input: CustomerInput) => Customer;
+  source: "demo" | "server";
+  loadFromServer: () => Promise<void>;
+  addCustomer: (input: CustomerInput) => Promise<Customer>;
+  updateCustomer: (id: string, input: CustomerInput) => Promise<Customer>;
   /** Money received against udhaar — never more than owed */
-  recordPayment: (input: CustomerPaymentInput) => CustomerPayment;
+  recordPayment: (input: CustomerPaymentInput) => Promise<CustomerPayment>;
 };
 
-/** Re-check everything at the store (screens validate too) */
-function clean(
-  input: CustomerInput,
-  others: readonly Customer[],
-): CustomerInput {
-  const name = cleanText(input.name, L.nameMax);
-  if (name.length < 2) throw new CustomerError("Name is required");
-  if (!isValidPhone(input.phone))
-    throw new CustomerError("Enter a 10-digit mobile number");
-  const phone = digits(input.phone);
-  if (phone && others.some((c) => c.phone === phone))
-    throw new CustomerError("Another customer has this number");
-  const limit = Number.isInteger(input.creditLimitPaise)
-    ? input.creditLimitPaise
-    : 0;
-  return {
-    name,
-    phone,
-    address: cleanText(input.address, L.addressMax),
-    creditLimitPaise: Math.max(0, Math.min(L.maxCreditLimitPaise, limit)),
-    notes: cleanText(input.notes, L.notesMax),
-    status: input.status === "inactive" ? "inactive" : "active",
-  };
+async function send<R extends { patch: ShopPatch }>(
+  method: "POST" | "PUT",
+  path: string,
+  body: unknown,
+): Promise<R> {
+  requireServer(useCustomerStore.getState().source);
+  const r = await apiRequest<R>(method, path, body);
+  applyShopPatch(r.patch);
+  return r;
 }
 
-/** What a customer owes right now (positive = owes us) */
-export function owedBy(customerId: string): number {
-  const { sales, saleReturns } = useSalesStore.getState();
-  const { customers, payments } = useCustomerStore.getState();
-  const c = customers.find((x) => x.id === customerId);
-  if (!c) return 0;
-  return (
-    customerSummaries([c], sales, saleReturns, payments).get(c.id)
-      ?.balancePaise ?? 0
-  );
-}
-
-export const useCustomerStore = create<CustomerState>()((set, get) => ({
+export const useCustomerStore = create<CustomerState>()((set) => ({
   customers: demoCustomers,
   payments: demoCustomerPayments,
+  source: "demo",
 
-  addCustomer: (input) => {
-    const c: Customer = {
-      id: newId("cus"),
-      createdAt: new Date().toISOString(),
-      ...clean(input, get().customers),
-    };
-    set({ customers: [c, ...get().customers] });
-    return c;
+  loadFromServer: async () => {
+    const r = await apiGet<{
+      customers: Customer[];
+      payments: CustomerPayment[];
+    }>("/api/customers");
+    set({ customers: r.customers, payments: r.payments, source: "server" });
   },
 
-  updateCustomer: (id, input) => {
-    const { customers } = get();
-    const old = customers.find((c) => c.id === id);
-    if (!old) throw new CustomerError("Customer not found");
-    const next: Customer = {
-      ...old,
-      ...clean(
+  addCustomer: async (input) =>
+    (
+      await send<{ customer: Customer; patch: ShopPatch }>(
+        "POST",
+        "/api/customers",
         input,
-        customers.filter((c) => c.id !== id),
-      ),
-    };
-    set({ customers: customers.map((c) => (c.id === id ? next : c)) });
-    return next;
-  },
-
-  recordPayment: (input) => {
-    const { customers, payments } = get();
-    if (!customers.some((c) => c.id === input.customerId))
-      throw new CustomerError("Customer not found");
-    const v = validatePaymentIn(input, owedBy(input.customerId));
-    if (!v.ok) throw new CustomerError(v.error);
-    const p: CustomerPayment = {
-      id: newId("pay"),
-      receiptNo: nextReceiptNo(payments),
-      customerId: input.customerId,
-      at: new Date().toISOString(),
-      amountPaise: v.amountPaise,
-      method: input.method,
-      reference: cleanText(input.reference, L.referenceMax),
-      note: cleanText(input.note, L.notesMax),
-    };
-    set({ payments: [p, ...payments] });
-    return p;
-  },
+      )
+    ).customer,
+  updateCustomer: async (id, input) =>
+    (
+      await send<{ customer: Customer; patch: ShopPatch }>(
+        "PUT",
+        `/api/customers/${encodeURIComponent(id)}`,
+        input,
+      )
+    ).customer,
+  recordPayment: async (input) =>
+    (
+      await send<{ payment: CustomerPayment; patch: ShopPatch }>(
+        "POST",
+        "/api/customer-payments",
+        input,
+      )
+    ).payment,
 }));

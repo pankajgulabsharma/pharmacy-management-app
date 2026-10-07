@@ -7,7 +7,10 @@ import { formatPackLabel } from "@medicare/domain/medicines/types";
 import { formatISODate } from "@medicare/domain/lib/date";
 import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import { cn } from "@/lib/utils";
-import { RETURN_REASONS, type PurchaseReturn } from "@medicare/domain/purchases/types";
+import {
+  RETURN_REASONS,
+  type PurchaseReturn,
+} from "@medicare/domain/purchases/types";
 
 type Props = {
   ret: PurchaseReturn | null;

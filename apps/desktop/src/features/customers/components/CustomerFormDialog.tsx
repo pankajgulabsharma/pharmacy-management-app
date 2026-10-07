@@ -9,8 +9,11 @@ import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
 import { isMoneyInput, paiseToInput } from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
-import { CUSTOMER_LIMITS as L, type Customer } from "@medicare/domain/customers/types";
-import { CustomerError, useCustomerStore } from "../store/useCustomerStore";
+import {
+  CUSTOMER_LIMITS as L,
+  type Customer,
+} from "@medicare/domain/customers/types";
+import { useCustomerStore } from "../store/useCustomerStore";
 import {
   digits,
   toCustomerInput,
@@ -89,14 +92,14 @@ function FormBody({
   const set = <K extends keyof CustomerForm>(k: K, v: CustomerForm[K]) =>
     setF((x) => ({ ...x, [k]: v }));
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     if (Object.keys(validateCustomerForm(f, otherPhones)).length) return;
     try {
       const c = customer
-        ? updateCustomer(customer.id, toCustomerInput(f))
-        : addCustomer(toCustomerInput(f));
+        ? await updateCustomer(customer.id, toCustomerInput(f))
+        : await addCustomer(toCustomerInput(f));
       toast.success(
         customer ? tr("Customer updated") : tr("Customer account created"),
         { description: c.name },
@@ -105,7 +108,7 @@ function FormBody({
       onClose();
     } catch (err) {
       toast.error(
-        err instanceof CustomerError ? tr(err.message) : tr("Could not save"),
+        err instanceof Error ? tr(err.message) : tr("Could not save"),
       );
     }
   };

@@ -24,6 +24,13 @@ export class EventBus {
     return this.clients.size;
   }
 
+  /** Send what one stock/money operation changed to every open app */
+  publish(patch: object) {
+    if (Object.keys(patch).length === 0) return;
+    const msg = `event: patch\ndata: ${JSON.stringify(patch)}\n\n`;
+    for (const res of this.clients) res.write(msg);
+  }
+
   emit(topic: Topic) {
     const msg = `event: change\ndata: ${JSON.stringify({ topic })}\n\n`;
     for (const res of this.clients) res.write(msg);

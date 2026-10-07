@@ -2,13 +2,20 @@ import { create } from "zustand";
 import { API_URL, ApiError } from "@/lib/api";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
+import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
+import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
+import { useSalesStore } from "@/features/billing/store/useSalesStore";
+import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
+import type { ShopPatch } from "@medicare/domain/shop/patch";
+import { applyShopPatch } from "./applyShopPatch";
 
 /**
  * Live connection to the server — screens update by themselves, no refresh.
  *
  *  • On connect: load everything that lives on the server.
- *  • The server announces every save ("medicines changed") over one open
- *    stream → only that part reloads, on this and every other counter.
+ *  • The server announces every save over one open stream: masters
+ *    ("medicines changed") reload; bills/purchases/returns arrive as a
+ *    patch of just what changed — on this and every other counter.
  *  • Stream drops (server stopped) → light turns red; the browser retries
  *    every 3 s and everything reloads the moment it is back.
  *  • Coming back to the app (window focus) also reloads — that catches
@@ -22,6 +29,14 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
   medicines: () => useMedicineStore.getState().loadFromServer(),
   suppliers: () => useSupplierStore.getState().loadFromServer(),
 };
+
+/** Stock & money: loaded on connect; after that, other counters' saves arrive as patches */
+const SHOP_LOADERS = [
+  () => useInventoryStore.getState().loadFromServer(),
+  () => usePurchaseStore.getState().loadFromServer(),
+  () => useSalesStore.getState().loadFromServer(),
+  () => useCustomerStore.getState().loadFromServer(),
+];
 
 type ServerState = {
   status: ServerStatus;
@@ -45,7 +60,9 @@ export const useServerStore = create<ServerState>()((set, get) => ({
     inFlight ??= (async () => {
       set({ status: "checking" });
       try {
-        await Promise.all(Object.values(LOADERS).map((load) => load()));
+        await Promise.all(
+          [...Object.values(LOADERS), ...SHOP_LOADERS].map((load) => load()),
+        );
         set({ status: "online", error: null, lastSyncAt: Date.now() });
       } catch (err) {
         set({
@@ -82,6 +99,16 @@ export const useServerStore = create<ServerState>()((set, get) => ({
       ).topic;
       const load = topic ? LOADERS[topic] : undefined;
       load?.().catch(() => void get().sync());
+    });
+    // A bill / purchase / return saved on any counter → merge what changed
+    stream.addEventListener("patch", (e) => {
+      try {
+        applyShopPatch(
+          JSON.parse((e as MessageEvent<string>).data) as ShopPatch,
+        );
+      } catch {
+        void get().sync();
+      }
     });
     window.addEventListener("focus", () => {
       if (get().status === "online") void get().sync();

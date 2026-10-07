@@ -33,7 +33,6 @@ import { startOfDay } from "@medicare/domain/lib/date";
 import { inrFromPaise } from "@medicare/domain/lib/money";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { tr } from "@/lib/i18n";
-import { ServerBanner } from "@/components/feedback/ServerBanner";
 import { useSupplierStore } from "../store/useSupplierStore";
 import { useSupplierSummaries } from "../hooks/useSupplierSummaries";
 import type {
@@ -257,8 +256,6 @@ export default function SuppliersPage() {
           </Button>
         }
       />
-
-      <ServerBanner />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
         <StatCard

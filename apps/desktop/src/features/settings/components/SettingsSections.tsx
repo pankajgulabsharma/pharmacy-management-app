@@ -21,7 +21,10 @@ import {
   type InventoryPrefs,
   type ShopProfile,
 } from "@medicare/domain/settings/types";
-import { validateInventory, validateShop } from "@medicare/domain/settings/validation";
+import {
+  validateInventory,
+  validateShop,
+} from "@medicare/domain/settings/validation";
 import { SettingsCard } from "./SettingsCard";
 import { EditableList } from "./EditableList";
 

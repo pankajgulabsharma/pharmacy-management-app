@@ -19,7 +19,10 @@ import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { toCodeInput } from "@medicare/domain/lib/sanitize";
 import { toISODate } from "@medicare/domain/lib/date";
 import { formatPaise } from "@medicare/domain/lib/money";
-import type { Medicine, MedicineWithStock } from "@medicare/domain/medicines/types";
+import type {
+  Medicine,
+  MedicineWithStock,
+} from "@medicare/domain/medicines/types";
 import {
   PURCHASE_LIMITS,
   type Purchase,
@@ -29,12 +32,10 @@ import {
 } from "@medicare/domain/purchases/types";
 import { calcTotals } from "@medicare/domain/purchases/calc";
 import {
-  draftToEditedPurchase,
   purchaseToDraft,
   createEmptyDraft,
   createLineFromMedicine,
   draftLineToAmountInput,
-  draftToPurchase,
   getDueDate,
   isDraftDirty,
 } from "@medicare/domain/purchases/draft";
@@ -59,7 +60,11 @@ type Props = {
   editing?: Purchase | null;
   onClose: () => void;
   /** Return false if saving failed, so the form can be submitted again */
-  onSave: (purchase: Purchase, mode: "create" | "edit") => boolean;
+  /** The typed form; for an edit also which invoice/revision it changes. Resolves true when saved. */
+  onSave: (
+    draft: PurchaseDraft,
+    editing: { id: string; revision: number } | null,
+  ) => Promise<boolean>;
 };
 
 /**
@@ -199,7 +204,7 @@ function PurchaseForm({
     onClose();
   }, [draft, initial, isEdit, confirmDiscard, onClose]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (savingRef.current) return; // guard against double submit
 
@@ -223,10 +228,10 @@ function PurchaseForm({
     }
 
     savingRef.current = true;
-    const now = new Date();
-    const saved = editing
-      ? onSave(draftToEditedPurchase(draft, supplier, editing, now), "edit")
-      : onSave(draftToPurchase(draft, supplier, now), "create");
+    const saved = await onSave(
+      draft,
+      editing ? { id: editing.id, revision: editing.revision } : null,
+    );
     if (!saved) savingRef.current = false;
   };
 

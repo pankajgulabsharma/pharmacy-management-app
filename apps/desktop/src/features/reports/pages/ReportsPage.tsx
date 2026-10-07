@@ -24,7 +24,12 @@ import { useInventoryStore } from "@/features/inventory/store/useInventoryStore"
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { downloadText } from "@/lib/csv";
-import { gstCsv, purchasesCsv, salesCsv, stockCsv } from "@medicare/domain/reports/exports";
+import {
+  gstCsv,
+  purchasesCsv,
+  salesCsv,
+  stockCsv,
+} from "@medicare/domain/reports/exports";
 import { toISODate } from "@medicare/domain/lib/date";
 import { PeriodFilter } from "../components/PeriodFilter";
 import {

@@ -7,7 +7,11 @@ import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
-import { inrFromPaise, isMoneyInput, paiseToInput } from "@medicare/domain/lib/money";
+import {
+  inrFromPaise,
+  isMoneyInput,
+  paiseToInput,
+} from "@medicare/domain/lib/money";
 import { tr } from "@/lib/i18n";
 import {
   PAYMENT_IN_LABELS,
@@ -15,7 +19,7 @@ import {
   type Customer,
   type PaymentInMethod,
 } from "@medicare/domain/customers/types";
-import { CustomerError, useCustomerStore } from "../store/useCustomerStore";
+import { useCustomerStore } from "../store/useCustomerStore";
 import { validatePaymentIn } from "@medicare/domain/customers/validation";
 
 type Props = {
@@ -59,19 +63,19 @@ function Body({
   const error = submitted && !check.ok ? check.error : undefined;
   const left = check.ok ? owedPaise - check.amountPaise : owedPaise;
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     if (!check.ok) return;
     try {
-      const p = recordPayment(input);
+      const p = await recordPayment(input);
       toast.success(`${tr("Payment received")} · ${p.receiptNo}`, {
         description: `${customer.name} · ${inrFromPaise(p.amountPaise)}`,
       });
       onClose();
     } catch (err) {
       toast.error(
-        err instanceof CustomerError ? tr(err.message) : tr("Could not save"),
+        err instanceof Error ? tr(err.message) : tr("Could not save"),
       );
     }
   };

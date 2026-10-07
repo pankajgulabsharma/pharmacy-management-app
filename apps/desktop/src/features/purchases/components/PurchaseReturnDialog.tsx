@@ -25,13 +25,16 @@ import {
   type PurchaseReturnInput,
   type ReturnReason,
 } from "@medicare/domain/purchases/types";
-import { RETURN_NOTES_MAX, getReturnableLines } from "@medicare/domain/purchases/returns";
+import {
+  RETURN_NOTES_MAX,
+  getReturnableLines,
+} from "@medicare/domain/purchases/returns";
 
 type Props = {
   purchase: Purchase | null;
   onClose: () => void;
   /** Return false if saving failed, so the user can correct and retry */
-  onSubmit: (input: PurchaseReturnInput) => boolean;
+  onSubmit: (input: PurchaseReturnInput) => Promise<boolean>;
 };
 
 const COLUMNS: TableColumn[] = [
@@ -81,7 +84,7 @@ function ReturnForm({
 }: {
   purchase: Purchase;
   onClose: () => void;
-  onSubmit: (input: PurchaseReturnInput) => boolean;
+  onSubmit: (input: PurchaseReturnInput) => Promise<boolean>;
 }) {
   const titleId = useId();
   const batches = useInventoryStore((s) => s.batches);
@@ -130,12 +133,12 @@ function ReturnForm({
         ? "Some quantities are more than allowed"
         : dateError;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     if (formError || saving || !reason) return;
     setSaving(true);
-    const ok = onSubmit({
+    const ok = await onSubmit({
       purchaseId: purchase.id,
       date,
       reason,

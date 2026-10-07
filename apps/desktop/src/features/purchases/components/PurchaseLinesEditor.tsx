@@ -12,7 +12,11 @@ import { formatPackLabel } from "@medicare/domain/medicines/types";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { formatExpiryInput, monthsToExpiry } from "@medicare/domain/lib/expiry";
 import { formatPaise, isMoneyInput } from "@medicare/domain/lib/money";
-import { isIntInput, isPercentInput, toCodeInput } from "@medicare/domain/lib/sanitize";
+import {
+  isIntInput,
+  isPercentInput,
+  toCodeInput,
+} from "@medicare/domain/lib/sanitize";
 import {
   GST_RATES,
   PURCHASE_LIMITS,

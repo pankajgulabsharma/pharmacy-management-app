@@ -17,8 +17,9 @@ class FakeStream {
     this.url = url;
     FakeStream.last = this;
   }
-  addEventListener(_t: string, fn: (e: { data: string }) => void) {
-    this.listeners.push(fn);
+  private patchListeners: ((e: { data: string }) => void)[] = [];
+  addEventListener(type: string, fn: (e: { data: string }) => void) {
+    (type === "patch" ? this.patchListeners : this.listeners).push(fn);
   }
   open() {
     this.readyState = 1;
@@ -27,6 +28,9 @@ class FakeStream {
   drop() {
     this.readyState = 0;
     this.onerror?.();
+  }
+  emitPatch(patch: object) {
+    for (const fn of this.patchListeners) fn({ data: JSON.stringify(patch) });
   }
   announce(topic: string) {
     for (const fn of this.listeners) fn({ data: JSON.stringify({ topic }) });
@@ -52,7 +56,19 @@ beforeEach(async () => {
       calls.push(path);
       if (path === "/api/medicines")
         return reply({ items: [{ ...mockMedicines[0], name: medName }] });
-      return reply({ items: mockSuppliers });
+      if (path === "/api/suppliers") return reply({ items: mockSuppliers });
+      // stock & money lists (contents don't matter for these tests)
+      return reply({
+        items: [],
+        batches: [],
+        movements: [],
+        purchases: [],
+        returns: [],
+        sales: [],
+        saleReturns: [],
+        customers: [],
+        payments: [],
+      });
     }),
   );
 });
@@ -71,7 +87,15 @@ describe("live updates — no refresh", () => {
   it("on connect: loads everything and turns green", async () => {
     const srv = await connected();
     expect(srv.getState().status).toBe("online");
-    expect(calls.sort()).toEqual(["/api/medicines", "/api/suppliers"]);
+    expect(calls.sort()).toEqual([
+      "/api/customers",
+      "/api/held",
+      "/api/medicines",
+      "/api/purchases",
+      "/api/sales",
+      "/api/stock",
+      "/api/suppliers",
+    ]);
   });
 
   it("a save announced by the server reloads ONLY that part, by itself", async () => {
@@ -96,7 +120,7 @@ describe("live updates — no refresh", () => {
     await flush();
     await flush();
     expect(srv.getState().status).toBe("online");
-    expect(calls.length).toBe(2);
+    expect(calls.length).toBe(7);
   });
 });
 
@@ -121,5 +145,18 @@ describe("suppliers are saved through the server", () => {
       useSupplierStore.getState().addSupplier({ ...input, gstin: input.gstin }),
     ).rejects.toThrow(/already/);
     expect(calls).toEqual([]);
+  });
+});
+
+describe("a bill saved on another counter", () => {
+  it("arrives as a patch and is merged — no reload at all", async () => {
+    await connected();
+    const { useSalesStore } =
+      await import("@/features/billing/store/useSalesStore");
+    calls = [];
+    const bill = { id: "s_other", billNo: "INV-9999" };
+    FakeStream.last.emitPatch({ sales: [bill], heldRemoved: [] });
+    expect(calls).toEqual([]);
+    expect(useSalesStore.getState().sales[0]).toMatchObject(bill);
   });
 });

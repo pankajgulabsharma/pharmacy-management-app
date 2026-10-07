@@ -8,8 +8,11 @@ import { getExpiringSoonDays } from "@/features/settings/store/useSettingsStore"
 
 export * from "@medicare/domain/inventory/stock";
 
-export const isExpiringSoon = (expiry: string, days = getExpiringSoonDays(), now = new Date()) =>
-  rules.isExpiringSoon(expiry, days, now);
+export const isExpiringSoon = (
+  expiry: string,
+  days = getExpiringSoonDays(),
+  now = new Date(),
+) => rules.isExpiringSoon(expiry, days, now);
 
 export const batchStatus = (
   b: InventoryBatch,

@@ -30,7 +30,6 @@ import {
 import { canSellLoose } from "@medicare/domain/medicines/types";
 import { useInventoryStore } from "../store/useInventoryStore";
 import { useInventoryRows } from "../hooks/useInventoryRows";
-import { StockError } from "@medicare/domain/inventory/ledger";
 import type {
   InventoryBatch,
   InventoryStatusFilter,
@@ -143,13 +142,13 @@ export default function InventoryPage() {
   const closeAdjust = useCallback(() => setAdjustTarget(null), []);
 
   const handleAdjustSave = useCallback(
-    (id: string, values: StockAdjustValues) => {
+    async (id: string, values: StockAdjustValues) => {
       const target = items.find((b) => b.id === id);
       const looseOk = target
         ? canSellLoose(target.unit, target.allowLoose)
         : false;
       try {
-        const changed = adjustStock(
+        const changed = await adjustStock(
           id,
           {
             qtyStrip: Number(values.qtyStrip) || 0,
@@ -162,7 +161,7 @@ export default function InventoryPage() {
         else toast.info("No change in quantity");
       } catch (err) {
         toast.error(
-          err instanceof StockError ? err.message : "Could not update stock",
+          err instanceof Error ? err.message : "Could not update stock",
         );
       }
     },
