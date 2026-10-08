@@ -109,6 +109,7 @@ export function createSession(
   raw: DatabaseSync,
   userId: string,
   remember: boolean,
+  ip = "",
   now = Date.now(),
 ) {
   const token = randomBytes(32).toString("base64url");
@@ -118,9 +119,9 @@ export function createSession(
   raw.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
   raw
     .prepare(
-      "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+      "INSERT INTO sessions (token_hash, user_id, created_at, expires_at, ip) VALUES (?, ?, ?, ?, ?)",
     )
-    .run(sha(token), userId, new Date(now).toISOString(), expiresAt);
+    .run(sha(token), userId, new Date(now).toISOString(), expiresAt, ip);
   return { token, expiresAt };
 }
 
@@ -141,6 +142,20 @@ export function resolveSession(
   return row
     ? { user: toRecord(row), expiresAt: row.session_expires_at }
     : null;
+}
+
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1", ""]);
+export const isLocal = (ip: string) => LOOPBACK.has(ip);
+
+/** Other computers (not this one) signed in right now */
+export function activeCounterIps(
+  raw: DatabaseSync,
+  now = Date.now(),
+): Set<string> {
+  const rows = raw
+    .prepare("SELECT DISTINCT ip FROM sessions WHERE expires_at > ?")
+    .all(now) as { ip: string }[];
+  return new Set(rows.map((r) => r.ip).filter((ip) => !isLocal(ip)));
 }
 
 export function endSession(raw: DatabaseSync, token: string) {

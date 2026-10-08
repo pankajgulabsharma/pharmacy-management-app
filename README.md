@@ -61,6 +61,8 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 11. ✅ Daily backup & restore; bell (alerts) & header search; bills show counter + staff; tabs keep their work
 12. ✅ Windows installer (Electron: the server runs inside the app — nothing else to install)
 13. ✅ Several counters on the shop network (main computer + extra counters) + final checks
+14. ✅ Printing for every printer (thermal 58/80 mm, A5, A4 GST invoice) + barcodes & labels
+15. ✅ Licences for every shop (trial → key → on hold), activity log, security hardening
 
 ## Windows installer
 
@@ -106,6 +108,55 @@ Uninstalling never deletes the shop's data.
   without one, Medicines → barcode icon → *Create barcode* makes a shop
   code (EAN-13 starting with 2) and prints stickers on a label printer
   (50×25, 38×25, 50×30 mm) or A4 sticker sheets (65 / 24 per sheet).
+
+## Licences (selling to many shops)
+
+Every shop needs a licence key. New installs get a **14-day trial**. When a
+licence ends there are **7 grace days**, then the shop goes **on hold**: no
+new bills, purchases or changes — but viewing, reports, backups and entering
+a new key always work (the shop's data is never locked away). Moving the
+computer's date back also puts it on hold.
+
+You (the provider) make the keys on **your** computer:
+
+```bash
+npm run license -- keygen          # ONCE: makes your secret signing key
+                                   # (~/.medicare-vendor/ — back it up!) and
+                                   # writes the public key into the app → commit it
+npm run license -- issue --shop "Sharma Medicals" --machine 7KQ2-M9XD-4TRA-PZ6E --days 365 --counters 2
+npm run license -- show MC1.xxxx   # what is inside a key
+```
+
+- The **machine code** is shown in the shop's app: Settings → Licence. A key
+  only works on that computer (the main computer).
+- `--counters` = how many computers may bill at the same time.
+- Every key you make is listed in `~/.medicare-vendor/issued.csv`.
+- Keys are signed (Ed25519): they can't be edited or made up without your
+  private key. **Never** share or commit `license-private.pem`; if you lose
+  it you can't renew anyone (making a new one invalidates all old keys).
+- The installer can't be built until `keygen` has been run.
+
+## Security
+
+What protects the shop:
+
+| Risk | Protection |
+|---|---|
+| Guessing passwords | Slow password hashes (scrypt), 5 wrong tries → 30 s pause, logged |
+| Someone doing what their role doesn't allow | Every request checked on the server (not just hidden buttons); refusals logged |
+| Bad / tricky input (incl. SQL injection) | Every input checked (Zod, strict); database only through prepared statements |
+| Stolen database file used to sign in | Only hashes of passwords and sign-in tokens are stored |
+| Another website / app talking to the server | CORS limited to the app; safety headers + strict Content-Security-Policy |
+| One computer flooding the server | Per-computer request limit |
+| Code injected into the installed app (e.g. to skip the licence) | Electron locked down: no Node in pages, sandbox, can't run as Node / with debugger, pages can't navigate away or use camera/mic |
+| Staff misuse ("who deleted that bill?") | Settings → **Activity log**: every sign-in, bill, return, stock and price change, user change, backup/restore — who, when, which computer |
+| Data loss | Daily automatic backups + restore with a safety copy |
+
+Honest limits: anyone who can sit at the main computer with its Windows
+password can copy the data folder — keep that Windows account password-
+protected. On the shop network the traffic is plain HTTP — use the shop's
+own Wi-Fi / cable, not a public one. Buying a code-signing certificate
+removes Windows' "unknown publisher" warning.
 
 ## Where is the data?
 

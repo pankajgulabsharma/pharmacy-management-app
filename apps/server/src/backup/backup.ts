@@ -34,8 +34,8 @@ export type BackupInfo = {
 export const KEEP_AUTO = 30;
 const NAME_RE =
   /^medicare-\d{8}-\d{6}-(auto|manual|before-restore|uploaded)\.sqlite$/;
-/** Tables that are never copied back: sign-ins stay as they are now */
-const SKIP_TABLES = new Set(["sessions", "__drizzle_migrations"]);
+/** Never copied back: sign-ins and the activity log stay as they are now */
+const SKIP_TABLES = new Set(["sessions", "audit_log", "__drizzle_migrations"]);
 
 const stamp = (d: Date) =>
   d.toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);

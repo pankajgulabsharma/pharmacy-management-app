@@ -708,4 +708,37 @@ export const HI_UI: Record<string, string> = {
   "Label size": "लेबल साइज़",
   "Print {{n}} labels": "{{n}} लेबल प्रिंट करें",
   "Label preview": "लेबल प्रीव्यू",
+  // Licence & activity log (step 15)
+  "On hold": "रुका हुआ",
+  "Enter licence key": "लाइसेंस की डालें",
+  "Ask the owner": "मालिक से पूछें",
+  Licence: "लाइसेंस",
+  "Licence ending": "लाइसेंस खत्म हो रहा है",
+  "Software on hold": "सॉफ़्टवेयर रुका हुआ है",
+  "This shop's licence. When it ends, billing goes on hold until a new key is entered — your data always stays safe and viewable.":
+    "इस दुकान का लाइसेंस। खत्म होने पर नई की डालने तक बिलिंग रुक जाती है — आपका डेटा हमेशा सुरक्षित रहता है और देखा जा सकता है।",
+  "Machine code": "मशीन कोड",
+  "Licensed to": "किसके नाम",
+  "Valid until": "कब तक मान्य",
+  Computers: "कंप्यूटर",
+  "Licence no.": "लाइसेंस नं.",
+  "To buy or renew: send the machine code above to your MediCare provider. They send back a licence key — paste it below.":
+    "खरीदने या रिन्यू करने के लिए: ऊपर का मशीन कोड अपने मेडीकेयर प्रोवाइडर को भेजें। वे लाइसेंस की भेजेंगे — उसे नीचे पेस्ट करें।",
+  "Licence key": "लाइसेंस की",
+  "Save licence key": "लाइसेंस की सेव करें",
+  "Licence saved — works until {{date}}":
+    "लाइसेंस सेव हो गया — {{date}} तक चलेगा",
+  "Activity log": "गतिविधि लॉग",
+  "Every sign-in, bill, return, stock change, price change, user change, backup and restore — who, when and from which computer.":
+    "हर लॉगिन, बिल, रिटर्न, स्टॉक बदलाव, दाम बदलाव, यूज़र बदलाव, बैकअप और रिस्टोर — किसने, कब और किस कंप्यूटर से।",
+  "Search name, action, bill no…": "नाम, काम, बिल नं. खोजें…",
+  When: "कब",
+  Who: "किसने",
+  What: "क्या",
+  Details: "विवरण",
+  Computer: "कंप्यूटर",
+  "this computer": "यही कंप्यूटर",
+  "Show older": "पुराने दिखाएँ",
+  "Too many requests from this computer — wait a moment":
+    "इस कंप्यूटर से बहुत ज़्यादा अनुरोध — थोड़ा रुकें",
 };

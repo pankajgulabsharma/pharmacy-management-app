@@ -20,6 +20,7 @@ import { LoginLimiter } from "../auth/limiter";
 import { verifyPassword } from "../auth/password";
 import * as store from "../auth/store";
 import { parse } from "../shop/schemas";
+import { licenseState, type LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
 
 const password = z.string().max(USER_LIMITS.passwordMax);
@@ -53,6 +54,7 @@ type Params = { Params: { id: string } };
 export function authRoutes(
   app: FastifyInstance,
   { raw }: Database,
+  license: LicenseOptions,
   limiter = new LoginLimiter(),
 ) {
   app.post("/api/auth/login", async (req, reply) => {
@@ -78,7 +80,21 @@ export function authRoutes(
         : reply.code(401).send({ error: "Wrong username or password" });
     }
     limiter.success(key);
-    const s = store.createSession(raw, found.user.id, body.remember === true);
+    // Licence: how many computers may bill at the same time
+    const max = licenseState(raw, license).counters;
+    if (max && !store.isLocal(req.ip)) {
+      const others = store.activeCounterIps(raw);
+      if (!others.has(req.ip) && others.size >= max - 1)
+        return reply.code(403).send({
+          error: `Your licence allows ${max} computer${max === 1 ? "" : "s"} at a time. Sign out on another counter, or ask your provider to add counters.`,
+        });
+    }
+    const s = store.createSession(
+      raw,
+      found.user.id,
+      body.remember === true,
+      req.ip,
+    );
     return {
       token: s.token,
       expiresAt: s.expiresAt,

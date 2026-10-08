@@ -7,7 +7,7 @@
  * Run `npm run build` in the project root first (builds the screens).
  */
 import { build } from "esbuild";
-import { cpSync, existsSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const at = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -16,6 +16,13 @@ if (!existsSync(`${ui}/index.html`)) {
   console.error(
     "Build the app screens first:  npm run build  (in the project root)",
   );
+  process.exit(1);
+}
+
+// Licence keys can only be checked with the provider's public key
+const pub = readFileSync(at("../../apps/server/src/license/public-key.ts"), "utf8");
+if (/LICENSE_PUBLIC_KEY = ""/.test(pub)) {
+  console.error("No licence public key yet. Run once:  npm run license -- keygen  (then commit apps/server/src/license/public-key.ts)");
   process.exit(1);
 }
 

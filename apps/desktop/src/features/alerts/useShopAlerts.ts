@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  BadgeCheck,
   CalendarClock,
   CalendarX,
   HandCoins,
@@ -24,6 +25,7 @@ import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWi
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { tr } from "@/lib/i18n";
+import { useLicenseStore } from "@/features/license/useLicenseStore";
 
 export type ShopAlert = {
   key: string;
@@ -55,9 +57,20 @@ export function useShopAlerts(): ShopAlert[] {
   const held = useSalesStore((s) => s.held);
   const customers = useCustomerStore((s) => s.customers);
   const payments = useCustomerStore((s) => s.payments);
+  const licence = useLicenseStore((s) => s.state);
 
   return useMemo(() => {
     const list: ShopAlert[] = [];
+    // Licence first: on hold / ending soon matters more than anything else
+    if (licence && licence.status !== "off" && licence.message)
+      list.push({
+        key: "licence",
+        title: tr(licence.canWork ? "Licence ending" : "Software on hold"),
+        desc: tr(licence.message),
+        icon: BadgeCheck,
+        level: !licence.canWork || licence.status === "grace" ? "red" : "amber",
+        to: can(role, "admin") ? "/settings?section=license" : "/dashboard",
+      });
     const stock = stockReport(batches, medicines, expiringDays);
 
     if (stock.expired.length)
@@ -185,6 +198,7 @@ export function useShopAlerts(): ShopAlert[] {
     held,
     customers,
     payments,
+    licence,
   ]);
 }
 

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
+  BadgeCheck,
   Building2,
+  History,
   Database,
   HardDriveDownload,
   Printer,
@@ -29,6 +31,9 @@ import { UsersSection } from "../components/UsersSection";
 import { BackupSection } from "../components/BackupSection";
 import { NetworkSection } from "../components/NetworkSection";
 import { PrintingSection } from "../components/PrintingSection";
+import { LicenseSection } from "../components/LicenseSection";
+import { ActivitySection } from "../components/ActivitySection";
+import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { tr } from "@/lib/i18n";
 
 type SectionId =
@@ -40,6 +45,8 @@ type SectionId =
   | "printing"
   | "backup"
   | "network"
+  | "license"
+  | "activity"
   | "appearance"
   | "data";
 
@@ -93,6 +100,18 @@ const SECTIONS: {
     Component: NetworkSection,
   },
   {
+    id: "license",
+    label: "Licence",
+    icon: BadgeCheck,
+    Component: LicenseSection,
+  },
+  {
+    id: "activity",
+    label: "Activity log",
+    icon: History,
+    Component: ActivitySection,
+  },
+  {
     id: "appearance",
     label: "Appearance",
     icon: Palette,
@@ -102,7 +121,15 @@ const SECTIONS: {
 ];
 
 export default function SettingsPage() {
-  const [active, setActive] = useState<SectionId>("shop");
+  // ?section=license (e.g. from the licence banner) opens that section
+  const intent = useUrlIntent();
+  const [active, setActive] = useState<SectionId>(
+    oneOf(
+      intent.section,
+      SECTIONS.map((s) => s.id),
+      "shop",
+    ),
+  );
   const section = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
 
   // Keyboard: [ ] previous / next section

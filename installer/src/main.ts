@@ -9,10 +9,10 @@
  *
  * Nothing else to install: no separate server, no Node.js, no database.
  */
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { startServer } from "../../apps/server/src/server";
 
 type Config = {
@@ -59,6 +59,7 @@ async function runServer(c: Config) {
   await server?.close();
   server = null;
   process.env.MIGRATIONS_DIR = res("drizzle");
+  process.env.LICENSE_ENFORCE = "1"; // trial / licence key / on hold
   server = await startServer({
     dbFile: join(DATA(), "medicare.sqlite"),
     backupDir: join(DATA(), "backups"),
@@ -134,8 +135,14 @@ function createWindow() {
 
   // Links to other sites open in the normal browser, never inside the app
   win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url);
+    if (/^https?:/.test(url)) void shell.openExternal(url);
     return { action: "deny" };
+  });
+  // The window never leaves the shop's own pages
+  win.webContents.on("will-navigate", (e, url) => {
+    if (isOurs(url)) return;
+    e.preventDefault();
+    if (/^https?:/.test(url)) void shell.openExternal(url);
   });
 
   // A few keys a desktop app needs (there is no menu bar)
@@ -145,7 +152,9 @@ function createWindow() {
     const k = input.key.toLowerCase();
     const wc = win!.webContents;
     if (input.key === "F5" || (ctrl && k === "r")) wc.reload();
-    else if (ctrl && input.shift && k === "i") wc.toggleDevTools();
+    // Developer tools only in development, not in the installed app
+    else if (ctrl && input.shift && k === "i" && !app.isPackaged)
+      wc.toggleDevTools();
     else if (ctrl && (k === "=" || k === "+"))
       wc.setZoomLevel(wc.getZoomLevel() + 0.5);
     else if (ctrl && k === "-") wc.setZoomLevel(wc.getZoomLevel() - 0.5);
@@ -176,14 +185,41 @@ function createWindow() {
   });
 }
 
+/* ---- What our pages may ask (and nobody else) ---- */
+
+/** The shop's own pages: setup page, this computer's server, or the main computer */
+function isOurs(url: string): boolean {
+  if (url.startsWith("file:")) return url.startsWith(pathToFileURL(res()).href);
+  try {
+    const origin = new URL(url).origin;
+    return (
+      origin === `http://127.0.0.1:${PORT}` ||
+      (config?.role === "counter" && origin === new URL(config.mainUrl!).origin)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** ipcMain.handle, but refuses calls from any page that isn't ours */
+function handle<A extends unknown[], R>(
+  channel: string,
+  fn: (e: Electron.IpcMainInvokeEvent, ...args: A) => R,
+) {
+  ipcMain.handle(channel, (e, ...args) => {
+    if (!isOurs(e.senderFrame?.url ?? "")) throw new Error("Not allowed");
+    return fn(e, ...(args as A));
+  });
+}
+
 /* ---- Setup page (first start, or "Change setup") ---- */
 
-ipcMain.handle("setup:get", () => ({
+handle("setup:get", () => ({
   config,
   dataDir: DATA(),
 }));
 
-ipcMain.handle("setup:test", async (_e, url: string) => {
+handle("setup:test", async (_e, url: string) => {
   try {
     const r = await fetch(new URL("/health", url), {
       signal: AbortSignal.timeout(4000),
@@ -201,7 +237,7 @@ ipcMain.handle("setup:test", async (_e, url: string) => {
   }
 });
 
-ipcMain.handle("setup:save", async (_e, c: Config) => {
+handle("setup:save", async (_e, c: Config) => {
   const clean: Config =
     c.role === "counter"
       ? { role: "counter", mainUrl: new URL(String(c.mainUrl)).origin }
@@ -214,13 +250,13 @@ ipcMain.handle("setup:save", async (_e, c: Config) => {
   await openShop();
 });
 
-ipcMain.handle("app:open-setup", () => openSetup());
-ipcMain.handle("app:open-data-folder", () => shell.openPath(DATA()));
-ipcMain.handle("app:retry", () => openShop());
+handle("app:open-setup", () => openSetup());
+handle("app:open-data-folder", () => shell.openPath(DATA()));
+handle("app:retry", () => openShop());
 
 /* ---- Printing: straight to the chosen printer, right paper size ---- */
 
-ipcMain.handle("print:list", async () =>
+handle("print:list", async () =>
   ((await win?.webContents.getPrintersAsync()) ?? []).map((p) => ({
     name: p.name,
     isDefault: (p as { isDefault?: boolean }).isDefault === true,
@@ -235,7 +271,7 @@ type PrintJob = {
   copies?: number;
 };
 
-ipcMain.handle("print:html", async (_e, job: PrintJob) => {
+handle("print:html", async (_e, job: PrintJob) => {
   if (typeof job?.html !== "string" || job.html.length > 5_000_000)
     return { ok: false, error: "Nothing to print" };
   // A hidden page with ONLY the bill — never the app screen behind it
@@ -288,7 +324,12 @@ if (!app.requestSingleInstanceLock()) {
     win?.focus();
   });
   app.setAppUserModelId("in.medicare.pharmacy");
+
   void app.whenReady().then(async () => {
+    // Pages get no camera, microphone, location, notifications… — only "copy"
+    session.defaultSession.setPermissionRequestHandler((_wc, perm, ok) =>
+      ok(perm === "clipboard-sanitized-write"),
+    );
     createWindow();
     config = readConfig();
     if (config) await openShop();

@@ -3,6 +3,7 @@ import { API_URL, ApiError, apiToken } from "@/lib/api";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUserStore } from "@/features/settings/store/useUserStore";
+import { useLicenseStore } from "@/features/license/useLicenseStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
@@ -26,13 +27,14 @@ import { applyShopPatch } from "./applyShopPatch";
  *    changes made outside the app (Drizzle Studio, sqlite3).
  */
 type ServerStatus = "checking" | "online" | "offline";
-type Topic = "medicines" | "suppliers" | "settings" | "users";
+type Topic = "medicines" | "suppliers" | "settings" | "users" | "license";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
   medicines: () => useMedicineStore.getState().loadFromServer(),
   suppliers: () => useSupplierStore.getState().loadFromServer(),
   settings: () => useSettingsStore.getState().loadFromServer(),
+  license: () => useLicenseStore.getState().loadFromServer(),
   // My role may have changed; the owner's Users screen refreshes too
   users: async () => {
     await useAuthStore.getState().refreshMe();
@@ -65,6 +67,12 @@ let inFlight: Promise<void> | null = null;
 let stream: EventSource | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let focusHooked = false;
+
+function closeStream() {
+  clearTimeout(retryTimer);
+  stream?.close();
+  stream = null;
+}
 
 export const useServerStore = create<ServerState>()((set, get) => ({
   status: "checking",
@@ -112,7 +120,8 @@ export const useServerStore = create<ServerState>()((set, get) => ({
       // Refused (e.g. signed out elsewhere) → the browser gives up; we retry.
       // A 401 on the next load signs this app out (and closes the stream).
       if (stream?.readyState === EventSource.CLOSED) {
-        get().disconnect();
+        // Only the stream is reopened — screens (and a half-made bill) stay
+        closeStream();
         retryTimer = setTimeout(() => {
           if (!apiToken()) return; // signed out meanwhile
           void get().sync();
@@ -150,9 +159,7 @@ export const useServerStore = create<ServerState>()((set, get) => ({
   },
 
   disconnect: () => {
-    clearTimeout(retryTimer);
-    stream?.close();
-    stream = null;
+    closeStream();
     set({ status: "checking", error: null, lastSyncAt: null });
   },
 }));

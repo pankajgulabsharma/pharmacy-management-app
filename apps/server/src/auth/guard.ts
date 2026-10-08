@@ -8,6 +8,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { can, type Permission } from "@medicare/domain/auth/permissions";
 import type { UserRecord } from "@medicare/domain/auth/types";
 import { resolveSession } from "./store";
+import { licenseState, type LicenseOptions } from "../license/state";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -19,7 +20,7 @@ declare module "fastify" {
 export class AuthError extends Error {
   constructor(
     message: string,
-    readonly statusCode: 401 | 403,
+    readonly statusCode: 401 | 402 | 403,
   ) {
     super(message);
     this.name = "AuthError";
@@ -35,7 +36,7 @@ const WRITE_RULES: [RegExp, Permission][] = [
     /^\/api\/(medicines|suppliers|purchases|purchase-returns|stock)(\/|$)/,
     "stock",
   ],
-  [/^\/api\/(settings|users|backups)(\/|$)/, "admin"],
+  [/^\/api\/(settings|users|backups|license)(\/|$)/, "admin"],
 ];
 
 /** null = any signed-in user */
@@ -45,7 +46,7 @@ export function requiredPermission(
 ): Permission | null {
   if (path.startsWith("/api/auth/")) return null;
   if (method === "GET")
-    return /^\/api\/(users|backups)(\/|$)/.test(path) ? "admin" : null;
+    return /^\/api\/(users|backups|audit)(\/|$)/.test(path) ? "admin" : null;
   return WRITE_RULES.find(([re]) => re.test(path))?.[1] ?? "admin";
 }
 
@@ -58,7 +59,14 @@ function tokenOf(req: FastifyRequest, path: string): string {
   return "";
 }
 
-export function authGuard(app: FastifyInstance, raw: DatabaseSync) {
+/** While on hold (licence), these still work: sign-in, licence, backups, network */
+const ON_HOLD_ALLOWED = /^\/api\/(auth|license|backups|system)(\/|$)/;
+
+export function authGuard(
+  app: FastifyInstance,
+  raw: DatabaseSync,
+  license: LicenseOptions,
+) {
   app.decorateRequest("user", null);
   app.decorateRequest("token", "");
   app.addHook("preHandler", async (req) => {
@@ -75,5 +83,10 @@ export function authGuard(app: FastifyInstance, raw: DatabaseSync) {
     const need = requiredPermission(req.method, path);
     if (need && !can(session.user.role, need))
       throw new AuthError("Your role can't do this — ask the owner", 403);
+    // Licence on hold → look, report, back up — but no new bills / changes
+    if (req.method !== "GET" && !ON_HOLD_ALLOWED.test(path)) {
+      const state = licenseState(raw, license);
+      if (!state.canWork) throw new AuthError(state.message, 402);
+    }
   });
 }

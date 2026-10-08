@@ -14,6 +14,13 @@ extraResources:
     to: .
     filter: ["**/*"]
 asar: true
+# Lock the app down: it can't be started as plain Node, or with debugging /
+# NODE_OPTIONS tricks to inject code (e.g. to skip the licence check)
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableCookieEncryption: true
 # Only the languages the app speaks (smaller download)
 electronLanguages: [en-US, hi]
 win:

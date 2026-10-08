@@ -530,6 +530,25 @@ export const sessions = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: text("created_at").notNull(),
     expiresAt: integer("expires_at").notNull(),
+    /** Which computer signed in (counts towards the licence's counters) */
+    ip: text("ip").notNull().default(""),
   },
   (s) => [index("sessions_user_idx").on(s.userId)],
+);
+
+/**
+ * Who did what, when — sign-ins, bills, stock changes, settings, users,
+ * backups, licence. Only ever added to (never edited by the app).
+ */
+export const auditLog = sqliteTable(
+  "audit_log",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    at: text("at").notNull(),
+    userName: text("user_name").notNull().default(""),
+    action: text("action").notNull(),
+    detail: text("detail").notNull().default(""),
+    ip: text("ip").notNull().default(""),
+  },
+  (t) => [index("audit_log_at_idx").on(t.at)],
 );

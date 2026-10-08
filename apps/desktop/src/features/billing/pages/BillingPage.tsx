@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api";
 import {
   useCallback,
   useDeferredValue,
@@ -53,11 +54,15 @@ import {
 } from "@medicare/domain/billing/sale";
 import { tr } from "@/lib/i18n";
 
-/** Show domain errors as-is; hide anything unexpected behind a generic message */
+/**
+ * Shop rules and the server's answers (e.g. "short stock", "licence on
+ * hold") are shown as-is; offline / unexpected errors get a plain message.
+ */
 function errorMessage(err: unknown, fallback: string) {
-  return err instanceof SaleError || err instanceof StockError
-    ? err.message
-    : fallback;
+  if (err instanceof SaleError || err instanceof StockError) return err.message;
+  if (err instanceof ApiError)
+    return err.kind === "http" ? err.message : `${fallback} — ${err.message}`;
+  return fallback;
 }
 
 export default function BillingPage() {

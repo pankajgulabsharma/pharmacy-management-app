@@ -94,3 +94,25 @@ describe("shop network sharing", () => {
     ).toBe(403);
   });
 });
+
+describe("security", () => {
+  it("sends browser safety headers; the app page gets a strict content policy", async () => {
+    const page = await app.inject({ method: "GET", url: "/" });
+    expect(page.headers["content-security-policy"]).toContain(
+      "script-src 'self'",
+    );
+    expect(page.headers["x-frame-options"]).toBe("DENY");
+    const api = await app.inject({ method: "GET", url: "/health" });
+    expect(api.headers["x-content-type-options"]).toBe("nosniff");
+  });
+
+  it("one computer flooding the server is slowed down, others are not", async () => {
+    const { RateLimiter } = await import("../security");
+    const l = new RateLimiter(5, 1);
+    const now = 1_000_000;
+    for (let i = 0; i < 5; i++) expect(l.take("10.0.0.5", now)).toBe(true);
+    expect(l.take("10.0.0.5", now)).toBe(false);
+    expect(l.take("10.0.0.6", now)).toBe(true);
+    expect(l.take("10.0.0.5", now + 1000)).toBe(true); // refills
+  });
+});

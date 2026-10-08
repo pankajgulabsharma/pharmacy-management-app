@@ -11,9 +11,22 @@ import { settingsRoutes } from "./routes/settings";
 import { backupRoutes } from "./routes/backups";
 import { serveApp } from "./static";
 import { systemRoutes, type SystemHooks } from "./routes/system";
+import { licenseRoutes } from "./routes/license";
+import type { LicenseOptions } from "./license/state";
+import { LICENSE_PUBLIC_KEY } from "./license/public-key";
+import { machineCode } from "./license/machine";
 import { AuthError, authGuard } from "./auth/guard";
+import { auditHook, loadAudit } from "./audit/audit";
+import { security } from "./security";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
+
+/** Installed app sets LICENSE_ENFORCE=1; development and tests run without */
+const defaultLicense = (): LicenseOptions => ({
+  enforce: process.env.LICENSE_ENFORCE === "1",
+  publicKey: LICENSE_PUBLIC_KEY,
+  machine: machineCode(),
+});
 
 /**
  * Builds the server without starting it — tests call this directly,
@@ -25,6 +38,7 @@ export function buildApp({
   backupDir = DEFAULT_BACKUP_DIR,
   appDir,
   system = { lanEnabled: () => process.env.HOST === "0.0.0.0" },
+  license = defaultLicense(),
 }: {
   database: Database;
   bus?: EventBus;
@@ -34,9 +48,12 @@ export function buildApp({
   appDir?: string;
   /** Shop-network sharing (the installed app can switch it) */
   system?: SystemHooks;
+  /** Licence checking (on in the installed app) */
+  license?: LicenseOptions;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
   cors(app);
+  security(app); // safety headers + per-computer request limit
 
   /** Is the server up, and can it read the database? */
   app.get("/health", async (_req, reply) => {
@@ -55,9 +72,18 @@ export function buildApp({
     };
   });
 
-  authGuard(app, database.raw); // sign-in + role check before every /api call
+  authGuard(app, database.raw, license); // sign-in, role, licence before every /api call
+  auditHook(app, database.raw); // who did what, when (Settings → Activity log)
   bus.routes(app); // GET /api/events + "something changed" after every save
-  authRoutes(app, database);
+  authRoutes(app, database, license);
+  licenseRoutes(app, database, license);
+  app.get("/api/audit", async (req) => {
+    const q = req.query as { q?: string; before?: string };
+    return loadAudit(database.raw, {
+      q: String(q.q ?? "").slice(0, 60),
+      before: Number(q.before) || 0,
+    });
+  });
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir);
   systemRoutes(app, system);

@@ -96,6 +96,7 @@ describe("live updates — no refresh", () => {
     expect(calls.sort()).toEqual([
       "/api/customers",
       "/api/held",
+      "/api/license",
       "/api/medicines",
       "/api/purchases",
       "/api/sales",
@@ -145,7 +146,7 @@ describe("live updates — no refresh", () => {
     await flush();
     await flush();
     expect(srv.getState().status).toBe("online");
-    expect(calls.length).toBe(8);
+    expect(calls.length).toBe(9);
   });
 });
 

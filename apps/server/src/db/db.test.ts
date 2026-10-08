@@ -18,7 +18,7 @@ describe("database setup", () => {
     const n = q<{ n: number }>(
       "SELECT count(*) n FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '\\_\\_%' ESCAPE '\\'",
     ).n;
-    expect(n).toBe(20);
+    expect(n).toBe(21);
   });
 
   it("stores the whole demo shop", async () => {
