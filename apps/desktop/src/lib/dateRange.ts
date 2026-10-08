@@ -1,4 +1,9 @@
-import { addDays, parseISODate, startOfDay, toISODate } from "@medicare/domain/lib/date";
+import {
+  addDays,
+  parseISODate,
+  startOfDay,
+  toISODate,
+} from "@medicare/domain/lib/date";
 
 export type RangePreset =
   | "today"

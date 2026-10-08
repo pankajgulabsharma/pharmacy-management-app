@@ -52,6 +52,10 @@ export const medicines = sqliteTable(
   },
   (t) => [
     index("medicines_name_idx").on(t.name),
+    // A barcode belongs to ONE medicine (scanning must never be ambiguous)
+    uniqueIndex("medicines_barcode_uq")
+      .on(t.barcode)
+      .where(sql`${t.barcode} <> ''`),
     check(
       "medicines_price_ok",
       sql`${t.mrpPaise} >= 0 AND ${t.salePricePaise} >= 0 AND ${t.salePricePaise} <= ${t.mrpPaise}`,

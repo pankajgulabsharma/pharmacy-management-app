@@ -1,28 +1,43 @@
-import { useEffect, useId } from "react";
-import { Printer, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { toast } from "sonner";
+import { Printer, Settings2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
+import { fieldClass } from "@/components/common/formStyles";
+import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
+import { printHtml } from "@/lib/print";
+import type { Sale } from "@medicare/domain/billing/types";
 import {
-  formatPaise,
-  inrFromPaise,
-  signedInrFromPaise,
-} from "@medicare/domain/lib/money";
+  PAPER_FORMATS,
+  isThermal,
+  receiptHtml,
+  type PaperFormat,
+} from "@medicare/domain/printing/receipt";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import {
-  PAYMENT_METHOD_LABELS,
-  type Sale,
-} from "@medicare/domain/billing/types";
+import { usePrintPrefs } from "@/features/printing/usePrintPrefs";
+import { PrinterSettings } from "@/features/printing/PrinterSettings";
 
 type Props = {
   sale: Sale | null;
-  /** Open the print dialog as soon as the bill is shown */
+  /** Print as soon as the bill is shown (Save and Print) */
   autoPrint: boolean;
   onClose: () => void;
   /** Reprint from search: "Bill INV-0042" instead of "… saved" */
   reprint?: boolean;
 };
 
-/** Printable tax invoice (fits an 80 mm thermal roll; prints fine on A4) */
+/**
+ * The bill: an exact preview of the page that prints, in the paper size
+ * chosen for this computer (thermal 58/80 mm, A5, A4).
+ */
 export function ReceiptDialog({ sale, ...rest }: Props) {
   if (!sale) return null;
   return <Receipt key={sale.id} sale={sale} {...rest} />;
@@ -37,35 +52,48 @@ function Receipt({
   const titleId = useId();
   const shop = useSettingsStore((s) => s.shop);
   const footer = useSettingsStore((s) => s.billing.receiptFooter);
+  const { format, printer, copies, set } = usePrintPrefs();
+  const [setup, setSetup] = useState(false);
+  const html = useMemo(
+    () => receiptHtml({ sale, shop, footer, format }),
+    [sale, shop, footer, format],
+  );
 
+  const print = useCallback(
+    () =>
+      printHtml({
+        html,
+        widthMm: PAPER_FORMATS[format].widthMm,
+        printer,
+        copies,
+      }).catch((e: Error) => toast.error(e.message)),
+    [html, format, printer, copies],
+  );
+
+  // Save and Print: print once, as soon as the bill is ready
+  const printed = useRef(false);
   useEffect(() => {
-    if (!autoPrint) return;
-    // Let the receipt render before the browser print dialog opens
-    const id = window.setTimeout(() => window.print(), 150);
-    return () => window.clearTimeout(id);
-  }, [autoPrint]);
+    if (!autoPrint || printed.current) return;
+    printed.current = true;
+    void print();
+  }, [autoPrint, print]);
 
-  const t = sale.totals;
-  const p = sale.payment;
-  const when = new Date(sale.createdAt).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const thermal = isThermal(format);
 
   return (
     <ModalShell
       open
       onClose={onClose}
       labelledBy={titleId}
-      className="max-w-sm max-h-[92vh] flex flex-col overflow-hidden"
+      className={cn(
+        "max-h-[92vh] flex flex-col overflow-hidden",
+        thermal ? "max-w-sm" : "max-w-3xl",
+      )}
     >
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5 shrink-0 print:hidden">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5 shrink-0">
         <h2 id={titleId} className="text-sm font-semibold">
-          Bill {sale.billNo}
-          {reprint ? "" : " saved"}
+          {tr("Bill")} {sale.billNo}
+          {reprint ? "" : ` ${tr("saved")}`}
         </h2>
         <button
           type="button"
@@ -77,134 +105,67 @@ function Receipt({
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto p-3">
-        <div className="print-area mx-auto bg-white text-black rounded-md border border-border p-3 font-mono text-[10px] leading-snug">
-          <div className="text-center">
-            <p className="text-[13px] font-bold">{shop.name}</p>
-            <p>{shop.address}</p>
-            <p>Ph {shop.phone}</p>
-            {shop.gstin ? <p>GSTIN {shop.gstin}</p> : null}
-            <p>DL {shop.drugLicense}</p>
-            <p className="mt-1 font-bold">TAX INVOICE</p>
-          </div>
+      <div className="flex-1 min-h-0 overflow-auto bg-muted/40 p-3">
+        {setup ? (
+          <PrinterSettings />
+        ) : (
+          <iframe
+            title={`Bill ${sale.billNo}`}
+            srcDoc={html}
+            // Preview only: no scripts, nothing can run inside
+            sandbox=""
+            className={cn(
+              "mx-auto block bg-white rounded-md border border-border shadow-sm",
+              thermal ? "w-[320px] h-[60vh]" : "w-full h-[65vh]",
+            )}
+          />
+        )}
+      </div>
 
-          <Rule />
-          <Kv k="Bill" v={sale.billNo} />
-          <Kv k="Date" v={when} />
-          <Kv k="Customer" v={sale.customerName} />
-          {sale.doctor ? <Kv k="Doctor" v={sale.doctor} /> : null}
-          {sale.counter ? <Kv k="Counter" v={sale.counter} /> : null}
-          {sale.billedBy ? <Kv k="Billed by" v={sale.billedBy} /> : null}
-          <Rule />
-
-          <table className="w-full">
-            <thead>
-              <tr className="text-left">
-                <th className="font-bold">Item</th>
-                <th className="text-right font-bold">Qty</th>
-                <th className="text-right font-bold">Amt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sale.lines.map((l) => (
-                <tr key={l.id} className="align-top">
-                  <td className="pr-1 pt-1">
-                    {l.medicineName}
-                    <div className="text-[9px]">
-                      {l.allocations
-                        .map((a) => `${a.batchNo} ${a.expiry}`)
-                        .join(", ")}{" "}
-                      · GST {l.gstPercent}%
-                      {l.discountPercent ? ` · ${l.discountPercent}% off` : ""}
-                    </div>
-                  </td>
-                  <td className="text-right pt-1 whitespace-nowrap">
-                    {[
-                      l.qtyStrip ? `${l.qtyStrip}${l.unit}` : "",
-                      l.qtyLoose ? `${l.qtyLoose}L` : "",
-                    ]
-                      .filter(Boolean)
-                      .join("+")}
-                  </td>
-                  <td className="text-right pt-1">
-                    {formatPaise(l.amountPaise)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <Rule />
-          <Kv k="Subtotal" v={formatPaise(t.grossPaise)} />
-          {t.discountPaise ? (
-            <Kv k="Discount" v={`-${formatPaise(t.discountPaise)}`} />
-          ) : null}
-          <Kv k="Taxable value" v={formatPaise(t.taxablePaise)} />
-          <Kv k="CGST" v={formatPaise(t.cgstPaise)} />
-          <Kv k="SGST" v={formatPaise(t.sgstPaise)} />
-          {t.roundOffPaise ? (
-            <Kv k="Round off" v={signedInrFromPaise(t.roundOffPaise)} />
-          ) : null}
-          <div className="flex justify-between text-[13px] font-bold mt-1">
-            <span>TOTAL</span>
-            <span>{inrFromPaise(t.netPaise)}</span>
-          </div>
-          <p className="text-[9px]">(Prices include GST)</p>
-
-          <Rule />
-          <Kv k="Paid by" v={PAYMENT_METHOD_LABELS[p.method]} />
-          {p.method === "cash" ? (
-            <>
-              <Kv k="Received" v={formatPaise(p.receivedPaise)} />
-              <Kv k="Change" v={formatPaise(p.changePaise)} />
-            </>
-          ) : null}
-          {p.split ? (
-            <Kv
-              k="Split"
-              v={`C ${formatPaise(p.split.cashPaise)} / U ${formatPaise(p.split.upiPaise)} / Cd ${formatPaise(p.split.cardPaise)}`}
-            />
-          ) : null}
-          {p.reference ? <Kv k="Ref" v={p.reference} /> : null}
-          <Rule />
-          {footer ? (
-            <p className="text-center whitespace-pre-line">{footer}</p>
-          ) : null}
+      <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2.5 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <select
+            aria-label={tr("Bill paper")}
+            value={format}
+            onChange={(e) => set({ format: e.target.value as PaperFormat })}
+            className={cn(fieldClass, "h-8 w-44")}
+          >
+            {(Object.keys(PAPER_FORMATS) as PaperFormat[]).map((f) => (
+              <option key={f} value={f}>
+                {tr(PAPER_FORMATS[f].label)}
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 rounded-lg text-[11px] gap-1"
+            onClick={() => setSetup((v) => !v)}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            {tr(setup ? "Back to bill" : "Printer")}
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-8 rounded-lg text-[11px]"
+            onClick={onClose}
+          >
+            {tr(reprint ? "Close" : "New bill")}
+          </Button>
+          <Button
+            type="button"
+            className="h-8 rounded-lg text-[11px] gap-1.5"
+            onClick={print}
+            data-autofocus
+          >
+            <Printer className="h-3.5 w-3.5" />
+            {tr("Print")}
+          </Button>
         </div>
       </div>
-
-      <div className="flex justify-end gap-2 border-t border-border px-4 py-2.5 shrink-0 print:hidden">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-8 rounded-lg text-[11px]"
-          onClick={onClose}
-        >
-          New bill
-        </Button>
-        <Button
-          type="button"
-          className="h-8 rounded-lg text-[11px] gap-1.5"
-          onClick={() => window.print()}
-          data-autofocus
-        >
-          <Printer className="h-3.5 w-3.5" />
-          Print
-        </Button>
-      </div>
     </ModalShell>
-  );
-}
-
-function Rule() {
-  return <div className="my-1.5 border-t border-dashed border-black/60" />;
-}
-
-function Kv({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex justify-between gap-2">
-      <span>{k}</span>
-      <span className="text-right">{v}</span>
-    </div>
   );
 }

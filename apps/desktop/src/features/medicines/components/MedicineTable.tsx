@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
-import { Pencil as PencilIcon, PillBottle, Trash2 } from "lucide-react";
+import {
+  Barcode,
+  Pencil as PencilIcon,
+  PillBottle,
+  Trash2,
+} from "lucide-react";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { scrollRowIntoView } from "@/lib/dom";
@@ -21,6 +26,8 @@ type Props = {
   /** Left out when your role can't change medicines — no edit/delete buttons */
   onEdit?: (m: MedicineWithStock) => void;
   onDelete?: (m: MedicineWithStock) => void;
+  /** Print barcode stickers (everyone) */
+  onLabels?: (m: MedicineWithStock) => void;
   /** Keyboard / click selection */
   selectedId?: string | null;
   onSelect?: (m: MedicineWithStock) => void;
@@ -30,6 +37,7 @@ export function MedicineTable({
   items,
   onEdit,
   onDelete,
+  onLabels,
   selectedId = null,
   onSelect,
 }: Props) {
@@ -186,26 +194,39 @@ export function MedicineTable({
                     </StatusBadge>
                   </td>
                   <td className="px-2 py-2.5 text-right">
-                    {onEdit && onDelete ? (
-                      <div className="inline-flex items-center gap-2">
+                    <div className="inline-flex items-center gap-2">
+                      {onLabels ? (
                         <button
                           type="button"
-                          onClick={() => onEdit(m)}
+                          onClick={() => onLabels(m)}
                           className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                          aria-label={`Edit ${m.name}`}
+                          aria-label={`Barcode labels for ${m.name}`}
+                          title="Print barcode labels"
                         >
-                          <PencilIcon className="h-3.5 w-3.5" />
+                          <Barcode className="h-3.5 w-3.5" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(m)}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                          aria-label={`Delete ${m.name}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ) : null}
+                      ) : null}
+                      {onEdit && onDelete ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(m)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            aria-label={`Edit ${m.name}`}
+                          >
+                            <PencilIcon className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(m)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                            aria-label={`Delete ${m.name}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               );

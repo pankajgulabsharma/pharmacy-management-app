@@ -218,6 +218,66 @@ ipcMain.handle("app:open-setup", () => openSetup());
 ipcMain.handle("app:open-data-folder", () => shell.openPath(DATA()));
 ipcMain.handle("app:retry", () => openShop());
 
+/* ---- Printing: straight to the chosen printer, right paper size ---- */
+
+ipcMain.handle("print:list", async () =>
+  ((await win?.webContents.getPrintersAsync()) ?? []).map((p) => ({
+    name: p.name,
+    isDefault: (p as { isDefault?: boolean }).isDefault === true,
+  })),
+);
+
+type PrintJob = {
+  html: string;
+  widthMm?: number;
+  heightMm?: number;
+  printer?: string;
+  copies?: number;
+};
+
+ipcMain.handle("print:html", async (_e, job: PrintJob) => {
+  if (typeof job?.html !== "string" || job.html.length > 5_000_000)
+    return { ok: false, error: "Nothing to print" };
+  // A hidden page with ONLY the bill — never the app screen behind it
+  const page = new BrowserWindow({
+    show: false,
+    webPreferences: { sandbox: true, contextIsolation: true },
+  });
+  try {
+    await page.loadURL(
+      `data:text/html;charset=utf-8,${encodeURIComponent(job.html)}`,
+    );
+    const mm = (n: number) => Math.round(n * 1000); // microns
+    let pageSize: Electron.WebContentsPrintOptions["pageSize"];
+    if (job.widthMm && job.heightMm)
+      pageSize = { width: mm(job.widthMm), height: mm(job.heightMm) };
+    else if (job.widthMm && job.widthMm <= 80) {
+      // Thermal roll: as long as the bill (+ a little to tear off)
+      const px = (await page.webContents.executeJavaScript(
+        "document.documentElement.scrollHeight",
+      )) as number;
+      pageSize = {
+        width: mm(job.widthMm),
+        height: mm(Math.max(60, (px * 25.4) / 96 + 12)),
+      };
+    } // A4/A5: the page says its own size (@page)
+    return await new Promise<{ ok: boolean; error?: string }>((resolve) =>
+      page.webContents.print(
+        {
+          silent: !!job.printer,
+          deviceName: job.printer || undefined,
+          copies: Math.min(Math.max(job.copies ?? 1, 1), 3),
+          printBackground: true,
+          ...(pageSize ? { pageSize, margins: { marginType: "none" } } : {}),
+        },
+        (ok, reason) => resolve({ ok, error: ok ? undefined : reason }),
+      ),
+    );
+  } finally {
+    page.destroy();
+  }
+});
+
 /* ---- Start ---- */
 
 if (!app.requestSingleInstanceLock()) {

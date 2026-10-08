@@ -44,6 +44,7 @@ import { useMedicinesWithStock } from "../hooks/useMedicinesWithStock";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
+import { BarcodeLabelDialog } from "../components/BarcodeLabelDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
 import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
 
@@ -194,6 +195,11 @@ export default function MedicinesPage() {
   }, []);
 
   const openImport = useCallback(() => setImportOpen(true), []);
+  const [labelsFor, setLabelsFor] = useState<string | null>(null);
+  const openLabels = useCallback(
+    (m: MedicineWithStock) => setLabelsFor(m.id),
+    [],
+  );
   const closeImport = useCallback(() => setImportOpen(false), []);
   const closeDelete = useCallback(() => setDeleteTarget(null), []);
 
@@ -382,6 +388,7 @@ export default function MedicinesPage() {
         items={filtered}
         onEdit={canEdit ? openEdit : undefined}
         onDelete={canEdit ? setDeleteTarget : undefined}
+        onLabels={openLabels}
         selectedId={nav.selectedKey}
         onSelect={nav.select}
       />
@@ -391,6 +398,11 @@ export default function MedicinesPage() {
         medicine={editing}
         onClose={closeForm}
         onSave={handleSave}
+      />
+
+      <BarcodeLabelDialog
+        medicineId={labelsFor}
+        onClose={() => setLabelsFor(null)}
       />
 
       <MedicineImportDialog

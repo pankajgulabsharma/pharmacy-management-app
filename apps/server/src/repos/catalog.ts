@@ -10,6 +10,7 @@ import type { StockBatch } from "@medicare/domain/inventory/types";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 import type { Db } from "../db/client";
 import { batches, medicines } from "../db/schema";
+import { InputError } from "../schemas/medicine";
 
 const rupees = (paise: number) => paise / 100;
 
@@ -71,10 +72,23 @@ function toRow(m: MedicineInput) {
   };
 }
 
+/** A scanned barcode must point to exactly one medicine */
+async function checkBarcode(db: Db, code: string, exceptId = "") {
+  if (!code) return;
+  const other = await db
+    .select({ id: medicines.id, name: medicines.name })
+    .from(medicines)
+    .where(eq(medicines.barcode, code))
+    .get();
+  if (other && other.id !== exceptId)
+    throw new InputError(`Barcode ${code} is already used by ${other.name}`);
+}
+
 export async function createMedicine(
   db: Db,
   input: MedicineInput,
 ): Promise<Medicine> {
+  await checkBarcode(db, input.barcode);
   const row = { id: newId("med"), ...toRow(input) };
   await db.insert(medicines).values(row);
   return toMedicine(row);
@@ -87,6 +101,7 @@ export async function updateMedicine(
   input: MedicineInput,
 ): Promise<Medicine | null> {
   if (!(await getMedicine(db, id))) return null;
+  await checkBarcode(db, input.barcode, id);
   await db.update(medicines).set(toRow(input)).where(eq(medicines.id, id));
   return getMedicine(db, id);
 }
@@ -96,6 +111,14 @@ export async function importMedicines(
   db: Db,
   rows: MedicineInput[],
 ): Promise<Medicine[]> {
+  const seen = new Set<string>();
+  for (const [i, r] of rows.entries()) {
+    if (!r.barcode) continue;
+    if (seen.has(r.barcode))
+      throw new InputError(`Row ${i + 1}: barcode ${r.barcode} appears twice`);
+    seen.add(r.barcode);
+    await checkBarcode(db, r.barcode);
+  }
   const created = rows.map((r) => ({ id: newId("med"), ...toRow(r) }));
   await db.transaction(async (tx) => {
     for (let i = 0; i < created.length; i += 100)

@@ -7,6 +7,8 @@ import { FormField as Field } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { isMoneyInput } from "@medicare/domain/lib/money";
 import { isIntInput } from "@medicare/domain/lib/sanitize";
+import { newInStoreBarcode } from "@medicare/domain/printing/labels";
+import { useMedicineStore } from "../store/useMedicineStore";
 import { GST_RATES, isGstRate } from "@medicare/domain/lib/gst";
 import type {
   Medicine,
@@ -199,12 +201,37 @@ function MedicineForm({ medicine, onClose, onSave }: Omit<Props, "open">) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          <Field label="Barcode">
-            <Input
-              value={values.barcode}
-              onChange={(e) => setField("barcode")(e.target.value)}
-              className={fieldClass}
-            />
+          <Field
+            label="Barcode"
+            hint="Scan the pack, or Generate one for items without a barcode"
+          >
+            <div className="flex gap-1.5">
+              <Input
+                value={values.barcode}
+                onChange={(e) => setField("barcode")(e.target.value)}
+                className={fieldClass}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-lg text-[11px] px-2 shrink-0"
+                title="Make a shop barcode (starts with 2 — never clashes with a company barcode)"
+                onClick={() =>
+                  setField("barcode")(
+                    newInStoreBarcode(
+                      new Set(
+                        useMedicineStore
+                          .getState()
+                          .medicines.map((m) => m.barcode)
+                          .filter(Boolean),
+                      ),
+                    ),
+                  )
+                }
+              >
+                Generate
+              </Button>
+            </div>
           </Field>
           <Field label="Rack">
             <Input

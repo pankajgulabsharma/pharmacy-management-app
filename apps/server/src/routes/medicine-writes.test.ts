@@ -149,3 +149,40 @@ describe("CSV import", () => {
     expect(count()).toBe(before);
   });
 });
+
+describe("barcodes", () => {
+  it("one barcode → one medicine (add, edit and import all check it)", async () => {
+    const a = (
+      await send("POST", "/api/medicines", {
+        ...valid,
+        name: "Cotton Roll 50g",
+        barcode: "2123456789012",
+      })
+    ).json();
+    const dup = await send("POST", "/api/medicines", {
+      ...valid,
+      name: "Other",
+      barcode: "2123456789012",
+    });
+    expect(dup.statusCode).toBe(400);
+    expect(dup.json().error).toMatch(/already used by Cotton Roll 50g/);
+    // Saving the same medicine again with its own barcode is fine
+    expect(
+      (
+        await send("PUT", `/api/medicines/${a.id}`, {
+          ...valid,
+          name: "Cotton Roll 50g",
+          barcode: "2123456789012",
+        })
+      ).statusCode,
+    ).toBe(200);
+    const imp = await send("POST", "/api/medicines/import", {
+      rows: [
+        { ...valid, name: "X1", barcode: "2999999999990" },
+        { ...valid, name: "X2", barcode: "2999999999990" },
+      ],
+    });
+    expect(imp.statusCode).toBe(400);
+    expect(imp.json().error).toMatch(/appears twice/);
+  });
+});

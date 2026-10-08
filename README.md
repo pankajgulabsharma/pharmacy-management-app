@@ -93,6 +93,20 @@ Uninstalling never deletes the shop's data.
    the same everywhere and update live. Keep the app open on the main
    computer while the shop is open (closing it asks first).
 
+## Printing & barcodes
+
+- **Bills** print as a clean page in the paper size chosen for each
+  computer (Settings → Printing, or *Printer* on any bill): thermal 80 mm,
+  thermal 58 mm, A5, or A4 full GST tax invoice (HSN, batch, expiry, GST
+  table, amount in words). Laser, inkjet, thermal and dot-matrix printers
+  all work through their Windows driver. The installed app can print
+  straight to a chosen printer (no dialog).
+- **Barcodes**: most packs already have one — scan it with any USB barcode
+  scanner into Billing's search (exact match is added at once). For items
+  without one, Medicines → barcode icon → *Create barcode* makes a shop
+  code (EAN-13 starting with 2) and prints stickers on a label printer
+  (50×25, 38×25, 50×30 mm) or A4 sticker sheets (65 / 24 per sheet).
+
 ## Where is the data?
 
 `apps/server/data/medicare.sqlite` — one file, never committed to git.

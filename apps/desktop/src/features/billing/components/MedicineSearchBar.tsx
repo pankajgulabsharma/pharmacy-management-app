@@ -54,13 +54,14 @@ export function MedicineSearchBar({
             <X className="h-3.5 w-3.5" />
           </button>
         ) : null}
-        <button
-          type="button"
-          className="p-1.5 rounded-md text-muted-foreground hover:bg-muted"
-          aria-label="Scan barcode"
+        {/* A USB barcode scanner types into this box and presses Enter */}
+        <span
+          className="p-1.5 text-muted-foreground"
+          title="Barcode scanner works here — just scan the pack"
+          aria-hidden="true"
         >
           <ScanBarcode className="h-3.5 w-3.5" />
-        </button>
+        </span>
         <div className="hidden sm:flex items-center gap-1 rounded-md border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           <span>↑↓</span>
           <span className="opacity-40">·</span>

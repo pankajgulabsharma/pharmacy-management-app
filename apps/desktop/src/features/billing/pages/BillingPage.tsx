@@ -33,6 +33,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useSalesStore } from "../store/useSalesStore";
 import {
   useBillView,
+  useBarcodeLookup,
   useSellableSearch,
   type SellableItem,
 } from "../hooks/useBillingData";
@@ -128,6 +129,7 @@ export default function BillingPage() {
 
   const deferredQuery = useDeferredValue(query);
   const results = useSellableSearch(deferredQuery);
+  const byBarcode = useBarcodeLookup();
   const bill = useBillView(cart);
   const billNo = useMemo(() => nextBillNo(sales), [sales]);
 
@@ -392,10 +394,14 @@ export default function BillingPage() {
       {
         keys: "Enter",
         allowInInputs: true,
-        enabled: searching && results.length > 0,
+        enabled: searching,
         when: (e) => e.target === searchRef.current,
-        handler: () =>
-          results[focusedIndex] && addToCart(results[focusedIndex]),
+        handler: () => {
+          // Scanned barcode → that exact medicine, even before the list updates
+          const scanned = byBarcode(query);
+          if (scanned) addToCart(scanned);
+          else if (results[focusedIndex]) addToCart(results[focusedIndex]);
+        },
       },
       {
         keys: "Escape",

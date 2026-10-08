@@ -3,6 +3,7 @@ import {
   Building2,
   Database,
   HardDriveDownload,
+  Printer,
   Network,
   Palette,
   Receipt,
@@ -27,6 +28,7 @@ import {
 import { UsersSection } from "../components/UsersSection";
 import { BackupSection } from "../components/BackupSection";
 import { NetworkSection } from "../components/NetworkSection";
+import { PrintingSection } from "../components/PrintingSection";
 import { tr } from "@/lib/i18n";
 
 type SectionId =
@@ -35,6 +37,7 @@ type SectionId =
   | "inventory"
   | "lists"
   | "users"
+  | "printing"
   | "backup"
   | "network"
   | "appearance"
@@ -70,6 +73,12 @@ const SECTIONS: {
     label: "Users & roles",
     icon: UserCog,
     Component: UsersSection,
+  },
+  {
+    id: "printing",
+    label: "Printing",
+    icon: Printer,
+    Component: PrintingSection,
   },
   {
     id: "backup",
@@ -112,7 +121,7 @@ export default function SettingsPage() {
       <PageHeader
         icon={SettingsIcon}
         title="Settings"
-        subtitle="Shop profile · billing · stock · lists · users · backup · network · appearance"
+        subtitle="Shop profile · billing · stock · lists · users · printing · backup · network · appearance"
       />
 
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">

@@ -9,8 +9,7 @@
  */
 function defaultApiUrl(): string {
   const loc = typeof window === "undefined" ? undefined : window.location;
-  if (!loc?.origin || loc.port === "5173")
-    return "http://localhost:4000";
+  if (!loc?.origin || loc.port === "5173") return "http://localhost:4000";
   return loc.origin;
 }
 export const API_URL = (

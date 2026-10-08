@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { StockBatch } from "@medicare/domain/inventory/types";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
@@ -41,6 +41,47 @@ export type SellableItem = {
 
 const MAX_RESULTS = 50;
 
+/** One medicine as the billing screen shows it (stock, next batch, price) */
+function toSellable(m: Medicine, own: StockBatch[], now: Date): SellableItem {
+  const sellable = sellableBatches(own, m.id, now);
+  const next = sellable[0] ?? null;
+  let expiredStrip = 0;
+  for (const b of own)
+    if (isExpiryPast(b.expiry, now)) expiredStrip += b.qtyStrip + b.qtyLoose;
+  return {
+    medicine: m,
+    nextBatch: next,
+    limits: stockLimits(sellable, m, 0),
+    expiredStrip,
+    ratePaise: next ? batchRatePaise(m, next) : rupeesToPaise(m.salePrice),
+    mrpPaise: next ? rupeesToPaise(next.mrp) : rupeesToPaise(m.mrp),
+  };
+}
+
+/**
+ * A barcode scanner types the code and presses Enter within milliseconds —
+ * faster than the search list updates. This finds the medicine whose
+ * barcode is EXACTLY what was scanned, right now.
+ */
+export function useBarcodeLookup(): (code: string) => SellableItem | null {
+  const medicines = useMedicineStore((s) => s.medicines);
+  const batches = useInventoryStore((s) => s.batches);
+  return useCallback(
+    (code: string) => {
+      const c = code.trim();
+      if (c.length < 4) return null;
+      const m = medicines.find((x) => x.status === "active" && x.barcode === c);
+      if (!m) return null;
+      return toSellable(
+        m,
+        batches.filter((b) => b.medicineId === m.id),
+        new Date(),
+      );
+    },
+    [medicines, batches],
+  );
+}
+
 /** Live search over active medicines (name, salt, brand, barcode, batch no.) */
 export function useSellableSearch(query: string): SellableItem[] {
   const medicines = useMedicineStore((s) => s.medicines);
@@ -70,21 +111,7 @@ export function useSellableSearch(query: string): SellableItem[] {
       const batchHit = own.some((b) => b.batchNo.includes(qUpper));
       if (!batchHit && !medicineMatchesQuery(m, q)) continue;
 
-      const sellable = sellableBatches(own, m.id, now);
-      const next = sellable[0] ?? null;
-      let expiredStrip = 0;
-      for (const b of own)
-        if (isExpiryPast(b.expiry, now))
-          expiredStrip += b.qtyStrip + b.qtyLoose;
-
-      out.push({
-        medicine: m,
-        nextBatch: next,
-        limits: stockLimits(sellable, m, 0),
-        expiredStrip,
-        ratePaise: next ? batchRatePaise(m, next) : rupeesToPaise(m.salePrice),
-        mrpPaise: next ? rupeesToPaise(next.mrp) : rupeesToPaise(m.mrp),
-      });
+      out.push(toSellable(m, own, now));
       if (out.length >= MAX_RESULTS) break;
     }
 
