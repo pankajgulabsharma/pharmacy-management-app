@@ -43,6 +43,20 @@
       "when": 1791451362563,
       "tag": "0005_audit_license",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791465985370,
+      "tag": "0006_drop_activity_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791466334372,
+      "tag": "0007_drug_schedule",
+      "breakpoints": true
     }
   ]
 }

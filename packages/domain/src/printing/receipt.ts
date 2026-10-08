@@ -115,6 +115,10 @@ export type ReceiptInput = {
   format: PaperFormat;
 };
 
+/** " [Sch. H1]" after Rx medicines on the printed bill */
+const schMark = (l: { schedule?: string }) =>
+  l.schedule ? ` [Sch. ${esc(l.schedule)}]` : "";
+
 export function receiptHtml(input: ReceiptInput): string {
   return isThermal(input.format) ? thermal(input) : sheet(input);
 }
@@ -134,7 +138,7 @@ function thermal({ sale, shop, footer, format }: ReceiptInput) {
   const items = sale.lines
     .map(
       (l) => `<div class="item">
-  <div class="name">${esc(l.medicineName)}</div>
+  <div class="name">${esc(l.medicineName)}${schMark(l)}</div>
   <div class="sub">${esc(batchText(l))}${l.hsn ? ` · HSN ${esc(l.hsn)}` : ""} · GST ${l.gstPercent}%${l.discountPercent ? ` · ${l.discountPercent}% off` : ""}</div>
   <div class="kv"><span>${esc(qtyText(l))}</span><span>${money(l.amountPaise)}</span></div>
 </div>`,
@@ -186,7 +190,7 @@ function sheet({ sale, shop, footer, format }: ReceiptInput) {
       const rate = a.length ? money(a[0].ratePaise) : "";
       return `<tr>
 <td class="r">${i + 1}</td>
-<td><b>${esc(l.medicineName)}</b>${l.brand ? `<div class="mut">${esc(l.brand)}</div>` : ""}</td>
+<td><b>${esc(l.medicineName)}${schMark(l)}</b>${l.brand ? `<div class="mut">${esc(l.brand)}</div>` : ""}</td>
 <td>${esc(l.hsn)}</td>
 <td>${esc(a.map((x) => x.batchNo).join(", "))}</td>
 <td>${esc(a.map((x) => x.expiry).join(", "))}</td>

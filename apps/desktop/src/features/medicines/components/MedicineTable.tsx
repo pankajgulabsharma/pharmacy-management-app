@@ -1,3 +1,4 @@
+import { ScheduleBadge } from "@/components/common/ScheduleBadge";
 import { useEffect, useRef } from "react";
 import {
   Barcode,
@@ -122,7 +123,7 @@ export function MedicineTable({
                 >
                   <td className="px-3 py-2.5">
                     <p className="font-medium text-foreground leading-tight">
-                      {m.name}
+                      {m.name} <ScheduleBadge schedule={m.schedule} />
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {m.salt || "—"}

@@ -13,6 +13,7 @@ import * as inventory from "../shop/inventory";
 import * as purchases from "../shop/purchases";
 import * as sales from "../shop/sales";
 import * as s from "../shop/schemas";
+import { importStock } from "../shop/importStock";
 
 type Params = { Params: { id: string } };
 
@@ -48,6 +49,15 @@ export function shopRoutes(
   }));
 
   // Stock
+  // Excel / Marg / Tally file → medicines + opening stock (all or nothing)
+  app.post("/api/medicines/import", async (req, reply) =>
+    reply
+      .code(201)
+      .send(
+        write(() => importStock(raw, s.parse(s.importInput, req.body).rows)),
+      ),
+  );
+
   app.post("/api/stock/adjust", async (req) =>
     write(() => inventory.adjustStock(raw, s.parse(s.adjustInput, req.body))),
   );

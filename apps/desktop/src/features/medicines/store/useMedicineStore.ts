@@ -4,6 +4,16 @@ import {
   MAX_MEDICINE_IMPORT,
 } from "@medicare/domain/medicines/clean";
 import { apiGet, apiRequest, requireServer } from "@/lib/api";
+import type { ImportRow } from "@medicare/domain/medicines/csv";
+import type { ShopPatch } from "@medicare/domain/shop/patch";
+import { applyShopPatch } from "@/stores/applyShopPatch";
+
+/** What a file import did */
+export type ImportResult = {
+  created: number;
+  existing: number;
+  batches: number;
+};
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 
 /**
@@ -22,7 +32,8 @@ type MedicineState = {
   updateMedicine: (id: string, input: MedicineInput) => Promise<Medicine>;
   /** The server refuses if the medicine has stock or history */
   removeMedicine: (id: string) => Promise<void>;
-  importMedicines: (rows: readonly MedicineInput[]) => Promise<number>;
+  /** File import (Excel / Marg / Tally): medicines + opening stock */
+  importMedicines: (rows: readonly ImportRow[]) => Promise<ImportResult>;
 };
 
 export const useMedicineStore = create<MedicineState>()((set, get) => ({
@@ -71,14 +82,19 @@ export const useMedicineStore = create<MedicineState>()((set, get) => ({
 
   importMedicines: async (rows) => {
     requireServer(get().source);
-    const { items } = await apiRequest<{ items: Medicine[] }>(
+    const r = await apiRequest<ImportResult & { patch: ShopPatch }>(
       "POST",
       "/api/medicines/import",
       {
-        rows: rows.slice(0, MAX_MEDICINE_IMPORT).map(cleanMedicineInput),
+        rows: rows.slice(0, MAX_MEDICINE_IMPORT).map((row) => ({
+          ...row,
+          medicine: cleanMedicineInput(row.medicine),
+        })),
       },
+      120_000,
     );
-    set((s) => ({ medicines: [...items, ...s.medicines] }));
-    return items.length;
+    applyShopPatch(r.patch); // new batches
+    await get().loadFromServer(); // new medicines
+    return r;
   },
 }));

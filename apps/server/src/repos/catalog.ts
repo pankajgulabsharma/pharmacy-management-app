@@ -5,23 +5,17 @@
  */
 import { asc, eq, sql } from "drizzle-orm";
 import { newId } from "@medicare/domain/lib/id";
-import { rupeesToPaise } from "@medicare/domain/lib/money";
 import type { StockBatch } from "@medicare/domain/inventory/types";
 import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 import type { Db } from "../db/client";
 import { batches, medicines } from "../db/schema";
 import { InputError } from "../schemas/medicine";
+import { medicineFromRow, medicineToRow } from "../db/mappers";
 
 const rupees = (paise: number) => paise / 100;
 
-function toMedicine(r: typeof medicines.$inferSelect): Medicine {
-  const { mrpPaise, salePricePaise, ...rest } = r;
-  return {
-    ...rest,
-    mrp: rupees(mrpPaise),
-    salePrice: rupees(salePricePaise),
-  } as Medicine;
-}
+const toMedicine = (r: typeof medicines.$inferSelect) => medicineFromRow(r);
+const toRow = medicineToRow;
 
 function toBatch(r: typeof batches.$inferSelect): StockBatch {
   const { mrpPaise, purchasePricePaise, ...rest } = r;
@@ -63,15 +57,6 @@ export async function listBatches(db: Db): Promise<StockBatch[]> {
 /* Writes                                                             */
 /* ------------------------------------------------------------------ */
 
-function toRow(m: MedicineInput) {
-  const { mrp, salePrice, ...rest } = m;
-  return {
-    ...rest,
-    mrpPaise: rupeesToPaise(mrp),
-    salePricePaise: rupeesToPaise(salePrice),
-  };
-}
-
 /** A scanned barcode must point to exactly one medicine */
 async function checkBarcode(db: Db, code: string, exceptId = "") {
   if (!code) return;
@@ -104,27 +89,6 @@ export async function updateMedicine(
   await checkBarcode(db, input.barcode, id);
   await db.update(medicines).set(toRow(input)).where(eq(medicines.id, id));
   return getMedicine(db, id);
-}
-
-/** Many at once — all or nothing */
-export async function importMedicines(
-  db: Db,
-  rows: MedicineInput[],
-): Promise<Medicine[]> {
-  const seen = new Set<string>();
-  for (const [i, r] of rows.entries()) {
-    if (!r.barcode) continue;
-    if (seen.has(r.barcode))
-      throw new InputError(`Row ${i + 1}: barcode ${r.barcode} appears twice`);
-    seen.add(r.barcode);
-    await checkBarcode(db, r.barcode);
-  }
-  const created = rows.map((r) => ({ id: newId("med"), ...toRow(r) }));
-  await db.transaction(async (tx) => {
-    for (let i = 0; i < created.length; i += 100)
-      await tx.insert(medicines).values(created.slice(i, i + 100));
-  });
-  return created.map(toMedicine);
 }
 
 export type DeleteResult =

@@ -2,21 +2,22 @@ import { useId, useRef, useState } from "react";
 import { Download, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
-import type { MedicineInput } from "@medicare/domain/medicines/types";
 import {
   buildSampleCsv,
   parseMedicineCsv,
   type CsvRowResult,
+  type ImportRow,
 } from "@medicare/domain/medicines/csv";
+import { downloadText } from "@/lib/csv";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onImport: (rows: MedicineInput[]) => void;
+  onImport: (rows: ImportRow[]) => void;
 };
 
 /** Guard rails so a wrong/huge file can't freeze the browser */
-const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_ROWS = 5000;
 
 /** Mounted only while open, so every import starts clean */
@@ -32,8 +33,14 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState("");
 
-  const okRows = results?.filter((r) => r.ok) ?? [];
+  const okRows = (results ?? []).filter(
+    (r): r is Extract<CsvRowResult, { ok: true }> => r.ok,
+  );
   const errRows = results?.filter((r) => !r.ok) ?? [];
+  const medicineCount = new Set(
+    okRows.map((r) => r.medicine.name.toLowerCase()),
+  ).size;
+  const stockRows = okRows.filter((r) => r.opening).length;
 
   const handleFile = async (file: File) => {
     setFileName(file.name);
@@ -49,7 +56,7 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      setFileError("File is larger than 2 MB");
+      setFileError("File is larger than 5 MB");
       return;
     }
 
@@ -62,24 +69,12 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
     setResults(parsed);
   };
 
-  const downloadSample = () => {
-    const blob = new Blob([buildSampleCsv()], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "medicines_sample.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const downloadSample = () =>
+    downloadText("medicines_sample.csv", buildSampleCsv());
 
   const handleImport = () => {
-    const data = okRows
-      .filter((r): r is Extract<CsvRowResult, { ok: true }> => r.ok)
-      .map((r) => r.data);
-    if (data.length === 0) return;
-    onImport(data);
+    if (okRows.length === 0) return;
+    onImport(okRows.map(({ medicine, opening }) => ({ medicine, opening })));
     setResults(null);
     setFileName("");
     onClose();
@@ -94,7 +89,7 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
         <h2 id={titleId} className="text-sm font-semibold">
-          Import medicines (CSV)
+          Import medicines & stock
         </h2>
         <button
           type="button"
@@ -108,9 +103,11 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
 
       <div className="p-4 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <p className="text-[11px] text-muted-foreground">
-          Upload CSV with columns: name, salt, brand, category, hsn, barcode,
-          rack, unit (STP/BTL/LSE), units_per_strip, allow_loose, mrp,
-          sale_price, min_stock, status.
+          A CSV from Excel, or exported from your old software (Marg, Tally,
+          GoFrugal… → “Export / Save as CSV”). Columns are recognised by name:
+          item name, company, pack, HSN, MRP, rate, GST, schedule — and for
+          opening stock: batch, expiry, stock / qty, purchase rate. One row per
+          batch is fine. Medicines already in the list are not duplicated.
         </p>
 
         <div className="flex gap-2">
@@ -161,7 +158,8 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
           <div className="space-y-2 text-[11px]">
             <p>
               <span className="text-emerald-600 font-medium">
-                {okRows.length} valid
+                {medicineCount} medicines
+                {stockRows ? ` · ${stockRows} batches of stock` : ""}
               </span>
               {" · "}
               <span className="text-red-500 font-medium">

@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { Printer, Settings2, X } from "lucide-react";
+import { MessageCircle, Printer, Settings2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
 import { fieldClass } from "@/components/common/formStyles";
@@ -24,6 +24,7 @@ import {
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { usePrintPrefs } from "@/features/printing/usePrintPrefs";
 import { PrinterSettings } from "@/features/printing/PrinterSettings";
+import { WhatsAppBill } from "./WhatsAppBill";
 
 type Props = {
   sale: Sale | null;
@@ -54,6 +55,7 @@ function Receipt({
   const footer = useSettingsStore((s) => s.billing.receiptFooter);
   const { format, printer, copies, set } = usePrintPrefs();
   const [setup, setSetup] = useState(false);
+  const [whatsApp, setWhatsApp] = useState(false);
   const html = useMemo(
     () => receiptHtml({ sale, shop, footer, format }),
     [sale, shop, footer, format],
@@ -87,7 +89,7 @@ function Receipt({
       labelledBy={titleId}
       className={cn(
         "max-h-[92vh] flex flex-col overflow-hidden",
-        thermal ? "max-w-sm" : "max-w-3xl",
+        thermal ? "max-w-md" : "max-w-3xl",
       )}
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 shrink-0">
@@ -122,13 +124,16 @@ function Receipt({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2.5 shrink-0">
+      {whatsApp ? (
+        <WhatsAppBill sale={sale} onDone={() => setWhatsApp(false)} />
+      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <select
             aria-label={tr("Bill paper")}
             value={format}
             onChange={(e) => set({ format: e.target.value as PaperFormat })}
-            className={cn(fieldClass, "h-8 w-44")}
+            className={cn(fieldClass, "h-8 w-40 shrink-0")}
           >
             {(Object.keys(PAPER_FORMATS) as PaperFormat[]).map((f) => (
               <option key={f} value={f}>
@@ -144,6 +149,15 @@ function Receipt({
           >
             <Settings2 className="h-3.5 w-3.5" />
             {tr(setup ? "Back to bill" : "Printer")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 rounded-lg text-[11px] gap-1"
+            onClick={() => setWhatsApp((v) => !v)}
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            WhatsApp
           </Button>
         </div>
         <div className="flex gap-2">

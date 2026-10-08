@@ -1,6 +1,12 @@
 # Builds the Windows installer (MediCare-Pharmacy-Setup-x.y.z.exe).
-# Run it from GitHub → Actions → "Windows installer" → Run workflow,
-# then download the .exe from the run's "Artifacts".
+#
+#  • Run by hand (Actions → "Windows installer" → Run workflow): the .exe
+#    appears under the run's "Artifacts".
+#  • Push a version tag (npm run release): the .exe is ALSO published as a
+#    GitHub Release — every installed MediCare finds it and updates itself.
+#    Releases go to this repository, or to the one in the repository
+#    variable UPDATE_REPO (e.g. a free public "medicare-releases" repo; then
+#    add a token with access to it as the secret RELEASES_TOKEN).
 name: Windows installer
 
 on:
@@ -8,9 +14,14 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      UPDATE_REPO: ${{ vars.UPDATE_REPO || github.repository }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,8 +34,24 @@ jobs:
       - run: npm run build
       - run: npm ci
         working-directory: installer
-      - run: npm run dist
+      - name: Build (and publish the update on a version tag)
         working-directory: installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          PUBLISH=never
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            PUBLISH=always
+            VERSION=$(node -p "require('./package.json').version")
+            [[ "$GITHUB_REF_NAME" == "v$VERSION" ]] || { echo "Tag $GITHUB_REF_NAME doesn't match version $VERSION — use: npm run release"; exit 1; }
+          fi
+          npm run bundle
+          npx electron-builder --win nsis --x64 --publish "$PUBLISH" \
+            -c.publish.provider=github \
+            -c.publish.owner="${UPDATE_REPO%%/*}" \
+            -c.publish.repo="${UPDATE_REPO##*/}" \
+            -c.publish.releaseType=release
       - uses: actions/upload-artifact@v4
         with:
           name: MediCare-Pharmacy-Setup

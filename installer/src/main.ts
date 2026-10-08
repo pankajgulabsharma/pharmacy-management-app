@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { startServer } from "../../apps/server/src/server";
+import { checkNow, startUpdates, updateState } from "./updates";
 
 type Config = {
   role: "main" | "counter";
@@ -252,6 +253,8 @@ handle("setup:save", async (_e, c: Config) => {
 
 handle("app:open-setup", () => openSetup());
 handle("app:open-data-folder", () => shell.openPath(DATA()));
+handle("app:updates", () => updateState());
+handle("app:check-updates", () => checkNow());
 handle("app:retry", () => openShop());
 
 /* ---- Printing: straight to the chosen printer, right paper size ---- */
@@ -331,6 +334,7 @@ if (!app.requestSingleInstanceLock()) {
       ok(perm === "clipboard-sanitized-write"),
     );
     createWindow();
+    startUpdates(() => win);
     config = readConfig();
     if (config) await openShop();
     else openSetup();

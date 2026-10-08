@@ -1,3 +1,4 @@
+import { saveBlob } from "./csv";
 /**
  * The ONE way the app talks to the server: a base URL, a timeout, and
  * clear errors (offline / timeout / server said no).
@@ -113,12 +114,7 @@ export async function apiRequest<T>(
 /** Save a file the server sends (e.g. a backup) to the computer's Downloads */
 export async function apiDownload(path: string, fileName: string) {
   const res = await send("GET", path, undefined, 120_000);
-  const url = URL.createObjectURL(await res.blob());
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveBlob(await res.blob(), fileName);
 }
 
 export const apiGet = <T>(path: string, timeoutMs?: number) =>

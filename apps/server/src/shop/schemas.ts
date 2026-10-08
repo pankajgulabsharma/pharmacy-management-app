@@ -18,7 +18,7 @@ import {
   PURCHASE_LIMITS,
   RETURN_REASONS,
 } from "@medicare/domain/purchases/types";
-import { InputError, describe } from "../schemas/medicine";
+import { InputError, describe, medicineInputSchema } from "../schemas/medicine";
 
 const id = z.string().min(1).max(64);
 const str = (max: number) => z.string().max(max);
@@ -146,6 +146,32 @@ export const purchaseReturnInput = z
           .strict(),
       )
       .min(1),
+  })
+  .strict();
+
+/** Import from a file (Excel / Marg / Tally): medicines + opening stock */
+export const importInput = z
+  .object({
+    rows: z
+      .array(
+        z
+          .object({
+            medicine: medicineInputSchema,
+            opening: z
+              .object({
+                batchNo: str(20),
+                expiry: str(5),
+                qty: z.number().int().min(1).max(100_000),
+                mrp: z.number().finite().positive().max(1_000_000),
+                purchasePrice: z.number().finite().min(0).max(1_000_000),
+              })
+              .strict()
+              .optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(10_000),
   })
   .strict();
 

@@ -6,20 +6,17 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { apiGet, apiRequest } from "@/lib/api";
 import { tr } from "@/lib/i18n";
 import { SettingsCard } from "./SettingsCard";
+import {
+  desktopBridge,
+  type DesktopBridge,
+  type UpdateState,
+} from "@/lib/desktop";
 
 type SystemInfo = {
   lan: { enabled: boolean; canChange: boolean };
   port: number;
   addresses: string[];
 };
-
-/** Only inside the installed app (see installer/src/preload.cts) */
-type DesktopBridge = {
-  openSetup: () => Promise<void>;
-  openDataFolder: () => Promise<void>;
-};
-const desktop = () =>
-  (window as unknown as { medicareDesktop?: DesktopBridge }).medicareDesktop;
 
 const showError = (err: unknown) =>
   toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -67,7 +64,7 @@ export function NetworkSection() {
     }
   };
 
-  const bridge = desktop();
+  const bridge = desktopBridge();
   const on = info?.lan.enabled ?? false;
 
   return (
@@ -155,6 +152,8 @@ export function NetworkSection() {
         </div>
       ) : null}
 
+      {bridge ? <AppVersion bridge={bridge} /> : null}
+
       {bridge ? (
         <div className="flex flex-wrap gap-2 border-t border-border pt-3">
           <Button
@@ -178,5 +177,45 @@ export function NetworkSection() {
         </div>
       ) : null}
     </SettingsCard>
+  );
+}
+
+const UPDATE_TEXT: Record<UpdateState["status"], string> = {
+  off: "Automatic updates are off in this copy",
+  idle: "Up to date",
+  checking: "Checking for updates…",
+  downloading: "Downloading the new version…",
+  ready: "New version ready — it installs when MediCare restarts",
+  error: "Couldn't check (no internet?) — will try again later",
+};
+
+/** Installed app: version + free automatic updates (GitHub Releases) */
+function AppVersion({ bridge }: { bridge: DesktopBridge }) {
+  const [u, setU] = useState<UpdateState | null>(null);
+  useEffect(() => void bridge.updates().then(setU, () => {}), [bridge]);
+  if (!u) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3 text-[12px]">
+      <span>
+        MediCare <b>{u.version}</b> ·{" "}
+        <span className="text-muted-foreground">
+          {tr(UPDATE_TEXT[u.status])}
+          {u.available ? ` (${u.available})` : ""}
+        </span>
+      </span>
+      {u.status !== "off" ? (
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-7 rounded-md text-[11px]"
+          onClick={() => {
+            setU({ ...u, status: "checking" });
+            void bridge.checkUpdates().then(setU, () => {});
+          }}
+        >
+          {tr("Check now")}
+        </Button>
+      ) : null}
+    </div>
   );
 }

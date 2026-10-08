@@ -14,9 +14,17 @@ export type PrintJob = {
   copies?: number;
 };
 
+export type UpdateState = {
+  version: string;
+  status: "off" | "idle" | "checking" | "downloading" | "ready" | "error";
+  available?: string;
+};
+
 export type DesktopBridge = {
   openSetup: () => Promise<void>;
   openDataFolder: () => Promise<void>;
+  updates: () => Promise<UpdateState>;
+  checkUpdates: () => Promise<UpdateState>;
   listPrinters: () => Promise<{ name: string; isDefault: boolean }[]>;
   print: (job: PrintJob) => Promise<{ ok: boolean; error?: string }>;
 };

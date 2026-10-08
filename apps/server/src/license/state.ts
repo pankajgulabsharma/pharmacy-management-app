@@ -1,7 +1,7 @@
 /**
  * Is this shop allowed to work right now?
  *
- *   trial    first 14 days after installing, no key needed
+ *   trial    first 30 days after installing, no key needed
  *   active   valid key, before its last day (warning in the last 15 days)
  *   grace    up to 7 days after the last day — still works, red warning
  *   expired  after that, or trial over → ON HOLD: no new bills, purchases
@@ -12,7 +12,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import { checkKey, type LicenseData } from "./key";
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 30;
 export const GRACE_DAYS = 7;
 export const WARN_DAYS = 15;
 const DAY = 86_400_000;

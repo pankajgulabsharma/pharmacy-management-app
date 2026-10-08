@@ -1,3 +1,4 @@
+import { ScheduleBadge } from "@/components/common/ScheduleBadge";
 import { memo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ScanBarcode, SearchX } from "lucide-react";
@@ -139,7 +140,9 @@ const ResultRow = memo(function ResultRow({
       )}
     >
       <td className="px-3 py-2">
-        <p className="font-medium text-foreground">{m.name}</p>
+        <p className="font-medium text-foreground">
+          {m.name} <ScheduleBadge schedule={m.schedule} />
+        </p>
         <p className="text-[10px] text-muted-foreground">
           {m.salt || "—"} · {m.brand}
         </p>

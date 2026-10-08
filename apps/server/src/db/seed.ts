@@ -4,7 +4,6 @@
  * One transaction: all of it goes in, or nothing does.
  */
 import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
-import { rupeesToPaise } from "@medicare/domain/lib/money";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
 import {
@@ -23,6 +22,7 @@ import * as t from "./schema";
 import { insertRows, writeTx } from "./sync";
 import {
   batchToRow,
+  medicineToRow,
   heldToRow,
   insertPurchase,
   insertPurchaseReturn,
@@ -67,15 +67,7 @@ export async function seedDemoData({
       n: number;
     };
     if (n === 0) insertRows(raw, t.users, users);
-    insertRows(
-      raw,
-      t.medicines,
-      mockMedicines.map((m) => ({
-        ...m,
-        mrpPaise: rupeesToPaise(m.mrp),
-        salePricePaise: rupeesToPaise(m.salePrice),
-      })),
-    );
+    insertRows(raw, t.medicines, mockMedicines.map(medicineToRow));
     insertRows(raw, t.suppliers, mockSuppliers);
     insertRows(raw, t.batches, demoInventory.batches.map(batchToRow));
     insertRows(

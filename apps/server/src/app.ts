@@ -16,7 +16,6 @@ import type { LicenseOptions } from "./license/state";
 import { LICENSE_PUBLIC_KEY } from "./license/public-key";
 import { machineCode } from "./license/machine";
 import { AuthError, authGuard } from "./auth/guard";
-import { auditHook, loadAudit } from "./audit/audit";
 import { security } from "./security";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
@@ -73,17 +72,9 @@ export function buildApp({
   });
 
   authGuard(app, database.raw, license); // sign-in, role, licence before every /api call
-  auditHook(app, database.raw); // who did what, when (Settings → Activity log)
   bus.routes(app); // GET /api/events + "something changed" after every save
   authRoutes(app, database, license);
   licenseRoutes(app, database, license);
-  app.get("/api/audit", async (req) => {
-    const q = req.query as { q?: string; before?: string };
-    return loadAudit(database.raw, {
-      q: String(q.q ?? "").slice(0, 60),
-      before: Number(q.before) || 0,
-    });
-  });
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir);
   systemRoutes(app, system);

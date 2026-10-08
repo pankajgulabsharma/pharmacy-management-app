@@ -1,3 +1,4 @@
+import { ScheduleBadge } from "@/components/common/ScheduleBadge";
 import { memo, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Trash2 } from "lucide-react";
@@ -198,7 +199,9 @@ const BillRow = memo(function BillRow({
       <td className="px-2.5 py-2 text-muted-foreground">{index + 1}</td>
 
       <td className="px-2.5 py-2">
-        <p className="font-medium text-foreground leading-tight">{m.name}</p>
+        <p className="font-medium text-foreground leading-tight">
+          {m.name} <ScheduleBadge schedule={m.schedule} />
+        </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
           {m.brand} · HSN {m.hsn} · GST {m.gstPercent}%
         </p>

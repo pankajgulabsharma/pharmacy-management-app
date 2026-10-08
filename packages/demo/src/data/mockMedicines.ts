@@ -5,7 +5,19 @@ import type { Medicine } from "@medicare/domain/medicines/types";
  * from inventory batches. TODO(api): load from the backend.
  */
 
-export const mockMedicines: Medicine[] = [
+/** Prescription schedules of the demo medicines (others: OTC) */
+const SCHEDULES: Record<string, Medicine["schedule"]> = {
+  m3: "H", // Azithromycin
+  m4: "H", // Augmentin
+  m5: "H", // Ascoril LS
+  m9: "H", // Insulin
+  m10: "H1", // Taxim (cefotaxime) — H1 register
+  m12: "H", // Telma
+  m16: "H", // Asthalin
+  m17: "H", // Budecort
+};
+
+const RAW: Omit<Medicine, "schedule">[] = [
   {
     id: "m1",
     name: "Paracetamol 650mg Tablet",
@@ -385,3 +397,8 @@ export const mockMedicines: Medicine[] = [
     status: "active",
   },
 ];
+
+export const mockMedicines: Medicine[] = RAW.map((m) => ({
+  ...m,
+  schedule: SCHEDULES[m.id] ?? "",
+}));

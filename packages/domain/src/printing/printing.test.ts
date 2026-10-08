@@ -179,3 +179,39 @@ describe("barcodes & labels", () => {
     );
   });
 });
+
+describe("bill on WhatsApp", () => {
+  it("accepts Indian mobiles in any style, refuses the rest", async () => {
+    const { whatsappNumber } = await import("./whatsapp");
+    expect(whatsappNumber("98765 43210")).toBe("919876543210");
+    expect(whatsappNumber("+91-98765-43210")).toBe("919876543210");
+    expect(whatsappNumber("09876543210")).toBe("919876543210");
+    expect(whatsappNumber("02225401234")).toBeNull(); // landline
+    expect(whatsappNumber("12345")).toBeNull();
+  });
+
+  it("writes a short bill and a wa.me link", async () => {
+    const { billMessage, whatsappLink } = await import("./whatsapp");
+    const sale = {
+      billNo: "INV-0042",
+      createdAt: "2026-10-08T09:00:00Z",
+      lines: [
+        {
+          medicineName: "Dolo 650",
+          qtyStrip: 1,
+          qtyLoose: 0,
+          unit: "STP",
+          amountPaise: 2700,
+        },
+      ],
+      totals: { netPaise: 2700 },
+    } as never;
+    const text = billMessage(sale, "Sharma Medicals", "Get well soon");
+    expect(text).toContain("*Sharma Medicals*");
+    expect(text).toContain("Dolo 650 × 1 STP — ₹27.00");
+    expect(text).toContain("*Total: ₹27.00*");
+    expect(whatsappLink("919876543210", text)).toMatch(
+      /^https:\/\/wa\.me\/919876543210\?text=\*Sharma/,
+    );
+  });
+});

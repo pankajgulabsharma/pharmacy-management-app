@@ -6,12 +6,12 @@
  */
 import { z } from "zod";
 import {
-  MAX_MEDICINE_IMPORT,
   MEDICINE_CATEGORIES,
   PACK_UNITS,
   cleanMedicineInput,
 } from "@medicare/domain/medicines/clean";
 import type { MedicineInput } from "@medicare/domain/medicines/types";
+import { DRUG_SCHEDULES } from "@medicare/domain/medicines/schedule";
 import { GST_RATES, type GstRate } from "@medicare/domain/lib/gst";
 
 const text = (max: number) => z.string().max(max);
@@ -38,12 +38,9 @@ export const medicineInputSchema = z
         ...z.ZodLiteral<GstRate>[],
       ],
     ),
+    schedule: z.enum(DRUG_SCHEDULES).default(""),
     status: z.enum(["active", "inactive"]),
   })
-  .strict();
-
-const importSchema = z
-  .object({ rows: z.array(z.unknown()).min(1).max(MAX_MEDICINE_IMPORT) })
   .strict();
 
 /** Bad input from the app → the route answers 400 with this message */
@@ -57,19 +54,6 @@ export function parseMedicine(body: unknown): MedicineInput {
   if (m.name.length < 2) throw new InputError("Name is required");
   if (m.mrp <= 0) throw new InputError("MRP must be more than 0");
   return m;
-}
-
-/** Every row must pass, or nothing is imported */
-export function parseImport(body: unknown): MedicineInput[] {
-  const r = importSchema.safeParse(body);
-  if (!r.success) throw new InputError(describe(r.error));
-  return r.data.rows.map((row, i) => {
-    try {
-      return parseMedicine(row);
-    } catch (e) {
-      throw new InputError(`Row ${i + 1}: ${(e as Error).message}`);
-    }
-  });
 }
 
 /** First problem in plain words, e.g. "mrp: Invalid input…" */

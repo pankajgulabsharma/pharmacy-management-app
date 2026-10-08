@@ -1,3 +1,4 @@
+import type { DrugSchedule } from "./schedule";
 import { DEFAULT_GST_RATE, type GstRate } from "../lib/gst";
 /** Dosage form / category */
 export type MedicineCategory =
@@ -41,6 +42,8 @@ export type Medicine = {
   minStock: number;
   /** GST slab for this product (by HSN). Retail price already includes it. */
   gstPercent: GstRate;
+  /** Prescription schedule ("" = OTC) — see schedule.ts */
+  schedule: DrugSchedule;
   status: MedicineStatus;
 };
 
@@ -92,6 +95,7 @@ export type MedicineFormValues = {
   salePrice: string;
   minStock: string;
   gstPercent: GstRate;
+  schedule: DrugSchedule;
   status: MedicineStatus;
 };
 
@@ -200,6 +204,7 @@ export const emptyMedicineForm = (): MedicineFormValues => ({
   salePrice: "",
   minStock: "10",
   gstPercent: DEFAULT_GST_RATE,
+  schedule: "",
   status: "active",
 });
 
@@ -219,6 +224,7 @@ export function medicineToForm(m: Medicine): MedicineFormValues {
     salePrice: String(m.salePrice),
     minStock: String(m.minStock),
     gstPercent: m.gstPercent,
+    schedule: m.schedule,
     status: m.status,
   };
 }

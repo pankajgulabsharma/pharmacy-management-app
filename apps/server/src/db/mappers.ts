@@ -23,7 +23,7 @@ import type {
   Purchase,
   PurchaseReturn,
 } from "@medicare/domain/purchases/types";
-import type { Medicine } from "@medicare/domain/medicines/types";
+import type { Medicine, MedicineInput } from "@medicare/domain/medicines/types";
 import type { Supplier } from "@medicare/domain/suppliers/types";
 import * as t from "./schema";
 import { insertRows, selectRows, updateRow } from "./sync";
@@ -365,8 +365,9 @@ export function loadSales(
         reference: h.paymentReference,
       },
       lines: (lines.get(h.id as string) ?? []).map(
-        ({ saleId: _s, position: _p, ...l }) => ({
+        ({ saleId: _s, position: _p, schedule, ...l }) => ({
           ...l,
+          ...(schedule ? { schedule } : {}),
           allocations: (allocs.get(l.id as string) ?? []).map(
             ({ id: _i, saleLineId: _l, ...a }) => a,
           ),
@@ -477,15 +478,25 @@ export function loadCustomerPayments(
 
 /* ---------------- Masters (sync reads for operations) ---------------- */
 
+/** Medicine ⇄ database row (prices: rupees in the app, paise in the DB) */
+export function medicineToRow<M extends MedicineInput>(m: M) {
+  const { mrp, salePrice, ...rest } = m;
+  return {
+    ...rest,
+    mrpPaise: rupeesToPaise(mrp),
+    salePricePaise: rupeesToPaise(salePrice),
+  };
+}
+export function medicineFromRow(r: Row): Medicine {
+  const { mrpPaise, salePricePaise, ...rest } = r;
+  return {
+    ...rest,
+    mrp: rupees(mrpPaise as number),
+    salePrice: rupees(salePricePaise as number),
+  } as Medicine;
+}
 export function loadMedicinesSync(raw: DatabaseSync): Medicine[] {
-  return selectRows(raw, t.medicines).map(
-    ({ mrpPaise, salePricePaise, ...r }) =>
-      ({
-        ...r,
-        mrp: rupees(mrpPaise as number),
-        salePrice: rupees(salePricePaise as number),
-      }) as Medicine,
-  );
+  return selectRows(raw, t.medicines).map(medicineFromRow);
 }
 export function loadSuppliersSync(raw: DatabaseSync): Supplier[] {
   return selectRows<Supplier>(raw, t.suppliers);

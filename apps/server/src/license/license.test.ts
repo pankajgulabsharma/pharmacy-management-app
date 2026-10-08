@@ -73,13 +73,13 @@ const sell = () =>
   });
 
 describe("licence", () => {
-  it("new install: 14-day trial, then ON HOLD — but data stays readable", async () => {
+  it("new install: 30-day trial, then ON HOLD — but data stays readable", async () => {
     expect(await status()).toMatchObject({
       status: "trial",
-      daysLeft: 14,
+      daysLeft: 30,
       canWork: true,
     });
-    now = new Date(now.getTime() + 15 * DAY);
+    now = new Date(now.getTime() + 31 * DAY);
     const s = await status();
     expect(s).toMatchObject({ status: "expired", canWork: false });
     const r = await sell();

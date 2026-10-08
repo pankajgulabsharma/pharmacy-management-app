@@ -128,24 +128,75 @@ describe("delete a medicine", () => {
   });
 });
 
-describe("CSV import", () => {
-  it("adds every row", async () => {
+describe("import from a file (Excel / Marg / Tally)", () => {
+  const stockOf = (name: string) =>
+    database.raw
+      .prepare(
+        "SELECT b.batch_no, b.expiry, b.qty_strip FROM batches b JOIN medicines m ON m.id = b.medicine_id WHERE m.name = ? ORDER BY b.batch_no",
+      )
+      .all(name);
+
+  it("adds medicines and their opening stock; same name = same medicine", async () => {
     const before = count();
+    const opening = (batchNo: string, qty: number) => ({
+      batchNo,
+      expiry: "12/28",
+      qty,
+      mrp: valid.mrp,
+      purchasePrice: 20,
+    });
     const res = await send("POST", "/api/medicines/import", {
-      rows: [valid, { ...valid, name: "Second" }],
+      rows: [
+        {
+          medicine: { ...valid, name: "Imported Tab" },
+          opening: opening("IM1", 10),
+        },
+        {
+          medicine: { ...valid, name: "IMPORTED TAB" },
+          opening: opening("IM2", 4),
+        },
+        { medicine: { ...valid, name: "Second" } },
+      ],
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().count).toBe(2);
+    expect(res.json()).toMatchObject({ created: 2, batches: 2 });
     expect(count()).toBe(before + 2);
+    expect(stockOf("Imported Tab")).toEqual([
+      { batch_no: "IM1", expiry: "12/28", qty_strip: 10 },
+      { batch_no: "IM2", expiry: "12/28", qty_strip: 4 },
+    ]);
+    // Opening stock is explained in the stock history
+    const mv = database.raw
+      .prepare(
+        "SELECT count(*) n FROM stock_movements WHERE type = 'opening' AND ref_id LIKE 'import_%'",
+      )
+      .get() as { n: number };
+    expect(mv.n).toBe(2);
+    // Importing the same file again reuses the medicines (no duplicates)
+    const again = await send("POST", "/api/medicines/import", {
+      rows: [{ medicine: { ...valid, name: "Imported Tab" } }],
+    });
+    expect(again.json()).toMatchObject({ created: 0, existing: 1 });
   });
 
   it("one bad row → nothing is saved (all or nothing)", async () => {
     const before = count();
     const res = await send("POST", "/api/medicines/import", {
-      rows: [valid, { ...valid, name: "" }],
+      rows: [
+        { medicine: valid },
+        {
+          medicine: { ...valid, name: "Bad stock" },
+          opening: {
+            batchNo: "B1",
+            expiry: "13/99",
+            qty: 5,
+            mrp: 30,
+            purchasePrice: 20,
+          },
+        },
+      ],
     });
     expect(res.statusCode).toBe(400);
-    expect(res.json().error).toMatch(/Row 2/);
     expect(count()).toBe(before);
   });
 });
@@ -176,13 +227,13 @@ describe("barcodes", () => {
         })
       ).statusCode,
     ).toBe(200);
+    // Import: rows with the same barcode are the same medicine
     const imp = await send("POST", "/api/medicines/import", {
       rows: [
-        { ...valid, name: "X1", barcode: "2999999999990" },
-        { ...valid, name: "X2", barcode: "2999999999990" },
+        { medicine: { ...valid, name: "X1", barcode: "2999999999990" } },
+        { medicine: { ...valid, name: "X2", barcode: "2999999999990" } },
       ],
     });
-    expect(imp.statusCode).toBe(400);
-    expect(imp.json().error).toMatch(/appears twice/);
+    expect(imp.json()).toMatchObject({ created: 1 });
   });
 });

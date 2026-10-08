@@ -172,7 +172,7 @@ export function applyReceipt(
 
     movements.push({
       id: newId("mv"),
-      type: "purchase",
+      type: receipt.type ?? "purchase",
       batchId,
       medicineId: l.medicineId,
       qtyStripDelta: stripDelta,

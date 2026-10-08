@@ -1,3 +1,4 @@
+import { scheduleRule } from "@medicare/domain/medicines/schedule";
 import { ApiError } from "@/lib/api";
 import {
   useCallback,
@@ -143,13 +144,24 @@ export default function BillingPage() {
     if (cart.length === 0) return "Add at least one medicine";
     const lineError = bill.lines.find((l) => l.error)?.error;
     if (lineError) return lineError;
+    // Schedule H / H1 / X: doctor (and patient name) before saving
+    const rx = scheduleRule(
+      bill.lines.flatMap((l) =>
+        l.medicine
+          ? [{ medicineName: l.medicine.name, schedule: l.medicine.schedule }]
+          : [],
+      ),
+      customerName,
+      doctor,
+    );
+    if (rx) return rx;
     return validatePayment(
       payment,
       bill.totals.netPaise,
       customerName,
       udhaarCustomerId,
     );
-  }, [cart.length, bill, payment, customerName, udhaarCustomerId]);
+  }, [cart.length, bill, payment, customerName, doctor, udhaarCustomerId]);
 
   /* ---------------- cart ---------------- */
 

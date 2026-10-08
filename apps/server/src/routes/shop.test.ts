@@ -285,6 +285,50 @@ describe("billing on the server", () => {
     expect(count("sales")).toBeGreaterThan(0);
   });
 
+  it("Schedule H1: needs patient + doctor; the bill line keeps its schedule", async () => {
+    const { input } = await cartFor();
+    // Taxim (H1) is inactive and out of stock in the demo — fix that first
+    database.raw
+      .prepare("UPDATE medicines SET status = 'active' WHERE id = 'm10'")
+      .run();
+    const taxim = (await stock()).find((x) => x.medicineId === "m10")!;
+    await ok(
+      call("POST", "/api/stock/adjust", {
+        batchId: taxim.id,
+        qtyStrip: 5,
+        qtyLoose: 0,
+        reason: "Count",
+      }),
+    );
+    const cart = [{ ...input.cart[0], medicineId: taxim.medicineId }];
+    const walkIn = await call("POST", "/api/sales", {
+      ...input,
+      cart,
+      doctor: "Dr. A",
+    });
+    expect(walkIn.statusCode).toBe(400);
+    expect(walkIn.json().error).toMatch(/Schedule H1 — enter the patient/);
+    const noDoctor = await call("POST", "/api/sales", {
+      ...input,
+      cart,
+      customerName: "Ravi Kumar",
+    });
+    expect(noDoctor.json().error).toMatch(/prescribing doctor/);
+    const { sale } = await ok(
+      call("POST", "/api/sales", {
+        ...input,
+        cart,
+        customerName: "Ravi Kumar",
+        doctor: "Dr. A",
+      }),
+    );
+    expect(sale.lines[0].schedule).toBe("H1");
+    const saved = (await ok(call("GET", "/api/sales"))).sales.find(
+      (x: Sale) => x.id === sale.id,
+    );
+    expect(saved.lines[0].schedule).toBe("H1");
+  });
+
   it("short stock → nothing saved (no bill, no stock change)", async () => {
     const { input } = await cartFor();
     input.cart[0].qtyStrip = 100_000;

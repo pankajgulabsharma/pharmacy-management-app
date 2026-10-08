@@ -1,3 +1,4 @@
+import type { DrugSchedule } from "../medicines/schedule";
 import type { PackUnit } from "../medicines/types";
 import type { GstRate } from "../lib/gst";
 import type { Paise } from "../lib/money";
@@ -113,6 +114,8 @@ export type SaleLine = LineAmounts & {
   qtyStrip: number;
   qtyLoose: number;
   allocations: BatchAllocation[];
+  /** Copied from the medicine at billing time (Rx / register) */
+  schedule?: DrugSchedule;
 };
 
 export type SaleTotals = {

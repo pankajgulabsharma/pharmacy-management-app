@@ -46,6 +46,8 @@ export const medicines = sqliteTable(
     salePricePaise: paise("sale_price_paise"),
     minStock: integer("min_stock").notNull().default(0),
     gstPercent: integer("gst_percent").notNull(),
+    /** "" (OTC) | H | H1 | X — prescription / register rules */
+    schedule: text("schedule").notNull().default(""),
     status: text("status", { enum: ["active", "inactive"] })
       .notNull()
       .default("active"),
@@ -394,6 +396,8 @@ export const saleLines = sqliteTable(
     discountPercent: integer("discount_percent").notNull().default(0),
     qtyStrip: integer("qty_strip").notNull().default(0),
     qtyLoose: integer("qty_loose").notNull().default(0),
+    /** Schedule at billing time (H1 / X go into the register) */
+    schedule: text("schedule").notNull().default(""),
     grossPaise: paise("gross_paise"),
     discountPaise: paise("discount_paise"),
     amountPaise: paise("amount_paise"),
@@ -534,21 +538,4 @@ export const sessions = sqliteTable(
     ip: text("ip").notNull().default(""),
   },
   (s) => [index("sessions_user_idx").on(s.userId)],
-);
-
-/**
- * Who did what, when — sign-ins, bills, stock changes, settings, users,
- * backups, licence. Only ever added to (never edited by the app).
- */
-export const auditLog = sqliteTable(
-  "audit_log",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    at: text("at").notNull(),
-    userName: text("user_name").notNull().default(""),
-    action: text("action").notNull(),
-    detail: text("detail").notNull().default(""),
-    ip: text("ip").notNull().default(""),
-  },
-  (t) => [index("audit_log_at_idx").on(t.at)],
 );

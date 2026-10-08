@@ -4,12 +4,11 @@ import {
   createMedicine,
   deleteMedicine,
   getMedicine,
-  importMedicines,
   listBatches,
   listMedicines,
   updateMedicine,
 } from "../repos/catalog";
-import { parseImport, parseMedicine } from "../schemas/medicine";
+import { parseMedicine } from "../schemas/medicine";
 
 /** Medicines (read + write) and stock batches (read) */
 export function catalogRoutes(app: FastifyInstance, { db }: Database) {
@@ -63,11 +62,6 @@ export function catalogRoutes(app: FastifyInstance, { db }: Database) {
       });
     },
   );
-
-  app.post("/api/medicines/import", async (req, reply) => {
-    const items = await importMedicines(db, parseImport(req.body));
-    return reply.code(201).send({ items, count: items.length });
-  });
 
   app.get("/api/inventory/batches", async () => {
     const items = await listBatches(db);

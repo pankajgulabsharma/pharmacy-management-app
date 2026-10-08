@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   BadgeCheck,
   Building2,
-  History,
   Database,
   HardDriveDownload,
   Printer,
@@ -32,7 +31,6 @@ import { BackupSection } from "../components/BackupSection";
 import { NetworkSection } from "../components/NetworkSection";
 import { PrintingSection } from "../components/PrintingSection";
 import { LicenseSection } from "../components/LicenseSection";
-import { ActivitySection } from "../components/ActivitySection";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { tr } from "@/lib/i18n";
 
@@ -46,7 +44,6 @@ type SectionId =
   | "backup"
   | "network"
   | "license"
-  | "activity"
   | "appearance"
   | "data";
 
@@ -104,12 +101,6 @@ const SECTIONS: {
     label: "Licence",
     icon: BadgeCheck,
     Component: LicenseSection,
-  },
-  {
-    id: "activity",
-    label: "Activity log",
-    icon: History,
-    Component: ActivitySection,
   },
   {
     id: "appearance",

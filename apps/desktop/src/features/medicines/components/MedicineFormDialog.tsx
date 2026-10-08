@@ -10,6 +10,11 @@ import { isIntInput } from "@medicare/domain/lib/sanitize";
 import { newInStoreBarcode } from "@medicare/domain/printing/labels";
 import { useMedicineStore } from "../store/useMedicineStore";
 import { GST_RATES, isGstRate } from "@medicare/domain/lib/gst";
+import {
+  DRUG_SCHEDULES,
+  SCHEDULE_LABELS,
+  type DrugSchedule,
+} from "@medicare/domain/medicines/schedule";
 import type {
   Medicine,
   MedicineFormValues,
@@ -325,6 +330,21 @@ function MedicineForm({ medicine, onClose, onSave }: Omit<Props, "open">) {
               {GST_RATES.map((r) => (
                 <option key={r} value={r}>
                   {r}%
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Schedule" hint="H / H1 / X need a prescription">
+            <select
+              value={values.schedule}
+              onChange={(e) =>
+                setField("schedule")(e.target.value as DrugSchedule)
+              }
+              className={fieldClass}
+            >
+              {DRUG_SCHEDULES.map((sc) => (
+                <option key={sc} value={sc}>
+                  {SCHEDULE_LABELS[sc]}
                 </option>
               ))}
             </select>

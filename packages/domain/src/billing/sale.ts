@@ -2,6 +2,7 @@
  * Building and validating a sale — pure, re-checked on save even though
  * the screen validates too (never trust the caller).
  */
+import { scheduleRule } from "../medicines/schedule";
 import type { StockBatch, StockChangeLine } from "../inventory/types";
 import type { Medicine } from "../medicines/types";
 import { newId } from "../lib/id";
@@ -104,6 +105,7 @@ export function buildSaleLine(
       qtyStrip: line.qtyStrip,
       qtyLoose: line.qtyLoose,
       allocations,
+      ...(m.schedule ? { schedule: m.schedule } : {}),
       ...priceLine(allocations, ups, line.discountPercent, m.gstPercent),
     },
     change: allocations.map((a) => allocationDelta(a, ups)),
@@ -235,6 +237,9 @@ export function buildSale(
     input.customerId ?? null,
   );
   if (payErr) throw new SaleError(payErr);
+  const doctor = cleanText(input.doctor, 80);
+  const rxErr = scheduleRule(lines, customerName, doctor);
+  if (rxErr) throw new SaleError(rxErr);
 
   return {
     sale: {
@@ -242,7 +247,7 @@ export function buildSale(
       billNo,
       createdAt: now.toISOString(),
       customerName,
-      doctor: cleanText(input.doctor, 80),
+      doctor,
       counter: cleanText(input.counter, 30),
       lines,
       totals,

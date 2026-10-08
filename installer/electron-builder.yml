@@ -23,6 +23,9 @@ electronFuses:
   enableCookieEncryption: true
 # Only the languages the app speaks (smaller download)
 electronLanguages: [en-US, hi]
+# Automatic updates (GitHub Releases, free) are switched on by the
+# release workflow (.github/workflows/installer.yml) — it adds the
+# "publish" settings. Builds made without it simply don't auto-update.
 win:
   icon: build/icon.ico
   target: nsis

@@ -44,6 +44,7 @@ import { useMedicinesWithStock } from "../hooks/useMedicinesWithStock";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
+import type { ImportRow } from "@medicare/domain/medicines/csv";
 import { BarcodeLabelDialog } from "../components/BarcodeLabelDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
 import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
@@ -91,6 +92,7 @@ function formToInput(v: MedicineFormValues): MedicineInput {
     salePrice: Number(v.salePrice) || 0,
     minStock: Number(v.minStock) || 0,
     gstPercent: v.gstPercent,
+    schedule: v.schedule,
     status: v.status,
   };
 }
@@ -250,11 +252,29 @@ export default function MedicinesPage() {
   );
 
   const handleImport = useCallback(
-    (rows: MedicineInput[]) => {
+    (rows: ImportRow[]) => {
       void (async () => {
         try {
-          const count = await importMedicines(rows);
-          toast.success(`${count} medicine(s) imported`);
+          const r = await importMedicines(rows);
+          toast.success(
+            tr(
+              "Imported: {{created}} new medicines, {{batches}} stock batches",
+              {
+                created: r.created,
+                batches: r.batches,
+              },
+            ),
+            r.existing
+              ? {
+                  description: tr(
+                    "{{n}} were already in the list (not duplicated)",
+                    {
+                      n: r.existing,
+                    },
+                  ),
+                }
+              : undefined,
+          );
         } catch (err) {
           toast.error(saveError(err));
         }
@@ -302,7 +322,7 @@ export default function MedicinesPage() {
                 onClick={openImport}
               >
                 <Upload className="h-3.5 w-3.5" />
-                Import CSV
+                Import
               </Button>
               <Button
                 type="button"

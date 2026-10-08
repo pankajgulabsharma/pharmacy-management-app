@@ -62,7 +62,8 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 12. ✅ Windows installer (Electron: the server runs inside the app — nothing else to install)
 13. ✅ Several counters on the shop network (main computer + extra counters) + final checks
 14. ✅ Printing for every printer (thermal 58/80 mm, A5, A4 GST invoice) + barcodes & labels
-15. ✅ Licences for every shop (trial → key → on hold), activity log, security hardening
+15. ✅ Licences for every shop (trial → key → on hold), security hardening
+16. ✅ Free auto-updates, Schedule H / H1 / X (register), import from old software (Marg / Tally / Excel), bill on WhatsApp
 
 ## Windows installer
 
@@ -109,9 +110,49 @@ Uninstalling never deletes the shop's data.
   code (EAN-13 starting with 2) and prints stickers on a label printer
   (50×25, 38×25, 50×30 mm) or A4 sticker sheets (65 / 24 per sheet).
 
+## Updates for every shop (free)
+
+```bash
+npm run release          # 1.0.3 → 1.0.4: sets the version, commits, tags
+git push && git push origin v1.0.4
+```
+GitHub Actions builds the installer and publishes it as a GitHub Release.
+Every installed MediCare checks every 6 hours, downloads it quietly and
+asks "Restart now / Later" (data is never touched). Extra counters that
+open the main computer's address get new screens as soon as the main
+computer updates. Settings → This computer shows the version.
+
+For a **private** code repository: create a free **public** repository
+just for installers (e.g. `medicare-releases`), set the repository
+variable `UPDATE_REPO` = `you/medicare-releases` and a secret
+`RELEASES_TOKEN` (a GitHub token allowed to write to it).
+
+## Schedule H / H1 / X
+
+Set the schedule on each medicine (Medicines → edit). Billing then asks
+for the prescribing doctor (H, H1, X) and the patient's name (H1, X); the
+printed bill marks them `[Sch. H1]`. **Reports → H1 register** lists every
+H1 / X supply (date, bill, patient, doctor, medicine, batch, qty) — export
+to keep with the shop's records (3 years).
+
+## Import from old software
+
+Medicines → **Import**: a CSV from Excel, or an export from Marg / Tally /
+GoFrugal ("Save as CSV"). Columns are recognised by their usual names
+(item name, company, pack, batch, expiry, closing stock, MRP, P.rate, GST…);
+one row per batch is fine. Creates the medicines **and** their opening
+stock in one go — all rows or none; medicines already in the list are not
+duplicated.
+
+## Bill on WhatsApp
+
+On a saved bill (or any bill found with Ctrl+K) → **WhatsApp** → mobile
+number → WhatsApp opens with the bill typed out; press Send. Free — no
+SMS gateway or API (SMS would need a paid gateway).
+
 ## Licences (selling to many shops)
 
-Every shop needs a licence key. New installs get a **14-day trial**. When a
+Every shop needs a licence key. New installs get a **30-day trial**. When a
 licence ends there are **7 grace days**, then the shop goes **on hold**: no
 new bills, purchases or changes — but viewing, reports, backups and entering
 a new key always work (the shop's data is never locked away). Moving the
@@ -149,7 +190,7 @@ What protects the shop:
 | Another website / app talking to the server | CORS limited to the app; safety headers + strict Content-Security-Policy |
 | One computer flooding the server | Per-computer request limit |
 | Code injected into the installed app (e.g. to skip the licence) | Electron locked down: no Node in pages, sandbox, can't run as Node / with debugger, pages can't navigate away or use camera/mic |
-| Staff misuse ("who deleted that bill?") | Settings → **Activity log**: every sign-in, bill, return, stock and price change, user change, backup/restore — who, when, which computer |
+| Staff misuse | Roles (cashier can't change stock or prices); every bill and return records who made it |
 | Data loss | Daily automatic backups + restore with a safety copy |
 
 Honest limits: anyone who can sit at the main computer with its Windows

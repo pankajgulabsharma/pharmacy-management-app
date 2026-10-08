@@ -1,7 +1,12 @@
+import {
+  registerCsv,
+  scheduleRegister,
+} from "@medicare/domain/medicines/schedule";
 import { useMemo, useState } from "react";
 import {
   BarChart3,
   Download,
+  ClipboardList,
   IndianRupee,
   Landmark,
   Package,
@@ -36,6 +41,7 @@ import {
   GstTab,
   PurchasesTab,
   SalesTab,
+  RegisterTab,
   StockTab,
 } from "../components/ReportTabs";
 import {
@@ -51,13 +57,14 @@ import {
   stockReport,
 } from "@medicare/domain/reports/reports";
 
-type Tab = "sales" | "purchases" | "gst" | "stock";
+type Tab = "sales" | "purchases" | "gst" | "stock" | "register";
 
 const TABS: SegmentedTab<Tab>[] = [
   { id: "sales", label: "Sales", icon: IndianRupee },
   { id: "purchases", label: "Purchases", icon: Truck },
   { id: "gst", label: "GST", icon: Landmark },
   { id: "stock", label: "Stock", icon: Package },
+  { id: "register", label: "H1 register", icon: ClipboardList },
 ];
 
 export default function ReportsPage() {
@@ -72,7 +79,11 @@ export default function ReportsPage() {
   // Dashboard links like /reports?tab=sales&period=today
   const intent = useUrlIntent();
   const [tab, setTab] = useState<Tab>(
-    oneOf(intent.tab, ["sales", "purchases", "gst", "stock"] as const, "sales"),
+    oneOf(
+      intent.tab,
+      ["sales", "purchases", "gst", "stock", "register"] as const,
+      "sales",
+    ),
   );
   // 7 days: enough to see a trend without a mostly-empty chart
   const [preset, setPreset] = useState<PeriodPreset>(
@@ -97,21 +108,32 @@ export default function ReportsPage() {
   const customInvalid = preset === "custom" && customRange(from, to) === null;
   const periodLabel = describeRange(range);
 
+  // Only the open tab is worked out (years of bills → no wasted work)
   const sr = useMemo(
-    () => salesReport(sales, saleReturns, batches, range),
-    [sales, saleReturns, batches, range],
+    () =>
+      tab === "sales" ? salesReport(sales, saleReturns, batches, range) : null,
+    [tab, sales, saleReturns, batches, range],
   );
   const pr = useMemo(
-    () => purchaseReport(purchases, debitNotes, range),
-    [purchases, debitNotes, range],
+    () =>
+      tab === "purchases" ? purchaseReport(purchases, debitNotes, range) : null,
+    [tab, purchases, debitNotes, range],
   );
   const gr = useMemo(
-    () => gstReport(sales, saleReturns, purchases, debitNotes, range),
-    [sales, saleReturns, purchases, debitNotes, range],
+    () =>
+      tab === "gst"
+        ? gstReport(sales, saleReturns, purchases, debitNotes, range)
+        : null,
+    [tab, sales, saleReturns, purchases, debitNotes, range],
   );
   const st = useMemo(
-    () => stockReport(batches, medicines, expiringDays),
-    [batches, medicines, expiringDays],
+    () =>
+      tab === "stock" ? stockReport(batches, medicines, expiringDays) : null,
+    [tab, batches, medicines, expiringDays],
+  );
+  const reg = useMemo(
+    () => (tab === "register" ? scheduleRegister(sales, range) : null),
+    [tab, sales, range],
   );
 
   const exportCsv = () => {
@@ -122,11 +144,13 @@ export default function ReportsPage() {
     const csv =
       tab === "sales"
         ? salesCsv(sales, range)
-        : tab === "purchases"
+        : pr
           ? purchasesCsv(pr)
-          : tab === "gst"
+          : gr
             ? gstCsv(gr)
-            : stockCsv(batches, medicines);
+            : reg
+              ? registerCsv(reg)
+              : stockCsv(batches, medicines);
     downloadText(`${tab}-report_${stamp}.csv`, csv);
     toast.success("Report exported", {
       description: "Opens in Excel / Google Sheets",
@@ -200,14 +224,11 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
-        {tab === "sales" ? <SalesTab r={sr} periodLabel={periodLabel} /> : null}
-        {tab === "purchases" ? (
-          <PurchasesTab r={pr} periodLabel={periodLabel} />
-        ) : null}
-        {tab === "gst" ? <GstTab r={gr} periodLabel={periodLabel} /> : null}
-        {tab === "stock" ? (
-          <StockTab r={st} expiringDays={expiringDays} />
-        ) : null}
+        {sr ? <SalesTab r={sr} periodLabel={periodLabel} /> : null}
+        {pr ? <PurchasesTab r={pr} periodLabel={periodLabel} /> : null}
+        {gr ? <GstTab r={gr} periodLabel={periodLabel} /> : null}
+        {st ? <StockTab r={st} expiringDays={expiringDays} /> : null}
+        {reg ? <RegisterTab rows={reg} periodLabel={periodLabel} /> : null}
       </div>
     </div>
   );

@@ -26,6 +26,7 @@ const dolo: Medicine = {
   salePrice: 30,
   minStock: 5,
   gstPercent: 5,
+  schedule: "",
   status: "active",
 };
 

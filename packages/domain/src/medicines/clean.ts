@@ -2,6 +2,7 @@
  * Normalise and bound a medicine before it is saved — used by the app AND
  * the server, so both always store exactly the same thing.
  */
+import { isSchedule } from "./schedule";
 import { DEFAULT_GST_RATE, isGstRate } from "../lib/gst";
 import { cleanCode, cleanText } from "../lib/sanitize";
 import {
@@ -45,6 +46,7 @@ export function cleanMedicineInput(input: MedicineInput): MedicineInput {
     gstPercent: isGstRate(input.gstPercent)
       ? input.gstPercent
       : DEFAULT_GST_RATE,
+    schedule: isSchedule(input.schedule) ? input.schedule : "",
     status: input.status === "inactive" ? "inactive" : "active",
   };
 }

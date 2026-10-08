@@ -708,7 +708,7 @@ export const HI_UI: Record<string, string> = {
   "Label size": "लेबल साइज़",
   "Print {{n}} labels": "{{n}} लेबल प्रिंट करें",
   "Label preview": "लेबल प्रीव्यू",
-  // Licence & activity log (step 15)
+  // Licence (step 15)
   "On hold": "रुका हुआ",
   "Enter licence key": "लाइसेंस की डालें",
   "Ask the owner": "मालिक से पूछें",
@@ -728,17 +728,37 @@ export const HI_UI: Record<string, string> = {
   "Save licence key": "लाइसेंस की सेव करें",
   "Licence saved — works until {{date}}":
     "लाइसेंस सेव हो गया — {{date}} तक चलेगा",
-  "Activity log": "गतिविधि लॉग",
-  "Every sign-in, bill, return, stock change, price change, user change, backup and restore — who, when and from which computer.":
-    "हर लॉगिन, बिल, रिटर्न, स्टॉक बदलाव, दाम बदलाव, यूज़र बदलाव, बैकअप और रिस्टोर — किसने, कब और किस कंप्यूटर से।",
-  "Search name, action, bill no…": "नाम, काम, बिल नं. खोजें…",
-  When: "कब",
-  Who: "किसने",
-  What: "क्या",
-  Details: "विवरण",
-  Computer: "कंप्यूटर",
-  "this computer": "यही कंप्यूटर",
-  "Show older": "पुराने दिखाएँ",
   "Too many requests from this computer — wait a moment":
     "इस कंप्यूटर से बहुत ज़्यादा अनुरोध — थोड़ा रुकें",
+  // Schedules, import, WhatsApp, updates (step 16)
+  "Imported: {{created}} new medicines, {{batches}} stock batches":
+    "इम्पोर्ट हुआ: {{created}} नई दवाइयाँ, {{batches}} स्टॉक बैच",
+  "{{n}} were already in the list (not duplicated)":
+    "{{n}} पहले से लिस्ट में थीं (दोबारा नहीं जोड़ी गईं)",
+  "Customer mobile": "ग्राहक का मोबाइल",
+  Send: "भेजें",
+  "Automatic updates are off in this copy": "इस कॉपी में ऑटो-अपडेट बंद है",
+  "Up to date": "नया वर्ज़न लगा हुआ है",
+  "Checking for updates…": "अपडेट देख रहे हैं…",
+  "Downloading the new version…": "नया वर्ज़न डाउनलोड हो रहा है…",
+  "New version ready — it installs when MediCare restarts":
+    "नया वर्ज़न तैयार — मेडीकेयर दोबारा खुलने पर इंस्टॉल होगा",
+  "Couldn't check (no internet?) — will try again later":
+    "जाँच नहीं हो पाई (इंटरनेट नहीं?) — बाद में फिर कोशिश होगी",
+  "Check now": "अभी जाँचें",
+  "H1 register": "H1 रजिस्टर",
+  "Schedule H1 / X register": "शेड्यूल H1 / X रजिस्टर",
+  "No Schedule H1 / X medicines sold in this period":
+    "इस समय में कोई शेड्यूल H1 / X दवा नहीं बिकी",
+  Patient: "मरीज़",
+  Doctor: "डॉक्टर",
+  "Batch (expiry)": "बैच (एक्सपायरी)",
+  Schedule: "शेड्यूल",
+  "H / H1 / X need a prescription": "H / H1 / X पर पर्ची ज़रूरी",
+  "None (OTC)": "कोई नहीं (OTC)",
+  "Schedule H (Rx)": "शेड्यूल H (Rx)",
+  "Schedule H1 (register)": "शेड्यूल H1 (रजिस्टर)",
+  "Schedule X (register)": "शेड्यूल X (रजिस्टर)",
+  "Import medicines & stock": "दवाइयाँ और स्टॉक इम्पोर्ट करें",
+  Import: "इम्पोर्ट",
 };

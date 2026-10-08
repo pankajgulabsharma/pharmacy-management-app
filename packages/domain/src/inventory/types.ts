@@ -71,6 +71,8 @@ export type StockMovement = {
 export type StockReceipt = {
   /** Unique id of the source document — makes receiving idempotent */
   refId: string;
+  /** Default "purchase"; "opening" = stock brought in from old records */
+  type?: Extract<StockMovementType, "purchase" | "opening">;
   note: string;
   at: Date;
   lines: StockReceiptLine[];

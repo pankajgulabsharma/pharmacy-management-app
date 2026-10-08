@@ -7,6 +7,7 @@
  *
  * TODO(api): delete this file when data comes from the backend.
  */
+import { needsRegister } from "@medicare/domain/medicines/schedule";
 import { mockMedicines } from "./data/mockMedicines";
 import { mockStockBatches } from "./data/mockStock";
 import type {
@@ -183,6 +184,12 @@ function buildDemo() {
   const rand = prng(20261003);
   const pick = <T>(list: readonly T[]) =>
     list[Math.floor(rand() * list.length)];
+  /** Schedule H1 / X bills need a named patient (register) — never "Walk-in" */
+  const patientFor = (cart: CartLine[], picked: string, named: string) =>
+    picked.startsWith("Walk-in") &&
+    cart.some((c) => needsRegister(medicinesById.get(c.medicineId)?.schedule))
+      ? named
+      : picked;
   const medicinesById = new Map<string, Medicine>(
     mockMedicines.map((m) => [m.id, m]),
   );
@@ -271,7 +278,10 @@ function buildDemo() {
         const built = buildSale(
           {
             cart,
-            customerName: method === "udhaar" ? named : hpick(CUSTOMERS),
+            customerName:
+              method === "udhaar"
+                ? named
+                : patientFor(cart, hpick(CUSTOMERS), named),
             customerId:
               method === "udhaar"
                 ? (customerIdByName.get(named) ?? null)
@@ -334,7 +344,7 @@ function buildDemo() {
       continue;
 
     const r = rand();
-    const customerName = pick(CUSTOMERS);
+    const customerName = patientFor(cart, pick(CUSTOMERS), "Ramesh Sharma");
     const method: PaymentDraft["method"] =
       r < 0.55 ? "cash" : r < 0.8 ? "upi" : r < 0.9 ? "card" : "udhaar";
     const payment: PaymentDraft = {

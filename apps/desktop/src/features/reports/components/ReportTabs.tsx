@@ -27,6 +27,7 @@ import {
   type StockReport,
 } from "@medicare/domain/reports/reports";
 import { plural } from "@medicare/domain/lib/format";
+import type { RegisterRow } from "@medicare/domain/medicines/schedule";
 import { ReportCard, ReportTable, ShareBar } from "./ReportTable";
 import { DailyChart } from "./DailyChart";
 import { SalesInsightsCard } from "./SalesInsightsCard";
@@ -800,5 +801,68 @@ export function StockTab({
         Stock is always “as of now” — the period filter doesn't apply here.
       </p>
     </div>
+  );
+}
+
+/** Schedule H1 / X register — patient, doctor, medicine, batch, quantity */
+export function RegisterTab({
+  rows,
+  periodLabel,
+}: {
+  rows: readonly RegisterRow[];
+  periodLabel: string;
+}) {
+  return (
+    <ReportTable
+      title="Schedule H1 / X register"
+      subtitle={`${periodLabel} · keep for 3 years · Export → print or save`}
+      rows={rows}
+      getKey={(r) => `${r.billNo}|${r.medicine}`}
+      empty="No Schedule H1 / X medicines sold in this period"
+      maxHeightClass="max-h-[70vh]"
+      columns={[
+        {
+          key: "date",
+          label: "Date",
+          width: "w-[130px]",
+          render: (r) =>
+            new Date(r.date).toLocaleString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+        },
+        {
+          key: "bill",
+          label: "Bill",
+          width: "w-[90px]",
+          render: (r) => <CodeChip>{r.billNo}</CodeChip>,
+        },
+        { key: "patient", label: "Patient", render: (r) => r.patient },
+        { key: "doctor", label: "Doctor", render: (r) => r.doctor },
+        {
+          key: "medicine",
+          label: "Medicine",
+          render: (r) => (
+            <>
+              {r.medicine}{" "}
+              <span className="text-[10px] font-bold text-red-600">
+                {r.schedule}
+              </span>
+            </>
+          ),
+        },
+        { key: "batch", label: "Batch (expiry)", render: (r) => r.batches },
+        {
+          key: "qty",
+          label: "Qty",
+          align: "right",
+          width: "w-[90px]",
+          render: (r) => r.qty,
+        },
+      ]}
+    />
   );
 }
