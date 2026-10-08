@@ -4,4 +4,4 @@
  * on the provider's computer, never in this repository).
  * Empty = no keys can be checked yet (the installed app refuses to build).
  */
-export const LICENSE_PUBLIC_KEY = "";
+export const LICENSE_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAT4UeXQWZEPPV5NSHOKccFnv501O3Qp2HbZy6C7PB/wM=\n-----END PUBLIC KEY-----\n";
