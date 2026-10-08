@@ -15,6 +15,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "oxlint apps packages",
     "dev:server": "npm run dev -w @medicare/server",
+    "dev:server:license": "npm run dev -w @medicare/server -- --license",
     "db:seed": "npm run db:seed -w @medicare/server --",
     "db:studio": "npm run db:studio -w @medicare/server",
     "installer": "npm run build && npm --prefix installer install && npm --prefix installer run dist",

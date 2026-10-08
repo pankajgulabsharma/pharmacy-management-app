@@ -196,7 +196,7 @@ const RAW: Omit<Medicine, "schedule">[] = [
     salePrice: 82,
     minStock: 10,
     gstPercent: 5,
-    status: "inactive", // discontinued by the company — shows the Inactive filter
+    status: "active",
   },
   {
     id: "m11",
@@ -340,7 +340,7 @@ const RAW: Omit<Medicine, "schedule">[] = [
     salePrice: 27,
     minStock: 15,
     gstPercent: 5,
-    status: "active",
+    status: "inactive", // discontinued by the company — shows the Inactive filter
   },
   {
     id: "m20",

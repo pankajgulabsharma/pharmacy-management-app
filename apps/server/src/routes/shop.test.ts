@@ -287,20 +287,8 @@ describe("billing on the server", () => {
 
   it("Schedule H1: needs patient + doctor; the bill line keeps its schedule", async () => {
     const { input } = await cartFor();
-    // Taxim (H1) is inactive and out of stock in the demo — fix that first
-    database.raw
-      .prepare("UPDATE medicines SET status = 'active' WHERE id = 'm10'")
-      .run();
-    const taxim = (await stock()).find((x) => x.medicineId === "m10")!;
-    await ok(
-      call("POST", "/api/stock/adjust", {
-        batchId: taxim.id,
-        qtyStrip: 5,
-        qtyLoose: 0,
-        reason: "Count",
-      }),
-    );
-    const cart = [{ ...input.cart[0], medicineId: taxim.medicineId }];
+    // Taxim 1g Injection is the demo H1 medicine (active, in stock)
+    const cart = [{ ...input.cart[0], medicineId: "m10" }];
     const walkIn = await call("POST", "/api/sales", {
       ...input,
       cart,

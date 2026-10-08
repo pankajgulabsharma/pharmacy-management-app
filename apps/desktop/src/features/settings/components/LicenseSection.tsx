@@ -74,6 +74,13 @@ export function LicenseSection() {
         <StatusBadge tone={st.tone} shape="rounded">
           {st.label}
         </StatusBadge>
+        {state.status === "off" ? (
+          <span className="text-[12px] text-muted-foreground">
+            {tr(
+              "Development copy — licence is checked only in the installed app. To try it here, start the server with: npm run dev:server:license",
+            )}
+          </span>
+        ) : null}
         {state.message ? (
           <span className="text-[12px] text-muted-foreground">
             {tr(state.message)}

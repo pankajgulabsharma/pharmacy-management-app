@@ -728,6 +728,8 @@ export const HI_UI: Record<string, string> = {
   "Save licence key": "लाइसेंस की सेव करें",
   "Licence saved — works until {{date}}":
     "लाइसेंस सेव हो गया — {{date}} तक चलेगा",
+  "Development copy — licence is checked only in the installed app. To try it here, start the server with: npm run dev:server:license":
+    "डेवलपमेंट कॉपी — लाइसेंस सिर्फ़ इंस्टॉल किए ऐप में जाँचा जाता है। यहाँ आज़माने के लिए सर्वर ऐसे चलाएँ: npm run dev:server:license",
   "Too many requests from this computer — wait a moment":
     "इस कंप्यूटर से बहुत ज़्यादा अनुरोध — थोड़ा रुकें",
   // Schedules, import, WhatsApp, updates (step 16)

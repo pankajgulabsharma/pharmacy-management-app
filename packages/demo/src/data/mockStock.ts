@@ -124,7 +124,7 @@ export const mockStockBatches: StockBatch[] = [
     medicineId: "m10",
     batchNo: "TX7788",
     expiry: "06/27",
-    qtyStrip: 0,
+    qtyStrip: 20,
     qtyLoose: 0,
     mrp: 95,
     purchasePrice: 60,

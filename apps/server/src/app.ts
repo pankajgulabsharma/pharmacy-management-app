@@ -20,9 +20,13 @@ import { security } from "./security";
 import { NotFoundError, isRuleError } from "./shop/errors";
 import { InputError } from "./schemas/medicine";
 
-/** Installed app sets LICENSE_ENFORCE=1; development and tests run without */
+/**
+ * Installed app sets LICENSE_ENFORCE=1; development and tests run without.
+ * `npm run dev:server:license` (--license) tries the trial in development.
+ */
 const defaultLicense = (): LicenseOptions => ({
-  enforce: process.env.LICENSE_ENFORCE === "1",
+  enforce:
+    process.env.LICENSE_ENFORCE === "1" || process.argv.includes("--license"),
   publicKey: LICENSE_PUBLIC_KEY,
   machine: machineCode(),
 });

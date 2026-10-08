@@ -25,6 +25,7 @@ written once and can never disagree.
 | `npm install` | Installs everything for all packages (once) |
 | `npm run dev` | Starts the desktop app at http://localhost:5173 |
 | `npm run dev:server` | Starts the server at http://localhost:4000/health |
+| `npm run dev:server:license` | Same, but with the licence on (30-day trial) — to try it in development |
 | `npm run db:seed` | Fills an empty database with the demo shop (`-- --reset` starts over) |
 | `npm run db:studio` | Opens the tables in the browser (https://local.drizzle.studio) |
 | `npm test` | Runs every test in every package |
