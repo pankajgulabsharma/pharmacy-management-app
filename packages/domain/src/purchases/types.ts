@@ -163,7 +163,7 @@ export type PurchaseReturnLine = {
 
 export type PurchaseReturn = {
   id: string;
-  /** Sequential, e.g. "DN-0007" */
+  /** Sequential, e.g. "DN/26-27/0007" (lib/docNo) */
   returnNo: string;
   purchaseId: string;
   invoiceNo: string;

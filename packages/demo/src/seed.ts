@@ -164,7 +164,7 @@ function buildDemo() {
         lines: [{ purchaseLineId: first.line.id, qty: Math.min(2, first.max) }],
       },
       returnable,
-      nextReturnNo(returns),
+      nextReturnNo(returns, at),
       at,
     );
     const r = applyIssue(batches, {
@@ -297,7 +297,7 @@ function buildDemo() {
           },
           medicinesById,
           unlimited,
-          nextBillNo(sales),
+          nextBillNo(sales, undefined, at),
           at,
         );
         if (built.sale.payment.method === "cash") {
@@ -367,7 +367,7 @@ function buildDemo() {
       },
       medicinesById,
       batches,
-      nextBillNo(sales),
+      nextBillNo(sales, undefined, at),
       at,
     );
     // Realistic cash: received = bill rounded up to the next ₹50
@@ -466,7 +466,7 @@ function buildDemo() {
         },
         medicinesById,
         batches,
-        nextBillNo(sales),
+        nextBillNo(sales, undefined, at),
         at,
       );
       const r = applyChange(batches, {
@@ -503,7 +503,7 @@ function buildDemo() {
         lines: [{ saleLineId: line.id, qtyStrip: 1, qtyLoose: 0 }],
       },
       saleReturns,
-      nextSaleReturnNo(saleReturns),
+      nextSaleReturnNo(saleReturns, at),
       at,
     );
     const r3 = applyChange(batches, {
@@ -552,7 +552,7 @@ function buildDemo() {
         },
         medicinesById,
         batches,
-        nextBillNo(sales),
+        nextBillNo(sales, undefined, at),
         at,
       );
       const r1 = applyChange(batches, {
@@ -578,7 +578,7 @@ function buildDemo() {
           ],
         },
         saleReturns,
-        nextSaleReturnNo(saleReturns),
+        nextSaleReturnNo(saleReturns, retAt),
         retAt,
       );
       const r2 = applyChange(batches, {

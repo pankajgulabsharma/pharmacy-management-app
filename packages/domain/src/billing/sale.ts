@@ -6,6 +6,8 @@ import { scheduleRule } from "../medicines/schedule";
 import type { StockBatch, StockChangeLine } from "../inventory/types";
 import type { Medicine } from "../medicines/types";
 import { newId } from "../lib/id";
+import { checkGstin } from "../lib/gstin";
+import { DEFAULT_BILL_PREFIX, nextDocNo } from "../lib/docNo";
 import { parseRupees, type Paise } from "../lib/money";
 import { cleanText } from "../lib/sanitize";
 import {
@@ -36,14 +38,17 @@ export class SaleError extends Error {
 
 const WALK_IN = "Walk-in customer";
 
-/** "INV-0001", "INV-0002", … — next after the highest existing number */
-export function nextBillNo(sales: readonly Pick<Sale, "billNo">[]): string {
-  let max = 0;
-  for (const s of sales) {
-    const n = Number(/^INV-(\d+)$/.exec(s.billNo)?.[1] ?? 0);
-    if (n > max) max = n;
-  }
-  return `INV-${String(max + 1).padStart(4, "0")}`;
+/** "INV/26-27/0001", … — this financial year's next bill number (lib/docNo) */
+export function nextBillNo(
+  sales: readonly Pick<Sale, "billNo" | "createdAt">[],
+  prefix = DEFAULT_BILL_PREFIX,
+  now = new Date(),
+): string {
+  return nextDocNo(
+    sales.map((s) => ({ no: s.billNo, at: s.createdAt })),
+    prefix,
+    now,
+  );
 }
 
 /** Quantity rules for one cart line against its medicine */
@@ -203,6 +208,8 @@ export function buildSale(
   batches: readonly StockBatch[],
   billNo: string,
   now: Date,
+  /** This shop's GSTIN (Settings) — needed for a B2B bill */
+  shopGstin = "",
 ): { sale: Sale; change: StockChangeLine[] } {
   if (input.cart.length === 0) throw new SaleError("Add at least one medicine");
   if (input.cart.length > BILLING_LIMITS.maxLines) {
@@ -227,9 +234,15 @@ export function buildSale(
     change.push(...built.change);
   }
 
-  const totals = calcSaleTotals(lines);
   const customerName =
     cleanText(input.customerName, BILLING_LIMITS.customerMax) || WALK_IN;
+  const b2b = b2bParty(input.customerGstin, shopGstin, customerName);
+  const totals = calcSaleTotals(lines);
+  // Another state: the whole GST is IGST (shown as such on the bill)
+  if (b2b.interstate) {
+    totals.cgstPaise = 0;
+    totals.sgstPaise = 0;
+  }
   const payErr = validatePayment(
     input.payment,
     totals.netPaise,
@@ -255,7 +268,35 @@ export function buildSale(
       status: input.payment.method === "udhaar" ? "udhaar" : "paid",
       customerId: input.customerId ?? null,
       returnedPaise: 0,
+      ...b2b,
     },
     change,
   };
+}
+
+/**
+ * B2B (GST) bill: the buyer's GSTIN must be valid, the shop must have one,
+ * and the bill needs the buyer's name. Different state → IGST.
+ */
+export function b2bParty(
+  rawGstin: string | undefined,
+  shopGstin: string,
+  customerName: string,
+): { customerGstin?: string; interstate?: boolean } {
+  const gstin = (rawGstin ?? "").trim().toUpperCase();
+  if (!gstin) return {};
+  const c = checkGstin(gstin);
+  if (!c.ok) throw new SaleError(`Customer GSTIN: ${c.reason}`);
+  if (!shopGstin)
+    throw new SaleError(
+      "Add your shop's GSTIN in Settings → Shop to make a GST (B2B) bill",
+    );
+  if (gstin === shopGstin)
+    throw new SaleError("Customer GSTIN is your own shop's GSTIN");
+  const name = customerName.trim().toLowerCase();
+  if (!name || name === WALK_IN.toLowerCase())
+    throw new SaleError("Enter the buyer's name for a GST (B2B) bill");
+  return gstin.slice(0, 2) === shopGstin.slice(0, 2)
+    ? { customerGstin: gstin }
+    : { customerGstin: gstin, interstate: true };
 }

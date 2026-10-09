@@ -47,6 +47,7 @@ export const saleInput = z
     cart: z.array(cartLine).min(1).max(BILLING_LIMITS.maxLines),
     customerName: str(200),
     customerId: id.nullish(),
+    customerGstin: str(20).optional(),
     doctor: str(200),
     counter: str(60),
     payment: z
@@ -213,3 +214,14 @@ export function parse<S extends z.ZodType>(
   if (!r.success) throw new InputError(describe(r.error));
   return r.data;
 }
+
+/* ---------------- Reads ---------------- */
+
+const isoDate = z.iso.datetime({ offset: true });
+export const salesQuery = z.object({
+  since: isoDate.optional(),
+  from: isoDate.optional(),
+  to: isoDate.optional(),
+});
+export const findQuery = z.object({ q: z.string().trim().min(2).max(40) });
+export const closingQuery = z.object({ at: isoDate });

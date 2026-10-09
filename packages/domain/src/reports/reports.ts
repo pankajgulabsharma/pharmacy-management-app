@@ -210,6 +210,8 @@ export type GstRow = {
   rate: number;
   outTaxablePaise: Paise;
   outGstPaise: Paise;
+  /** Part of outGstPaise charged as IGST (B2B buyer in another state) */
+  outIgstPaise: Paise;
   inTaxablePaise: Paise;
   inGstPaise: Paise;
 };
@@ -241,6 +243,7 @@ export function gstReport(
         rate,
         outTaxablePaise: 0,
         outGstPaise: 0,
+        outIgstPaise: 0,
         inTaxablePaise: 0,
         inGstPaise: 0,
       },
@@ -253,6 +256,7 @@ export function gstReport(
         rate,
         outTaxablePaise: 0,
         outGstPaise: 0,
+        outIgstPaise: 0,
         inTaxablePaise: 0,
         inGstPaise: 0,
       };
@@ -263,13 +267,18 @@ export function gstReport(
 
   // Output: sales
   const saleLineRate = new Map<string, number>();
+  const interstateLine = new Set<string>();
   for (const s of sales) {
-    for (const l of s.lines) saleLineRate.set(l.id, l.gstPercent);
+    for (const l of s.lines) {
+      saleLineRate.set(l.id, l.gstPercent);
+      if (s.interstate) interstateLine.add(l.id);
+    }
     if (!inRange(s.createdAt, range)) continue;
     for (const l of s.lines) {
       const r = row(l.gstPercent);
       r.outTaxablePaise += l.taxablePaise;
       r.outGstPaise += l.gstPaise;
+      if (s.interstate) r.outIgstPaise += l.gstPaise;
     }
   }
   // Output reduced by customer returns
@@ -281,6 +290,7 @@ export function gstReport(
       const r = row(rate);
       r.outTaxablePaise -= taxablePaise;
       r.outGstPaise -= gstPaise;
+      if (interstateLine.has(l.saleLineId)) r.outIgstPaise -= gstPaise;
     }
   }
   // Input: purchases

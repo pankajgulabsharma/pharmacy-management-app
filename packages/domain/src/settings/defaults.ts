@@ -1,3 +1,4 @@
+import { DEFAULT_BILL_PREFIX } from "../lib/docNo";
 import type { Settings } from "./types";
 
 /** Factory defaults — also what "Reset to defaults" restores */
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
     defaultPaymentMethod: "cash",
     receiptFooter:
       "Thank you! Get well soon. Medicines are returnable only with this bill.",
+    billPrefix: DEFAULT_BILL_PREFIX,
   },
   inventory: {
     expiringSoonDays: 90,

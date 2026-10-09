@@ -341,6 +341,10 @@ export const sales = sqliteTable(
     billedBy: text("billed_by").notNull().default(""),
     status: text("status", { enum: ["paid", "udhaar"] }).notNull(),
     imported: bool("imported"),
+    /** B2B bill: buyer's GSTIN ("" = normal retail bill) */
+    customerGstin: text("customer_gstin").notNull().default(""),
+    /** Buyer in another state → IGST */
+    interstate: bool("interstate"),
     // totals
     itemCount: integer("item_count").notNull(),
     grossPaise: paise("gross_paise"),
@@ -450,7 +454,10 @@ export const saleReturns = sqliteTable(
     roundOffPaise: paise("round_off_paise"),
     refundPaise: paise("refund_paise"),
   },
-  (t) => [index("sale_returns_sale_idx").on(t.saleId)],
+  (t) => [
+    index("sale_returns_sale_idx").on(t.saleId),
+    index("sale_returns_created_idx").on(t.createdAt),
+  ],
 );
 
 export const saleReturnLines = sqliteTable("sale_return_lines", {

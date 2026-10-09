@@ -8,13 +8,14 @@ import { apiGet, apiRequest, requireServer } from "@/lib/api";
 import { applyShopPatch } from "@/stores/applyShopPatch";
 
 /**
- * Stock on the shelf + its full history. The server owns it: sales,
- * purchases and returns change stock THERE (one transaction each) and send
- * back what changed. This store only shows it.
+ * Stock on the shelf. The server owns it: sales, purchases and returns
+ * change stock THERE (one transaction each) and send back what changed.
+ * Only purchase receipts are kept from the movement log (to check a
+ * purchase cancel) — a batch's full history is read when it is opened.
  */
 type InventoryState = {
   batches: StockBatch[];
-  /** Movement history, newest first */
+  /** Purchase receipts from the movement log (shop/history), newest first */
   movements: StockMovement[];
   source: "none" | "server";
   loadFromServer: () => Promise<void>;
@@ -35,7 +36,7 @@ export const useInventoryStore = create<InventoryState>()((set, get) => ({
     const r = await apiGet<{
       batches: StockBatch[];
       movements: StockMovement[];
-    }>("/api/stock");
+    }>("/api/stock?movements=purchase");
     set({ batches: r.batches, movements: r.movements, source: "server" });
   },
 

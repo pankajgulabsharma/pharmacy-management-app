@@ -16,6 +16,8 @@ export type BillingPrefs = {
   defaultPaymentMethod: PaymentMethod;
   /** Printed at the bottom of every bill */
   receiptFooter: string;
+  /** Start of every bill number: INV → INV/26-27/0001 (1–5 letters/digits) */
+  billPrefix: string;
 };
 
 export type InventoryPrefs = {

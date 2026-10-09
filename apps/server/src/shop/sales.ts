@@ -36,7 +36,9 @@ import {
 } from "../db/mappers";
 import * as t from "../db/schema";
 import { insertRows, updateRow, writeTx } from "../db/sync";
+import { loadSettings } from "../routes/settings";
 import { customerById, owedBy } from "./customers";
+import { usedNumbers } from "./docNumbers";
 import { NotFoundError } from "./errors";
 
 export function completeSale(
@@ -60,17 +62,23 @@ export function completeSale(
         throw new SaleError(`${customer.name}'s account is inactive`);
       customerName = customer.name;
     }
+    const settings = loadSettings(raw);
     const medicines = new Map(loadMedicinesSync(raw).map((m) => [m.id, m]));
     const before = loadBatches(raw);
-    const billNos = raw
-      .prepare("SELECT bill_no AS billNo FROM sales")
-      .all() as { billNo: string }[];
     const built = buildSale(
       { ...input, customerName },
       medicines,
       before,
-      nextBillNo(billNos),
+      nextBillNo(
+        usedNumbers(raw, "sales", "bill_no", now).map((d) => ({
+          billNo: d.no,
+          createdAt: d.at,
+        })),
+        settings.billing.billPrefix,
+        now,
+      ),
       now,
+      settings.shop.gstin,
     );
     const { change } = built;
     const sale: Sale = billedBy ? { ...built.sale, billedBy } : built.sale;
@@ -109,8 +117,15 @@ export function createSaleReturn(
   return writeTx(raw, () => {
     const [sale] = loadSales(raw, "id = ?", [input.saleId]);
     if (!sale) throw new NotFoundError("Bill not found");
-    const all = loadSaleReturns(raw);
-    const built = buildSaleReturn(sale, input, all, nextSaleReturnNo(all), now);
+    const earlier = loadSaleReturns(raw, "sale_id = ?", [sale.id]);
+    const returnNo = nextSaleReturnNo(
+      usedNumbers(raw, "sale_returns", "return_no", now).map((d) => ({
+        returnNo: d.no,
+        createdAt: d.at,
+      })),
+      now,
+    );
+    const built = buildSaleReturn(sale, input, earlier, returnNo, now);
     const { change } = built;
     const ret = billedBy ? { ...built.ret, billedBy } : built.ret;
     const before = loadBatches(raw);

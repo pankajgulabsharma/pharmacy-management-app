@@ -17,6 +17,8 @@ import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { ReceiptDialog } from "@/features/billing/components/ReceiptDialog";
+import { useOlderBills } from "@/features/billing/hooks/useSalesHistory";
+import type { Sale } from "@medicare/domain/billing/types";
 import { globalSearch, type SearchHit } from "@/features/search/globalSearch";
 
 const IS_MAC =
@@ -37,7 +39,7 @@ export function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
-  const [billId, setBillId] = useState<string | null>(null);
+  const [bill, setBill] = useState<Sale | null>(null);
 
   const canStock = useCan("stock");
   const medicines = useMedicineStore((s) => s.medicines);
@@ -47,19 +49,24 @@ export function GlobalSearch() {
   const purchases = usePurchaseStore((s) => s.purchases);
 
   const deferred = useDeferredValue(query);
+  // Bills older than this counter keeps come from the server
+  const older = useOlderBills(deferred).sales;
+  const allSales = useMemo(
+    () => (older.length ? [...sales, ...older] : sales),
+    [sales, older],
+  );
   const hits = useMemo(
     () =>
       globalSearch(deferred, {
         medicines,
-        sales,
+        sales: allSales,
         customers,
         suppliers: canStock ? suppliers : undefined,
         purchases: canStock ? purchases : undefined,
       }),
-    [deferred, medicines, sales, customers, suppliers, purchases, canStock],
+    [deferred, medicines, allSales, customers, suppliers, purchases, canStock],
   );
   const active = Math.min(index, Math.max(0, hits.length - 1));
-  const bill = billId ? (sales.find((s) => s.id === billId) ?? null) : null;
 
   // ⌘K / Ctrl+K focuses the search from anywhere
   useEffect(() => {
@@ -78,7 +85,7 @@ export function GlobalSearch() {
     setOpen(false);
     setQuery("");
     inputRef.current?.blur();
-    if (h.saleId) setBillId(h.saleId);
+    if (h.saleId) setBill(allSales.find((s) => s.id === h.saleId) ?? null);
     else if (h.to) navigate(h.to);
   };
 
@@ -169,7 +176,7 @@ export function GlobalSearch() {
         sale={bill}
         autoPrint={false}
         reprint
-        onClose={() => setBillId(null)}
+        onClose={() => setBill(null)}
       />
     </div>
   );

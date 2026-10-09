@@ -141,7 +141,7 @@ export type SalePayment = {
 
 export type Sale = {
   id: string;
-  /** Sequential, e.g. "INV-0042" */
+  /** Sequential, e.g. "INV/26-27/0042" (lib/docNo) */
   billNo: string;
   /** ISO timestamp */
   createdAt: string;
@@ -159,6 +159,10 @@ export type Sale = {
   returnedPaise: Paise;
   /** Customer account (khata) — always set for udhaar bills */
   customerId?: string | null;
+  /** B2B bill: the buyer's GSTIN (clinic, hospital, another shop) */
+  customerGstin?: string;
+  /** Buyer in another state → IGST instead of CGST + SGST */
+  interstate?: boolean;
   /**
    * History imported from before this app tracked stock (demo: older
    * sales). Counted in reports, but never moved stock and can't be returned.
@@ -175,6 +179,8 @@ export type SaleInput = {
   doctor: string;
   counter: string;
   payment: PaymentDraft;
+  /** Optional: buyer's GSTIN for a B2B tax invoice */
+  customerGstin?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -228,7 +234,7 @@ export type SaleReturnLine = {
 
 export type SaleReturn = {
   id: string;
-  /** Sequential, e.g. "SR-0003" */
+  /** Sequential, e.g. "SR/26-27/0003" (lib/docNo) */
   returnNo: string;
   saleId: string;
   billNo: string;

@@ -21,6 +21,8 @@ type Props<T> = {
   footer?: ReactNode[];
   empty: string;
   maxHeightClass?: string;
+  /** Button(s) in the card header, e.g. Export */
+  action?: ReactNode;
 };
 
 /** Read-only report table — same indigo header style as every other table */
@@ -33,10 +35,11 @@ export function ReportTable<T>({
   footer,
   empty,
   maxHeightClass = "max-h-[340px]",
+  action,
 }: Props<T>) {
   const tr = useTr();
   return (
-    <ReportCard title={title} subtitle={subtitle} flush>
+    <ReportCard title={title} subtitle={subtitle} action={action} flush>
       {rows.length === 0 ? (
         <p className="px-3 py-8 text-center text-[11px] text-muted-foreground">
           {empty}

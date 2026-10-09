@@ -15,34 +15,34 @@ packages/
 ```
 
 **Why this shape?** The same rules (FEFO, GST, stock ledger, udhaar…) must run
-in the UI *and* on the server. Keeping them in `packages/domain` means they are
+in the UI _and_ on the server. Keeping them in `packages/domain` means they are
 written once and can never disagree.
 
 ## Commands (run from the project root)
 
-| Command | What it does |
-|---|---|
-| `npm install` | Installs everything for all packages (once) |
-| `npm run dev` | Starts the desktop app at http://localhost:5173 |
-| `npm run dev:server` | Starts the server at http://localhost:4000/health |
+| Command                      | What it does                                                            |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `npm install`                | Installs everything for all packages (once)                             |
+| `npm run dev`                | Starts the desktop app at http://localhost:5173                         |
+| `npm run dev:server`         | Starts the server at http://localhost:4000/health                       |
 | `npm run dev:server:license` | Same, but with the licence on (30-day trial) — to try it in development |
-| `npm run db:seed` | Fills an empty database with the demo shop (`-- --reset` starts over) |
-| `npm run db:studio` | Opens the tables in the browser (https://local.drizzle.studio) |
-| `npm test` | Runs every test in every package |
-| `npm run typecheck` | Type-checks every package |
-| `npm run lint` | Lints the whole project |
-| `npm run build` | Production build of the desktop app |
+| `npm run db:seed`            | Fills an empty database with the demo shop (`-- --reset` starts over)   |
+| `npm run db:studio`          | Opens the tables in the browser (https://local.drizzle.studio)          |
+| `npm test`                   | Runs every test in every package                                        |
+| `npm run typecheck`          | Type-checks every package                                               |
+| `npm run lint`               | Lints the whole project                                                 |
+| `npm run build`              | Production build of the desktop app                                     |
 
 ## Sign-in & roles
 
 The server checks every password (stored only as a slow scrypt hash) and
 every action against the person's role — hiding a button is not enough.
 
-| Demo user (password = username) | Role | May change |
-|---|---|---|
-| `admin` | Owner | Everything, incl. Settings and Users |
-| `pharmacist` | Pharmacist | Bills, stock, purchases, suppliers, medicines; sees Reports |
-| `cashier` | Cashier | Bills, returns, held bills, customers & udhaar |
+| Demo user (password = username) | Role       | May change                                                  |
+| ------------------------------- | ---------- | ----------------------------------------------------------- |
+| `admin`                         | Owner      | Everything, incl. Settings and Users                        |
+| `pharmacist`                    | Pharmacist | Bills, stock, purchases, suppliers, medicines; sees Reports |
+| `cashier`                       | Cashier    | Bills, returns, held bills, customers & udhaar              |
 
 A brand-new (empty) database gets one account, `admin` / `admin`, which must
 choose a new password at the first sign-in. Add people in Settings → Users.
@@ -65,6 +65,8 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 14. ✅ Printing for every printer (thermal 58/80 mm, A5, A4 GST invoice) + barcodes & labels
 15. ✅ Licences for every shop (trial → key → on hold), security hardening
 16. ✅ Free auto-updates, Schedule H / H1 / X (register), import from old software (Marg / Tally / Excel), bill on WhatsApp
+17. ✅ One search for the whole app (same rules on every screen)
+18. ✅ Backups to Google Drive / pen drive (+ licence details), financial-year bill numbers, GST returns (GSTR-1 files, GSTR-2B match, B2B / IGST bills), year close, fast loading after years of bills
 
 ## Windows installer
 
@@ -72,26 +74,27 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 rights, no Node.js, no separate server: the app contains everything.
 
 **Build it** (any of these):
-- GitHub → Actions → *Windows installer* → *Run workflow* → download the
+
+- GitHub → Actions → _Windows installer_ → _Run workflow_ → download the
   `.exe` from the run's Artifacts (works from any computer, even a Mac);
 - on a Windows PC: `npm run installer` → `installer/release/`.
 
 On the first start the app asks what this computer is:
 
-| Choice | What it does |
-|---|---|
-| **Main computer** | Keeps the data (`%APPDATA%\MediCare Pharmacy\data`) and the daily backups. Starts empty with one account `admin` / `admin` (must be changed), or with the demo shop if you tick it. |
-| **Extra counter** | Keeps no data — connects to the main computer's address. |
+| Choice            | What it does                                                                                                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Main computer** | Keeps the data (`%APPDATA%\MediCare Pharmacy\data`) and the daily backups. Starts empty with one account `admin` / `admin` (must be changed). The installed app never contains demo data (development only: `npm run db:seed`). |
+| **Extra counter** | Keeps no data — connects to the main computer's address.                                                                                                                                                                        |
 
 Change it later with **Ctrl+Shift+S** (or Settings → This computer & network).
 Uninstalling never deletes the shop's data.
 
 ## Several counters (shop network)
 
-1. Main computer: Settings → **This computer & network** → *Share with
-   other counters*. Windows may ask once — allow **Private networks**.
+1. Main computer: Settings → **This computer & network** → _Share with
+   other counters_. Windows may ask once — allow **Private networks**.
    The screen shows the address, e.g. `http://192.168.1.10:4000`.
-2. Each other counter: install the same app → *Extra counter* → type that
+2. Each other counter: install the same app → _Extra counter_ → type that
    address (or just open it in Chrome / Edge).
 3. Every counter signs in with its own user; bills, stock and udhaar are
    the same everywhere and update live. Keep the app open on the main
@@ -100,14 +103,14 @@ Uninstalling never deletes the shop's data.
 ## Printing & barcodes
 
 - **Bills** print as a clean page in the paper size chosen for each
-  computer (Settings → Printing, or *Printer* on any bill): thermal 80 mm,
+  computer (Settings → Printing, or _Printer_ on any bill): thermal 80 mm,
   thermal 58 mm, A5, or A4 full GST tax invoice (HSN, batch, expiry, GST
   table, amount in words). Laser, inkjet, thermal and dot-matrix printers
   all work through their Windows driver. The installed app can print
   straight to a chosen printer (no dialog).
 - **Barcodes**: most packs already have one — scan it with any USB barcode
   scanner into Billing's search (exact match is added at once). For items
-  without one, Medicines → barcode icon → *Create barcode* makes a shop
+  without one, Medicines → barcode icon → _Create barcode_ makes a shop
   code (EAN-13 starting with 2) and prints stickers on a label printer
   (50×25, 38×25, 50×30 mm) or A4 sticker sheets (65 / 24 per sheet).
 
@@ -117,6 +120,7 @@ Uninstalling never deletes the shop's data.
 npm run release          # 1.0.3 → 1.0.4: sets the version, commits, tags
 git push && git push origin v1.0.4
 ```
+
 GitHub Actions builds the installer and publishes it as a GitHub Release.
 Every installed MediCare checks every 6 hours, downloads it quietly and
 asks "Restart now / Later" (data is never touched). Extra counters that
@@ -182,17 +186,17 @@ npm run license -- show MC1.xxxx   # what is inside a key
 
 What protects the shop:
 
-| Risk | Protection |
-|---|---|
-| Guessing passwords | Slow password hashes (scrypt), 5 wrong tries → 30 s pause, logged |
-| Someone doing what their role doesn't allow | Every request checked on the server (not just hidden buttons); refusals logged |
-| Bad / tricky input (incl. SQL injection) | Every input checked (Zod, strict); database only through prepared statements |
-| Stolen database file used to sign in | Only hashes of passwords and sign-in tokens are stored |
-| Another website / app talking to the server | CORS limited to the app; safety headers + strict Content-Security-Policy |
-| One computer flooding the server | Per-computer request limit |
+| Risk                                                            | Protection                                                                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Guessing passwords                                              | Slow password hashes (scrypt), 5 wrong tries → 30 s pause, logged                                                               |
+| Someone doing what their role doesn't allow                     | Every request checked on the server (not just hidden buttons); refusals logged                                                  |
+| Bad / tricky input (incl. SQL injection)                        | Every input checked (Zod, strict); database only through prepared statements                                                    |
+| Stolen database file used to sign in                            | Only hashes of passwords and sign-in tokens are stored                                                                          |
+| Another website / app talking to the server                     | CORS limited to the app; safety headers + strict Content-Security-Policy                                                        |
+| One computer flooding the server                                | Per-computer request limit                                                                                                      |
 | Code injected into the installed app (e.g. to skip the licence) | Electron locked down: no Node in pages, sandbox, can't run as Node / with debugger, pages can't navigate away or use camera/mic |
-| Staff misuse | Roles (cashier can't change stock or prices); every bill and return records who made it |
-| Data loss | Daily automatic backups + restore with a safety copy |
+| Staff misuse                                                    | Roles (cashier can't change stock or prices); every bill and return records who made it                                         |
+| Data loss                                                       | Daily automatic backups + restore with a safety copy                                                                            |
 
 Honest limits: anyone who can sit at the main computer with its Windows
 password can copy the data folder — keep that Windows account password-
@@ -205,9 +209,55 @@ removes Windows' "unknown publisher" warning.
 `apps/server/data/medicare.sqlite` — one file, never committed to git.
 
 **Backups** — `apps/server/data/backups/`:
+
 - made automatically once a day (the last 30 are kept), and with
-  Settings → Backup & restore → *Backup now*;
-- *Download* saves a copy (keep one on a pen drive); *Bring a backup file*
+  Settings → Backup & restore → _Backup now_;
+- _Download_ saves a copy (keep one on a pen drive); _Bring a backup file_
   adds one back from a pen drive / another PC;
-- *Restore* puts every counter back to that moment — a safety copy of the
+- _Restore_ puts every counter back to that moment — a safety copy of the
   current data is made first, so a restore can itself be undone.
+- zipped (`.sqlite.gz`, ~10× smaller); older `.sqlite` files still work;
+- **second copy outside the computer** (free): Settings → Backup → choose
+  Google Drive for desktop (`G:\My Drive`), OneDrive or a pen drive. Every
+  backup is copied to `…\MediCare Backups\<shop> (<machine code>)\`
+  with `LICENCE-INFO.txt` (shop, computer, machine code, licence key, what
+  to do on a new computer). A missing drive is shown in Settings;
+- **year-end**: the first backup of every financial year is kept for ever.
+
+## Bill numbers
+
+`INV/26-27/0001` — one series per financial year (1 April → 31 March),
+starting again at 0001 every 1 April, as GST requires (max 16 characters).
+Sales returns `SR/26-27/…`, debit notes `DN/26-27/…`. The prefix can be
+changed in Settings → Billing. Older `INV-0816` style numbers simply
+continue (`INV/26-27/0817`).
+
+## GST returns (free)
+
+- **B2B bill**: Billing → _+ GSTIN (B2B bill)_. A buyer in another state is
+  charged IGST (printed as such).
+- **GSTR-3B**: Reports → GST — output vs input tax per slab.
+- **GSTR-1**: Reports → GST → _Download GSTR-1 files_ — a zip with b2b,
+  b2cs, cdnr, hsn(b2b), hsn(b2c), docs in the GST Offline Tool's CSV format.
+  Import them in the free Offline Tool (or give them to the CA), upload the
+  JSON it makes. Uploading straight from the app would need a paid GSP —
+  not used.
+- **GSTR-2B match**: download the GSTR-2B JSON from the portal (free) and
+  open it in Reports → GST: every supplier bill is matched with purchases
+  (matched / tax differs / not entered / supplier hasn't filed).
+- E-invoice (turnover above ₹5 crore) and e-way bills (wholesale) are not
+  needed for a retail pharmacy.
+
+## Year close (31 March)
+
+Nothing to run: bill numbers restart by themselves, a year-end backup is
+kept, balances and stock carry on. Reports → Stock → _Closing stock on
+31 Mar_ gives the year's closing stock (from the stock register).
+Reports have _This year (FY)_ / _Last year (FY)_ periods.
+
+## Fast after years of bills
+
+Counters keep only the last 90 days of bills (+ every udhaar bill for khata
+balances) and purchase receipts from the stock register. Older bills,
+past report periods and a batch's full history are read from the main
+computer when a screen needs them — nothing is ever deleted.

@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("medicareDesktop", {
   /** Settings → This computer */
   openSetup: () => ipcRenderer.invoke("app:open-setup"),
   openDataFolder: () => ipcRenderer.invoke("app:open-data-folder"),
+  chooseFolder: () => ipcRenderer.invoke("app:choose-folder"),
   /** Version + automatic updates */
   updates: () => ipcRenderer.invoke("app:updates"),
   checkUpdates: () => ipcRenderer.invoke("app:check-updates"),

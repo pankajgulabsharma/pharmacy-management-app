@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { toGstinInput } from "@medicare/domain/lib/gstin";
 import { UserRound, Stethoscope, MonitorSmartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,11 @@ type Props = {
   onCounterChange: (v: string) => void;
   doctors: string[];
   counters: string[];
+  /** B2B (GST) bill: buyer's GSTIN (null = normal bill, field closed) */
+  gstin: string | null;
+  onGstinChange: (v: string | null) => void;
+  /** The shop has a GSTIN (Settings) — else no B2B bills */
+  canB2b: boolean;
 };
 
 const fieldStyle = cn(
@@ -40,19 +46,34 @@ export function BillingContextBar({
   onCounterChange,
   doctors,
   counters,
+  gstin,
+  onGstinChange,
+  canB2b,
 }: Props) {
   const { t } = useTranslation();
+  const showGstin = canB2b && gstin !== null;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0 p-0.5">
       {/* Customer */}
       <div className="min-w-0 flex flex-col gap-2">
-        <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-          <span className="h-5 w-5 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <UserRound className="h-3 w-3" />
-          </span>
-          {t("billing.customerName")}
-        </label>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
+            <span className="h-5 w-5 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <UserRound className="h-3 w-3" />
+            </span>
+            {t("billing.customerName")}
+          </label>
+          {canB2b ? (
+            <button
+              type="button"
+              onClick={() => onGstinChange(showGstin ? null : "")}
+              className="ml-auto text-[10px] text-primary hover:underline"
+            >
+              {showGstin ? tr("Remove GSTIN") : tr("+ GSTIN (B2B bill)")}
+            </button>
+          ) : null}
+        </div>
         <div className="relative">
           <Input
             ref={customerRef}
@@ -73,6 +94,17 @@ export function BillingContextBar({
             </button>
           ) : null}
         </div>
+        {showGstin ? (
+          <Input
+            value={gstin ?? ""}
+            onChange={(e) => onGstinChange(toGstinInput(e.target.value))}
+            placeholder={tr("Buyer's GSTIN, e.g. 27AAPFU0939F1ZV")}
+            aria-label={tr("Buyer's GSTIN")}
+            className={cn(fieldStyle, "pl-3 font-mono uppercase")}
+            autoComplete="off"
+            autoFocus={gstin === ""}
+          />
+        ) : null}
       </div>
 
       {/* Prescribed By */}

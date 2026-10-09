@@ -29,6 +29,8 @@ type Props = {
   /** Shown when paying by udhaar: the customer account picker */
   udhaarSlot?: React.ReactNode;
   billNo: string;
+  /** B2B buyer in another state → IGST */
+  interstate?: boolean;
   lines: BillLineView[];
   totals: SaleTotals;
   payment: PaymentDraft;
@@ -57,6 +59,7 @@ const PAY_INPUT = cn(
 export const BillSummaryPanel = memo(function BillSummaryPanel({
   udhaarSlot,
   billNo,
+  interstate = false,
   lines,
   totals,
   payment,
@@ -167,11 +170,19 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   valueClass="text-emerald-600 dark:text-emerald-400"
                 />
               ) : null}
-              <Row
-                label="GST included (CGST + SGST)"
-                value={`${inrFromPaise(totals.cgstPaise)} + ${inrFromPaise(totals.sgstPaise)}`}
-                valueClass="text-muted-foreground"
-              />
+              {interstate ? (
+                <Row
+                  label="GST included (IGST — other state)"
+                  value={inrFromPaise(totals.gstPaise)}
+                  valueClass="text-muted-foreground"
+                />
+              ) : (
+                <Row
+                  label="GST included (CGST + SGST)"
+                  value={`${inrFromPaise(totals.cgstPaise)} + ${inrFromPaise(totals.sgstPaise)}`}
+                  valueClass="text-muted-foreground"
+                />
+              )}
               <Row
                 label="Round off"
                 value={signedInrFromPaise(totals.roundOffPaise)}

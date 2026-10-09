@@ -21,12 +21,15 @@ import {
 } from "@medicare/domain/lib/money";
 import { useSalesStore } from "../store/useSalesStore";
 import { saleSearch } from "@medicare/domain/billing/search";
+import { upsertById } from "@medicare/domain/shop/patch";
+import { useOlderBills } from "../hooks/useSalesHistory";
 import {
   BILLING_LIMITS,
   REFUND_MODE_LABELS,
   SALE_RETURN_REASONS,
   type RefundMode,
   type Sale,
+  type SaleReturn,
 } from "@medicare/domain/billing/types";
 import {
   getReturnableSaleLines,
@@ -72,24 +75,41 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Older bills (beyond what this counter keeps) come from the server
+  const older = useOlderBills(deferredQuery);
+  const [oldPick, setOldPick] = useState<{
+    sale: Sale;
+    returns: SaleReturn[];
+  } | null>(null);
   const list = useMemo(
     () =>
-      saleSearch.filter(sales, deferredQuery, {
+      saleSearch.filter([...sales, ...older.sales], deferredQuery, {
         keep: (s) => !s.imported,
         limit: MAX_LIST,
       }),
-    [sales, deferredQuery],
+    [sales, older, deferredQuery],
   );
-  const sale = saleId ? (sales.find((s) => s.id === saleId) ?? null) : null;
+  const sale = saleId
+    ? (sales.find((s) => s.id === saleId) ??
+      (oldPick?.sale.id === saleId ? oldPick.sale : null))
+    : null;
+  // Its earlier returns (an old bill's are fetched with it)
+  const returnsOfSale = useMemo(
+    () =>
+      sale
+        ? upsertById(
+            oldPick?.sale.id === sale.id ? oldPick.returns : [],
+            saleReturns,
+          ).filter((r) => r.saleId === sale.id)
+        : [],
+    [sale, oldPick, saleReturns],
+  );
 
   const rows = useMemo(
-    () => (sale ? getReturnableSaleLines(sale, saleReturns) : []),
-    [sale, saleReturns],
+    () => (sale ? getReturnableSaleLines(sale, returnsOfSale) : []),
+    [sale, returnsOfSale],
   );
-  const previous = useMemo(
-    () => (sale ? saleReturns.filter((r) => r.saleId === sale.id) : []),
-    [sale, saleReturns],
-  );
+  const previous = returnsOfSale;
 
   const totals = useMemo(() => {
     let raw = 0;
@@ -106,6 +126,11 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
   }, [rows, qty, sale]);
 
   const pickSale = (s: Sale) => {
+    if (older.sales.some((o) => o.id === s.id))
+      setOldPick({
+        sale: s,
+        returns: older.saleReturns.filter((r) => r.saleId === s.id),
+      });
     setSaleId(s.id);
     setQty({});
     setRefundMode(s.status === "udhaar" ? "udhaar_adjust" : "cash");

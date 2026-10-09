@@ -31,7 +31,7 @@ type Props = {
   /** Print as soon as the bill is shown (Save and Print) */
   autoPrint: boolean;
   onClose: () => void;
-  /** Reprint from search: "Bill INV-0042" instead of "… saved" */
+  /** Reprint from search: "Bill INV/26-27/0042" instead of "… saved" */
   reprint?: boolean;
 };
 

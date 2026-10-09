@@ -1,11 +1,15 @@
-import { useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModalShell } from "@/components/common/ModalShell";
 import { CodeChip } from "@/components/common/CodeChip";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useInventoryStore } from "../store/useInventoryStore";
-import type { StockMovementType } from "@medicare/domain/inventory/types";
+import type {
+  StockMovement,
+  StockMovementType,
+} from "@medicare/domain/inventory/types";
+import { apiGet } from "@/lib/api";
 
 type Props = {
   /** Batch to show; null = closed */
@@ -65,12 +69,34 @@ const balance = (strip: number, loose: number, unit: string) =>
 export function BatchHistoryDialog({ batchId, onClose }: Props) {
   const titleId = useId();
   const batches = useInventoryStore((s) => s.batches);
-  const movements = useInventoryStore((s) => s.movements);
   const medicines = useMedicineStore((s) => s.medicines);
+  const batch = batches.find((b) => b.id === batchId) ?? null;
+
+  // The full history lives on the server (counters don't keep every sale's
+  // movement); fetched again whenever this batch's stock changes
+  const [loaded, setLoaded] = useState<{
+    for: string;
+    movements: StockMovement[];
+    error?: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!batchId) return;
+    let live = true;
+    apiGet<{ movements: StockMovement[] }>(
+      `/api/stock/batches/${encodeURIComponent(batchId)}/movements`,
+    ).then(
+      (r) => live && setLoaded({ for: batchId, movements: r.movements }),
+      (e: Error) =>
+        live && setLoaded({ for: batchId, movements: [], error: e.message }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [batchId, batch]);
+  const movements = loaded?.for === batchId ? loaded.movements : null;
 
   const data = useMemo(() => {
-    if (!batchId) return null;
-    const batch = batches.find((b) => b.id === batchId) ?? null;
+    if (!batchId || !movements) return null;
     const medicine =
       medicines.find((m) => m.id === (batch?.medicineId ?? "")) ?? null;
     // Oldest first, with the running balance after each movement
@@ -84,16 +110,18 @@ export function BatchHistoryDialog({ batchId, onClose }: Props) {
       loose += m.qtyLooseDelta;
       return { m, strip, loose };
     });
-    return { batch, medicine, rows };
-  }, [batchId, batches, movements, medicines]);
+    return { medicine, rows };
+  }, [batchId, batch, movements, medicines]);
 
-  if (!batchId || !data) return null;
-  const { batch, medicine, rows } = data;
+  if (!batchId) return null;
+  const medicine = data?.medicine ?? null;
+  const rows = data?.rows ?? [];
   const unit = medicine?.unit ?? "STP";
-  const matches = batch
-    ? rows.at(-1)?.strip === batch.qtyStrip &&
-      rows.at(-1)?.loose === batch.qtyLoose
-    : true;
+  const matches =
+    batch && data
+      ? rows.at(-1)?.strip === batch.qtyStrip &&
+        rows.at(-1)?.loose === batch.qtyLoose
+      : true;
 
   return (
     <ModalShell
@@ -131,9 +159,13 @@ export function BatchHistoryDialog({ batchId, onClose }: Props) {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto">
-        {rows.length === 0 ? (
+        {!data || rows.length === 0 ? (
           <p className="p-8 text-center text-[12px] text-muted-foreground">
-            No stock movements recorded for this batch.
+            {!data
+              ? "Loading…"
+              : loaded?.error
+                ? loaded.error
+                : "No stock movements recorded for this batch."}
           </p>
         ) : (
           <table className="w-full text-[11px] border-collapse">

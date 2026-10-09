@@ -221,7 +221,7 @@ describe("purchases on the server", () => {
         lines: [{ purchaseLineId: p.lines[0].id, qty: 2 }],
       }),
     );
-    expect(ret.returnNo).toMatch(/^DN-\d{4}$/);
+    expect(ret.returnNo).toMatch(/^DN\/\d\d-\d\d\/\d{4}$/);
     expect(await qtyOf("TEST0")).toBe(before - 2);
     const saved = (await purchasesNow()).find((x) => x.id === p.id)!;
     expect(getDuePaise(saved)).toBe(0);
@@ -262,7 +262,7 @@ describe("billing on the server", () => {
     const { b, input } = await cartFor();
     const before = (await qtyOf(b.batchNo))!;
     const { sale } = await ok(call("POST", "/api/sales", input));
-    expect(sale.billNo).toMatch(/^INV-\d{4}$/);
+    expect(sale.billNo).toMatch(/^INV\/\d\d-\d\d\/\d{4}$/);
     // Who made it comes from the sign-in, and is kept with the bill
     expect(sale.billedBy).toBe("Pankaj Sharma");
     const saved = (await ok(call("GET", "/api/sales"))).sales.find(
@@ -366,7 +366,7 @@ describe("billing on the server", () => {
         lines: [{ saleLineId: sale.lines[0].id, qtyStrip: 1, qtyLoose: 0 }],
       }),
     );
-    expect(ret.returnNo).toMatch(/^SR-\d{4}$/);
+    expect(ret.returnNo).toMatch(/^SR\/\d\d-\d\d\/\d{4}$/);
     expect(ret.billedBy).toBe("Pankaj Sharma");
     expect(patch.sales[0].returnedPaise).toBe(ret.refundPaise);
     expect(
@@ -559,5 +559,137 @@ describe("reports stay right after a return", () => {
       }),
     );
     expect(await today()).toBe(before - ret.refundPaise);
+  });
+});
+
+describe("counters load only what they need (fast after years of bills)", () => {
+  /** Move one cash bill and one udhaar bill (with its returns) a year back */
+  function ageBills() {
+    const old = "2025-06-15T10:00:00.000Z";
+    const cash = database.raw
+      .prepare(
+        "SELECT id, bill_no AS no FROM sales WHERE status <> 'udhaar' LIMIT 1",
+      )
+      .get() as { id: string; no: string };
+    const udhaar = database.raw
+      .prepare("SELECT id FROM sales WHERE status = 'udhaar' LIMIT 1")
+      .get() as { id: string };
+    for (const id of [cash.id, udhaar.id]) {
+      database.raw
+        .prepare("UPDATE sales SET created_at = ? WHERE id = ?")
+        .run(old, id);
+      database.raw
+        .prepare("UPDATE sale_returns SET created_at = ? WHERE sale_id = ?")
+        .run(old, id);
+    }
+    return { cash, udhaar };
+  }
+
+  it("recent window: last bills + EVERY udhaar bill (khata stays right)", async () => {
+    const { cash, udhaar } = ageBills();
+    const since = new Date(Date.now() - 90 * 86_400_000).toISOString();
+    const r = await ok(
+      call("GET", `/api/sales?since=${encodeURIComponent(since)}`),
+    );
+    const ids = new Set(r.sales.map((s: Sale) => s.id));
+    expect(ids.has(cash.id)).toBe(false);
+    expect(ids.has(udhaar.id)).toBe(true);
+    // every bill has its lines
+    expect(r.sales.every((s: Sale) => s.lines.length > 0)).toBe(true);
+    const all = await ok(call("GET", "/api/sales"));
+    expect(r.sales.length).toBeLessThan(all.sales.length);
+  });
+
+  it("a past period is fetched on demand (last year's GST), with its returns", async () => {
+    const { cash } = ageBills();
+    const r = await ok(
+      call(
+        "GET",
+        `/api/sales?from=${encodeURIComponent("2025-06-01T00:00:00.000Z")}&to=${encodeURIComponent("2025-07-01T00:00:00.000Z")}`,
+      ),
+    );
+    expect(r.sales.map((s: Sale) => s.id)).toContain(cash.id);
+    expect(r.sales.every((s: Sale) => s.createdAt.startsWith("2025-06"))).toBe(
+      true,
+    );
+  });
+
+  it("an old bill is found by number or customer (reprint, return)", async () => {
+    const { cash } = ageBills();
+    const r = await ok(
+      call("GET", `/api/sales/find?q=${encodeURIComponent(cash.no.slice(-4))}`),
+    );
+    expect(r.sales.map((s: Sale) => s.id)).toContain(cash.id);
+    // LIKE wildcards typed by a user are plain text
+    expect(
+      (await ok(call("GET", "/api/sales/find?q=%25%25%25"))).sales,
+    ).toEqual([]);
+    expect((await call("GET", "/api/sales/find?q=a")).statusCode).toBe(400);
+  });
+
+  it("stock: counters keep purchase receipts only; a batch's full story on demand", async () => {
+    const { input } = await cartFor();
+    const { sale } = await ok(call("POST", "/api/sales", input));
+    const b = { id: sale.lines[0].allocations[0].batchId as string };
+    const lean = await ok(call("GET", "/api/stock?movements=purchase"));
+    expect(
+      lean.movements.every((m: { type: string }) =>
+        ["opening", "purchase", "purchase_reversal"].includes(m.type),
+      ),
+    ).toBe(true);
+    const story = await ok(call("GET", `/api/stock/batches/${b.id}/movements`));
+    expect(
+      story.movements.some((m: { type: string }) => m.type === "sale"),
+    ).toBe(true);
+    expect(
+      story.movements.every((m: { batchId: string }) => m.batchId === b.id),
+    ).toBe(true);
+  });
+});
+
+describe("GST (B2B) bills on the server", () => {
+  it("saves the buyer's GSTIN; another state is IGST; it comes back on reload", async () => {
+    const { input } = await cartFor();
+    const { sale } = await ok(
+      call("POST", "/api/sales", {
+        ...input,
+        customerName: "Goa Hospital",
+        customerGstin: "30AAPFU0939F1Z8",
+      }),
+    );
+    expect(sale).toMatchObject({
+      customerGstin: "30AAPFU0939F1Z8",
+      interstate: true,
+    });
+    expect(sale.totals.cgstPaise).toBe(0);
+    const again = (await ok(call("GET", "/api/sales"))).sales.find(
+      (s: Sale) => s.id === sale.id,
+    );
+    expect(again).toMatchObject({
+      customerGstin: "30AAPFU0939F1Z8",
+      interstate: true,
+    });
+    const bad = await call("POST", "/api/sales", {
+      ...input,
+      customerName: "X",
+      customerGstin: "30AAPFU0939F1Z1",
+    });
+    expect(bad.statusCode).toBe(400);
+    expect(bad.json().error).toMatch(/GSTIN/);
+  });
+});
+
+describe("year close", () => {
+  it("closing stock at a past moment = today's stock minus what moved since", async () => {
+    const before = new Date().toISOString();
+    const { input } = await cartFor(2);
+    const { sale } = await ok(call("POST", "/api/sales", input));
+    const batchId = sale.lines[0].allocations[0].batchId as string;
+    const now = (await stock()).find((b) => b.id === batchId)!;
+    const closing = await ok(
+      call("GET", `/api/stock/closing?at=${encodeURIComponent(before)}`),
+    );
+    const then = closing.batches.find((b: StockBatch) => b.id === batchId);
+    expect(then.qtyStrip).toBe(now.qtyStrip + 2);
   });
 });

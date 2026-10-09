@@ -89,3 +89,10 @@ export function toGstinInput(value: string): string {
     .replace(/[^0-9A-Z]/g, "")
     .slice(0, 15);
 }
+
+/** "27-Maharashtra" — place of supply as GST returns write it */
+export function placeOfSupply(gstinOrCode: string): string {
+  const code = gstinOrCode.slice(0, 2);
+  const name = GST_STATES[code];
+  return name ? `${code}-${name}` : code;
+}

@@ -50,6 +50,7 @@ import {
 } from "@medicare/domain/billing/types";
 import {
   SaleError,
+  b2bParty,
   nextBillNo,
   validatePayment,
 } from "@medicare/domain/billing/sale";
@@ -90,6 +91,9 @@ export default function BillingPage() {
   /** Bill picked from "Recent bills" → opens Sales Return on it */
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
+  /** B2B (GST) bill: buyer's GSTIN — "" for a normal retail bill */
+  const [customerGstin, setCustomerGstin] = useState<string | null>(null);
+  const shopGstin = useSettingsStore((s) => s.shop.gstin);
   const [doctor, setDoctor] = useState<string>(() => doctors[0] ?? "");
   const [counter, setCounter] = useState<string>(defaultCounter);
   const [query, setQuery] = useState("");
@@ -137,7 +141,11 @@ export default function BillingPage() {
   const results = useSellableSearch(deferredQuery);
   const byBarcode = useBarcodeLookup();
   const bill = useBillView(cart);
-  const billNo = useMemo(() => nextBillNo(sales), [sales]);
+  const billPrefix = useSettingsStore((s) => s.billing.billPrefix);
+  const billNo = useMemo(
+    () => nextBillNo(sales, billPrefix),
+    [sales, billPrefix],
+  );
 
   /** Why the bill can't be saved yet (shown under the Save button) */
   const blockReason = useMemo(() => {
@@ -155,13 +163,28 @@ export default function BillingPage() {
       doctor,
     );
     if (rx) return rx;
+    if (customerGstin)
+      try {
+        b2bParty(customerGstin, shopGstin, customerName);
+      } catch (e) {
+        return (e as Error).message;
+      }
     return validatePayment(
       payment,
       bill.totals.netPaise,
       customerName,
       udhaarCustomerId,
     );
-  }, [cart.length, bill, payment, customerName, doctor, udhaarCustomerId]);
+  }, [
+    cart.length,
+    bill,
+    payment,
+    customerName,
+    doctor,
+    udhaarCustomerId,
+    customerGstin,
+    shopGstin,
+  ]);
 
   /* ---------------- cart ---------------- */
 
@@ -253,6 +276,7 @@ export default function BillingPage() {
     setCart([]);
     setPayment(freshPayment);
     setCustomerName("");
+    setCustomerGstin(null);
   }, [freshPayment]);
 
   /* ---------------- save / hold ---------------- */
@@ -271,6 +295,7 @@ export default function BillingPage() {
           doctor,
           counter,
           payment,
+          ...(customerGstin ? { customerGstin } : {}),
         });
         resetBill();
         setSelectedLineId(null);
@@ -300,6 +325,7 @@ export default function BillingPage() {
       resetBill,
       focusSearch,
       udhaarCustomerId,
+      customerGstin,
     ],
   );
 
@@ -556,6 +582,9 @@ export default function BillingPage() {
             onClearCustomer={() => setCustomerName("")}
             prescribedBy={doctor}
             onPrescribedByChange={setDoctor}
+            gstin={customerGstin}
+            onGstinChange={setCustomerGstin}
+            canB2b={!!shopGstin}
             counter={counter}
             onCounterChange={setCounter}
             doctors={doctors}
@@ -643,6 +672,12 @@ export default function BillingPage() {
         <div className="col-span-12 xl:col-span-3 min-h-0 overflow-hidden">
           <BillSummaryPanel
             billNo={billNo}
+            interstate={
+              !!customerGstin &&
+              customerGstin.length === 15 &&
+              !!shopGstin &&
+              customerGstin.slice(0, 2) !== shopGstin.slice(0, 2)
+            }
             lines={bill.lines}
             totals={bill.totals}
             payment={payment}

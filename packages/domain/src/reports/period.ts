@@ -1,4 +1,5 @@
 import { addDays, parseISODate, startOfDay, toISODate } from "../lib/date";
+import { financialYear } from "../lib/docNo";
 
 export type PeriodPreset =
   | "today"
@@ -8,6 +9,8 @@ export type PeriodPreset =
   | "90d"
   | "month"
   | "lastMonth"
+  | "fy"
+  | "lastFy"
   | "custom";
 
 export const PERIOD_LABELS: Record<PeriodPreset, string> = {
@@ -18,6 +21,8 @@ export const PERIOD_LABELS: Record<PeriodPreset, string> = {
   "90d": "Last 3 months",
   month: "This month",
   lastMonth: "Last month",
+  fy: "This year (FY)",
+  lastFy: "Last year (FY)",
   custom: "Custom",
 };
 
@@ -54,6 +59,14 @@ export function presetRange(
       const from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const to = new Date(today.getFullYear(), today.getMonth(), 0);
       return { from, to: endOfDay(to) };
+    }
+    // Financial year: 1 April → 31 March (GST returns, year close)
+    case "fy":
+      return { from: financialYear(today).from, to: endOfDay(today) };
+    case "lastFy": {
+      const fy = financialYear(today);
+      const last = financialYear(addDays(fy.from, -1));
+      return { from: last.from, to: endOfDay(addDays(fy.from, -1)) };
     }
   }
 }

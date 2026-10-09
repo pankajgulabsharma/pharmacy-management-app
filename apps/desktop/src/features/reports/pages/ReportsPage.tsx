@@ -2,6 +2,8 @@ import {
   registerCsv,
   scheduleRegister,
 } from "@medicare/domain/medicines/schedule";
+import { GstReturns } from "../components/GstReturns";
+import { YearCloseCard } from "../components/YearCloseCard";
 import { useMemo, useState } from "react";
 import {
   BarChart3,
@@ -23,7 +25,7 @@ import {
   SegmentedTabs,
   type SegmentedTab,
 } from "@/components/common/SegmentedTabs";
-import { useSalesStore } from "@/features/billing/store/useSalesStore";
+import { useSalesInRange } from "@/features/billing/hooks/useSalesHistory";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
@@ -68,13 +70,12 @@ const TABS: SegmentedTab<Tab>[] = [
 ];
 
 export default function ReportsPage() {
-  const sales = useSalesStore((s) => s.sales);
-  const saleReturns = useSalesStore((s) => s.saleReturns);
   const purchases = usePurchaseStore((s) => s.purchases);
   const debitNotes = usePurchaseStore((s) => s.returns);
   const batches = useInventoryStore((s) => s.batches);
   const medicines = useMedicineStore((s) => s.medicines);
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
+  const shopGstin = useSettingsStore((s) => s.shop.gstin);
 
   // Dashboard links like /reports?tab=sales&period=today
   const intent = useUrlIntent();
@@ -89,7 +90,17 @@ export default function ReportsPage() {
   const [preset, setPreset] = useState<PeriodPreset>(
     oneOf(
       intent.period,
-      ["today", "yesterday", "7d", "30d", "90d", "month", "lastMonth"] as const,
+      [
+        "today",
+        "yesterday",
+        "7d",
+        "30d",
+        "90d",
+        "month",
+        "lastMonth",
+        "fy",
+        "lastFy",
+      ] as const,
       "7d",
     ),
   );
@@ -106,6 +117,9 @@ export default function ReportsPage() {
     [preset, from, to],
   );
   const customInvalid = preset === "custom" && customRange(from, to) === null;
+  // Older periods are fetched from the server (counters keep ~90 days)
+  const history = useSalesInRange(range);
+  const { sales, saleReturns } = history;
   const periodLabel = describeRange(range);
 
   // Only the open tab is worked out (years of bills → no wasted work)
@@ -204,7 +218,18 @@ export default function ReportsPage() {
       />
 
       {/* Period — chips and custom dates always on one line */}
-      <div className="shrink-0 min-h-9 flex items-center">
+      <div className="shrink-0 min-h-9 flex items-center gap-3">
+        {tab !== "stock" && (history.loading || history.error) ? (
+          <span
+            className={
+              history.error
+                ? "order-last text-[11px] text-red-600"
+                : "order-last text-[11px] text-muted-foreground"
+            }
+          >
+            {history.error ?? "Loading older bills…"}
+          </span>
+        ) : null}
         {tab !== "stock" ? (
           <PeriodFilter
             preset={preset}
@@ -226,8 +251,24 @@ export default function ReportsPage() {
       <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
         {sr ? <SalesTab r={sr} periodLabel={periodLabel} /> : null}
         {pr ? <PurchasesTab r={pr} periodLabel={periodLabel} /> : null}
-        {gr ? <GstTab r={gr} periodLabel={periodLabel} /> : null}
-        {st ? <StockTab r={st} expiringDays={expiringDays} /> : null}
+        {gr ? (
+          <div className="space-y-3">
+            <GstTab r={gr} periodLabel={periodLabel} />
+            <GstReturns
+              sales={sales}
+              saleReturns={saleReturns}
+              purchases={purchases}
+              range={range}
+              shopGstin={shopGstin}
+            />
+          </div>
+        ) : null}
+        {st ? (
+          <div className="space-y-3">
+            <StockTab r={st} expiringDays={expiringDays} />
+            <YearCloseCard medicines={medicines} />
+          </div>
+        ) : null}
         {reg ? <RegisterTab rows={reg} periodLabel={periodLabel} /> : null}
       </div>
     </div>

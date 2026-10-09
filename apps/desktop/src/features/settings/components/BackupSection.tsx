@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, HardDriveDownload, RotateCcw, Upload } from "lucide-react";
+import {
+  CloudUpload,
+  Download,
+  FolderOpen,
+  HardDriveDownload,
+  RotateCcw,
+  Upload,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { fieldClass } from "@/components/common/formStyles";
+import { desktopBridge } from "@/lib/desktop";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -10,7 +21,7 @@ import { SettingsCard } from "./SettingsCard";
 
 type Backup = {
   name: string;
-  kind: "auto" | "manual" | "before-restore" | "uploaded";
+  kind: "auto" | "manual" | "before-restore" | "uploaded" | "year-end";
   sizeBytes: number;
   createdAt: string;
 };
@@ -23,7 +34,28 @@ const KIND: Record<
   manual: { label: "Manual", tone: "success" },
   "before-restore": { label: "Before restore", tone: "warning" },
   uploaded: { label: "From file", tone: "info" },
+  "year-end": { label: "Year-end (kept)", tone: "success" },
 };
+
+type Offsite = {
+  folder: string;
+  target: string;
+  lastCopyAt: string | null;
+  lastCopied: string | null;
+  lastError: string | null;
+};
+type BackupsResponse = {
+  dir: string;
+  keepAuto: number;
+  backups: Backup[];
+  offsite: Offsite;
+  suggestions: { label: string; path: string }[];
+};
+
+/** The folder picker opens on THIS computer — only useful on the main one */
+const onMainComputer = () =>
+  ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
+  !!desktopBridge()?.chooseFolder;
 
 const size = (b: number) =>
   b > 1_048_576
@@ -50,19 +82,43 @@ export function BackupSection() {
   const [keepAuto, setKeepAuto] = useState(30);
   const [busy, setBusy] = useState(false);
   const [restore, setRestore] = useState<Backup | null>(null);
+  const [offsite, setOffsite] = useState<Offsite | null>(null);
+  const [suggestions, setSuggestions] = useState<
+    BackupsResponse["suggestions"]
+  >([]);
+  const [folder, setFolder] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(
     () =>
-      apiGet<{ dir: string; keepAuto: number; backups: Backup[] }>(
-        "/api/backups",
-      ).then((r) => {
+      apiGet<BackupsResponse>("/api/backups").then((r) => {
         setList(r.backups);
         setDir(r.dir);
         setKeepAuto(r.keepAuto);
+        setOffsite(r.offsite);
+        setSuggestions(r.suggestions);
+        setFolder(r.offsite.folder);
       }, showError),
     [],
   );
+
+  const saveFolder = (f: string) =>
+    run(
+      () =>
+        apiRequest<{ offsite: Offsite }>("PUT", "/api/backups/offsite", {
+          folder: f,
+        }),
+      f
+        ? "Folder saved — the latest backup was copied there"
+        : "Second copy switched off",
+    );
+  const choose = async () => {
+    const f = await desktopBridge()?.chooseFolder?.();
+    if (f) {
+      setFolder(f);
+      void saveFolder(f);
+    }
+  };
   useEffect(() => void load(), [load]);
 
   /** Run one action, then refresh the list */
@@ -124,7 +180,7 @@ export function BackupSection() {
         <input
           ref={fileRef}
           type="file"
-          accept=".sqlite"
+          accept=".gz,.sqlite"
           hidden
           aria-label={tr("Backup file")}
           onChange={(e) => {
@@ -138,6 +194,107 @@ export function BackupSection() {
           }}
         />
       </div>
+
+      {offsite ? (
+        <div
+          className={cn(
+            "rounded-lg border p-3 space-y-2",
+            !offsite.folder || offsite.lastError
+              ? "border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/30"
+              : "border-border",
+          )}
+        >
+          <p className="text-[12px] font-semibold flex items-center gap-1.5">
+            <CloudUpload className="h-4 w-4" />
+            {tr("Second copy outside this computer")}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {offsite.folder
+              ? offsite.lastError
+                ? tr(offsite.lastError)
+                : offsite.lastCopyAt
+                  ? tr(
+                      "Last copied: {{date}} · with the licence details (LICENCE-INFO.txt)",
+                      {
+                        date: when(offsite.lastCopyAt),
+                      },
+                    )
+                  : tr("Not copied yet")
+              : tr(
+                  "Not set up — if this computer is stolen or breaks, the data goes with it. Choose your Google Drive (free 15 GB), OneDrive or a pen drive folder: every backup is copied there.",
+                )}
+          </p>
+          {suggestions.length > 0 && !offsite.folder ? (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((sg) => (
+                <Button
+                  key={sg.path}
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setFolder(sg.path);
+                    void saveFolder(sg.path);
+                  }}
+                  className="h-7 rounded-md text-[11px]"
+                >
+                  {tr("Use {{name}}", { name: sg.label })} ({sg.path})
+                </Button>
+              ))}
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              placeholder={"G:\\My Drive"}
+              aria-label={tr("Backup copy folder")}
+              className={cn(fieldClass, "h-8 flex-1 min-w-[220px] font-mono")}
+            />
+            {onMainComputer() ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void choose()}
+                className="h-8 rounded-lg text-[11px] gap-1"
+              >
+                <FolderOpen className="h-3.5 w-3.5" />
+                {tr("Choose…")}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              disabled={busy || folder.trim() === offsite.folder}
+              onClick={() => void saveFolder(folder.trim())}
+              className="h-8 rounded-lg text-[11px]"
+            >
+              {tr("Save")}
+            </Button>
+            {offsite.folder ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() =>
+                  run(
+                    () => apiRequest("POST", "/api/backups/offsite/copy"),
+                    "Copied",
+                  )
+                }
+                className="h-8 rounded-lg text-[11px]"
+              >
+                {tr("Copy now")}
+              </Button>
+            ) : null}
+          </div>
+          {offsite.target ? (
+            <p className="text-[10px] text-muted-foreground font-mono break-all">
+              → {offsite.target}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-[12px]">

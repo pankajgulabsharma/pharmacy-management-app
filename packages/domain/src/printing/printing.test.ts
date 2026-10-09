@@ -127,10 +127,16 @@ describe("printed bill", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 
-  it("GST summary splits CGST/SGST per rate", () => {
+  it("GST summary splits CGST/SGST per rate (IGST for another state)", () => {
     expect(gstSummary(sale)).toEqual([
-      { rate: 5, taxable: 320000, cgst: 8000, sgst: 8000, gst: 16000 },
+      { rate: 5, taxable: 320000, cgst: 8000, sgst: 8000, igst: 0, gst: 16000 },
     ]);
+    const b2b = { ...sale, customerGstin: "30AAPFU0939F1Z8", interstate: true };
+    expect(gstSummary(b2b)[0]).toMatchObject({ cgst: 0, sgst: 0, igst: 16000 });
+    const html = receiptHtml({ sale: b2b, shop, footer: "", format: "a4" });
+    expect(html).toContain("Buyer GSTIN:</b> 30AAPFU0939F1Z8");
+    expect(html).toContain("30-Goa");
+    expect(html).toContain("<th>IGST</th>");
   });
 });
 

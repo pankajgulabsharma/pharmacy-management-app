@@ -14,6 +14,11 @@ import {
   type PaymentMethod,
 } from "@medicare/domain/billing/types";
 import { checkGstin, toGstinInput } from "@medicare/domain/lib/gstin";
+import {
+  DOC_PREFIX_RE,
+  financialYear,
+  formatDocNo,
+} from "@medicare/domain/lib/docNo";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useSectionForm } from "../hooks/useSectionForm";
 import {
@@ -168,15 +173,19 @@ type BillingDraft = {
   defaultCounter: string;
   defaultPaymentMethod: PaymentMethod;
   receiptFooter: string;
+  billPrefix: string;
 };
-const noErrors = () => ({});
+const validateBilling = (d: BillingDraft) =>
+  DOC_PREFIX_RE.test(d.billPrefix)
+    ? {}
+    : { billPrefix: "1–5 letters or digits, starting with a letter" };
 
 export function BillingSection() {
   const id = useId();
   const saved = useSettingsStore((s) => s.billing);
   const counters = useSettingsStore((s) => s.counters);
   const updateBilling = useSettingsStore((s) => s.updateBilling);
-  const f = useSectionForm<BillingDraft>(saved, noErrors);
+  const f = useSectionForm<BillingDraft>(saved, validateBilling);
 
   return (
     <SettingsCard
@@ -237,6 +246,30 @@ export function BillingSection() {
             )}
           </div>
         </div>
+        <FormField
+          label="Bill number prefix"
+          htmlFor={`${id}-prefix`}
+          error={f.errors.billPrefix}
+          hint={`Bills look like ${formatDocNo(f.draft.billPrefix || "INV", financialYear(), 1)} — the count starts again at 0001 every 1 April`}
+          className="sm:col-span-2"
+        >
+          <Input
+            id={`${id}-prefix`}
+            value={f.draft.billPrefix}
+            maxLength={5}
+            onChange={(e) =>
+              f.set(
+                "billPrefix",
+                e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+              )
+            }
+            className={cn(
+              fieldClass,
+              "w-32 font-mono",
+              f.errors.billPrefix && invalidFieldClass,
+            )}
+          />
+        </FormField>
         <FormField
           label="Bill footer note"
           htmlFor={`${id}-footer`}

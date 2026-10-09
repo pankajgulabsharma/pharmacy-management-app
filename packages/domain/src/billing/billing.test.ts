@@ -288,11 +288,57 @@ describe("buildSale", () => {
     expect(validatePayment(split("10", "20"), 3000, "")).toBeNull();
   });
 
-  it("numbers bills sequentially", () => {
-    expect(nextBillNo([])).toBe("INV-0001");
-    expect(nextBillNo([{ billNo: "INV-0041" }, { billNo: "INV-0007" }])).toBe(
-      "INV-0042",
+  it("B2B bill: buyer's GSTIN checked; another state → IGST", () => {
+    const shop = "27AABCM1234F1ZX";
+    const named = { customerName: "City Clinic" };
+    const local = buildSale(
+      input({ ...named, customerGstin: "27AAPFU0939F1ZV" }),
+      meds,
+      BATCHES,
+      "INV-1",
+      NOW,
+      shop,
+    ).sale;
+    expect(local).toMatchObject({ customerGstin: "27AAPFU0939F1ZV" });
+    expect(local.interstate).toBeUndefined();
+    expect(local.totals.cgstPaise).toBeGreaterThan(0);
+    const goa = buildSale(
+      input({ ...named, customerGstin: "30AAPFU0939F1Z8" }),
+      meds,
+      BATCHES,
+      "INV-2",
+      NOW,
+      shop,
+    ).sale;
+    expect(goa.interstate).toBe(true);
+    expect(goa.totals.cgstPaise + goa.totals.sgstPaise).toBe(0);
+    expect(goa.totals.gstPaise).toBeGreaterThan(0);
+    const bad =
+      (over: Partial<SaleInput>, shopGstin = shop) =>
+      () =>
+        buildSale(input(over), meds, BATCHES, "INV-3", NOW, shopGstin);
+    expect(bad({ ...named, customerGstin: "27AAPFU0939F1ZX" })).toThrow(
+      /GSTIN/,
     );
+    expect(bad({ customerGstin: "27AAPFU0939F1ZV" })).toThrow(/buyer's name/);
+    expect(bad({ ...named, customerGstin: "27AAPFU0939F1ZV" }, "")).toThrow(
+      /shop's GSTIN/,
+    );
+  });
+
+  it("numbers bills per financial year", () => {
+    const at = NOW.toISOString();
+    expect(nextBillNo([], "INV", NOW)).toBe("INV/26-27/0001");
+    expect(
+      nextBillNo(
+        [
+          { billNo: "INV/26-27/0041", createdAt: at },
+          { billNo: "INV/26-27/0007", createdAt: at },
+        ],
+        "INV",
+        NOW,
+      ),
+    ).toBe("INV/26-27/0042");
   });
 });
 

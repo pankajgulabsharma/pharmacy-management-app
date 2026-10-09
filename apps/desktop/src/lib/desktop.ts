@@ -23,6 +23,8 @@ export type UpdateState = {
 export type DesktopBridge = {
   openSetup: () => Promise<void>;
   openDataFolder: () => Promise<void>;
+  /** Folder picker (main computer) — null when cancelled */
+  chooseFolder?: () => Promise<string | null>;
   updates: () => Promise<UpdateState>;
   checkUpdates: () => Promise<UpdateState>;
   listPrinters: () => Promise<{ name: string; isDefault: boolean }[]>;

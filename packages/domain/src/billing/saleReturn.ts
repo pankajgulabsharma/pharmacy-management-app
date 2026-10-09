@@ -4,6 +4,7 @@
  */
 import type { StockChangeLine } from "../inventory/types";
 import { newId } from "../lib/id";
+import { nextDocNo } from "../lib/docNo";
 import { roundToRupee } from "../lib/money";
 import { cleanText } from "../lib/sanitize";
 import {
@@ -23,16 +24,16 @@ export class SaleReturnError extends Error {
   }
 }
 
-/** "SR-0001", … */
+/** "SR/26-27/0001", … — sales returns (credit notes), per financial year */
 export function nextSaleReturnNo(
-  returns: readonly Pick<SaleReturn, "returnNo">[],
+  returns: readonly Pick<SaleReturn, "returnNo" | "createdAt">[],
+  now = new Date(),
 ): string {
-  let max = 0;
-  for (const r of returns) {
-    const n = Number(/^SR-(\d+)$/.exec(r.returnNo)?.[1] ?? 0);
-    if (n > max) max = n;
-  }
-  return `SR-${String(max + 1).padStart(4, "0")}`;
+  return nextDocNo(
+    returns.map((r) => ({ no: r.returnNo, at: r.createdAt })),
+    "SR",
+    now,
+  );
 }
 
 type Returned = {

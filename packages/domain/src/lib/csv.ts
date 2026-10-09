@@ -32,13 +32,14 @@ export function csvCell(value: string | number | null | undefined): string {
 export function toCsv<T>(
   rows: readonly T[],
   columns: readonly CsvColumn<T>[],
+  { bom = true }: { bom?: boolean } = {},
 ): string {
   const head = columns.map((c) => csvCell(c.header)).join(",");
   const body = rows.map((r) =>
     columns.map((c) => csvCell(c.value(r))).join(","),
   );
-  // BOM so Excel opens ₹ and Hindi text as UTF-8
-  return `\uFEFF${[head, ...body].join("\r\n")}`;
+  // BOM so Excel opens ₹ and Hindi text as UTF-8 (the GST tool wants none)
+  return `${bom ? "\uFEFF" : ""}${[head, ...body].join("\r\n")}`;
 }
 
 /**

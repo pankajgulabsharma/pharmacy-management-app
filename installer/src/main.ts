@@ -22,8 +22,6 @@ type Config = {
   mainUrl?: string;
   /** Main: share on the shop network */
   lan?: boolean;
-  /** Main: start with the demo shop (to try the app) */
-  demo?: boolean;
 };
 type Server = Awaited<ReturnType<typeof startServer>>;
 
@@ -61,13 +59,13 @@ async function runServer(c: Config) {
   server = null;
   process.env.MIGRATIONS_DIR = res("drizzle");
   process.env.LICENSE_ENFORCE = "1"; // trial / licence key / on hold
+  process.env.APP_VERSION = app.getVersion(); // written next to off-site backups
   server = await startServer({
     dbFile: join(DATA(), "medicare.sqlite"),
     backupDir: join(DATA(), "backups"),
     host: c.lan ? "0.0.0.0" : "127.0.0.1",
     port: PORT,
     appDir: res("app-ui"),
-    demo: c.demo === true,
     // Settings → Shop network: switch sharing on/off
     setLan: async (on) => {
       saveConfig({ ...c, lan: on });
@@ -242,7 +240,7 @@ handle("setup:save", async (_e, c: Config) => {
   const clean: Config =
     c.role === "counter"
       ? { role: "counter", mainUrl: new URL(String(c.mainUrl)).origin }
-      : { role: "main", lan: c.lan === true, demo: c.demo === true };
+      : { role: "main", lan: c.lan === true };
   if (clean.role !== config?.role && server) {
     await server.close();
     server = null;
@@ -253,6 +251,14 @@ handle("setup:save", async (_e, c: Config) => {
 
 handle("app:open-setup", () => openSetup());
 handle("app:open-data-folder", () => shell.openPath(DATA()));
+/** Settings → Backup: pick the Google Drive / pen drive folder (main computer) */
+handle("app:choose-folder", async () => {
+  const r = await dialog.showOpenDialog(win!, {
+    title: "Folder for backup copies (Google Drive, OneDrive or pen drive)",
+    properties: ["openDirectory", "createDirectory"],
+  });
+  return r.canceled ? null : (r.filePaths[0] ?? null);
+});
 handle("app:updates", () => updateState());
 handle("app:check-updates", () => checkNow());
 handle("app:retry", () => openShop());

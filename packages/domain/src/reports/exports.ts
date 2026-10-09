@@ -69,13 +69,16 @@ export function gstCsv(r: GstReport): string {
   return toCsv(r.rows, [
     { header: "GST slab %", value: (x) => x.rate },
     { header: "Sales taxable (Rs)", value: (x) => rupees(x.outTaxablePaise) },
+    { header: "Output IGST (Rs)", value: (x) => rupees(x.outIgstPaise) },
     {
       header: "Output CGST (Rs)",
-      value: (x) => rupees(splitCgstSgst(x.outGstPaise).cgstPaise),
+      value: (x) =>
+        rupees(splitCgstSgst(x.outGstPaise - x.outIgstPaise).cgstPaise),
     },
     {
       header: "Output SGST (Rs)",
-      value: (x) => rupees(splitCgstSgst(x.outGstPaise).sgstPaise),
+      value: (x) =>
+        rupees(splitCgstSgst(x.outGstPaise - x.outIgstPaise).sgstPaise),
     },
     { header: "Purchase taxable (Rs)", value: (x) => rupees(x.inTaxablePaise) },
     {

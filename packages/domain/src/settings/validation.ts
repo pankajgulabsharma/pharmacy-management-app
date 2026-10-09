@@ -1,4 +1,5 @@
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../billing/types";
+import { cleanPrefix } from "../lib/docNo";
 import { checkGstin } from "../lib/gstin";
 import { RuleError } from "../lib/errors";
 import { cleanText } from "../lib/sanitize";
@@ -141,6 +142,7 @@ export function sanitizeSettings(raw: unknown): Settings {
         L.footerMax,
         d.billing.receiptFooter,
       ),
+      billPrefix: cleanPrefix(billing.billPrefix, d.billing.billPrefix),
     },
     inventory: {
       expiringSoonDays: int(

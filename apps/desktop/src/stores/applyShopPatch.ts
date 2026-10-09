@@ -1,4 +1,5 @@
 import { upsertById, type ShopPatch } from "@medicare/domain/shop/patch";
+import { keptOnCounter } from "@medicare/domain/shop/history";
 import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
@@ -13,7 +14,7 @@ export function applyShopPatch(p: ShopPatch) {
   if (p.batches || p.movements) {
     useInventoryStore.setState((s) => ({
       batches: upsertById(s.batches, p.batches),
-      movements: upsertById(s.movements, p.movements),
+      movements: upsertById(s.movements, p.movements?.filter(keptOnCounter)),
     }));
   }
   if (p.purchases || p.purchaseReturns) {

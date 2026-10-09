@@ -57,6 +57,13 @@
       "when": 1791466334372,
       "tag": "0007_drug_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791576340997,
+      "tag": "0008_b2b_gst",
+      "breakpoints": true
     }
   ]
 }

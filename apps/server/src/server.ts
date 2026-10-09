@@ -3,11 +3,11 @@
  * account, daily backups, API — and optionally the app screens.
  * Used by `npm run dev:server` (index.ts) and by the installed app.
  */
-import { buildApp } from "./app";
+import { buildApp, defaultLicense } from "./app";
 import { DEFAULT_BACKUP_DIR, DEFAULT_DB_FILE, openDatabase } from "./db/client";
 import { ensureOwner } from "./auth/store";
 import { startAutoBackup } from "./backup/backup";
-import { hasData, seedDemoData } from "./db/seed";
+import { copyOffsite } from "./backup/offsite";
 
 export type ServerOptions = {
   dbFile?: string;
@@ -19,8 +19,6 @@ export type ServerOptions = {
   appDir?: string;
   /** Switch shop-network sharing (installed app) */
   setLan?: (enabled: boolean) => Promise<void>;
-  /** Fill an EMPTY database with the demo shop (to try the app) */
-  demo?: boolean;
   log?: (msg: string) => void;
 };
 
@@ -31,20 +29,23 @@ export async function startServer({
   port = 4000,
   appDir,
   setLan,
-  demo = false,
   log = console.log,
 }: ServerOptions = {}) {
   const database = await openDatabase(dbFile);
-  if (demo && !(await hasData(database))) await seedDemoData(database);
   // A brand-new shop gets one owner account to start with
   if (await ensureOwner(database.raw))
     log(
       'First start: sign in as "admin" with password "admin" — you will be asked to choose a new password.',
     );
-  const stopBackups = startAutoBackup(database.raw, backupDir);
+  const license = defaultLicense();
+  // Every automatic backup also goes to the owner's Drive / pen drive folder
+  const stopBackups = startAutoBackup(database.raw, backupDir, (b) => {
+    copyOffsite(database.raw, backupDir, license, b);
+  });
   const app = buildApp({
     database,
     backupDir,
+    license,
     appDir,
     system: { lanEnabled: () => host === "0.0.0.0", setLan },
   });

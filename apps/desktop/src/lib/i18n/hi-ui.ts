@@ -763,4 +763,57 @@ export const HI_UI: Record<string, string> = {
   "Schedule X (register)": "शेड्यूल X (रजिस्टर)",
   "Import medicines & stock": "दवाइयाँ और स्टॉक इम्पोर्ट करें",
   Import: "इम्पोर्ट",
+  "Second copy outside this computer": "इस कंप्यूटर के बाहर दूसरी कॉपी",
+  "Last copied: {{date}} · with the licence details (LICENCE-INFO.txt)":
+    "आख़िरी कॉपी: {{date}} · लाइसेंस की जानकारी के साथ (LICENCE-INFO.txt)",
+  "Not copied yet": "अभी कॉपी नहीं हुई",
+  "Not set up — if this computer is stolen or breaks, the data goes with it. Choose your Google Drive (free 15 GB), OneDrive or a pen drive folder: every backup is copied there.":
+    "सेट नहीं है — कंप्यूटर चोरी या ख़राब हुआ तो डेटा भी जाएगा। अपना Google Drive (15 GB मुफ़्त), OneDrive या पेन ड्राइव फ़ोल्डर चुनें: हर बैकअप वहाँ कॉपी होगा।",
+  "Use {{name}}": "{{name}} इस्तेमाल करें",
+  "Backup copy folder": "बैकअप कॉपी फ़ोल्डर",
+  "Choose…": "चुनें…",
+  "Copy now": "अभी कॉपी करें",
+  "Folder saved — the latest backup was copied there":
+    "फ़ोल्डर सेव — ताज़ा बैकअप वहाँ कॉपी हो गया",
+  "Second copy switched off": "दूसरी कॉपी बंद",
+  "Remove GSTIN": "GSTIN हटाएँ",
+  "+ GSTIN (B2B bill)": "+ GSTIN (B2B बिल)",
+  "Buyer's GSTIN, e.g. 27AAPFU0939F1ZV":
+    "ख़रीदार का GSTIN, जैसे 27AAPFU0939F1ZV",
+  "Buyer's GSTIN": "ख़रीदार का GSTIN",
+  "GSTR-1 files downloaded": "GSTR-1 फ़ाइलें डाउनलोड हुईं",
+  "GST Offline Tool → Import Files → CSV: import each file, then upload the JSON it makes. Or send the zip to your CA.":
+    "GST Offline Tool → Import Files → CSV: हर फ़ाइल इम्पोर्ट करें, फिर बनी JSON अपलोड करें। या zip अपने CA को भेजें।",
+  "Add your shop's GSTIN in Settings → Shop to make GSTR-1 files and check GSTR-2B.":
+    "GSTR-1 फ़ाइलें और GSTR-2B मिलान के लिए Settings → Shop में दुकान का GSTIN डालें।",
+  "Download GSTR-1 files": "GSTR-1 फ़ाइलें डाउनलोड करें",
+  "B2B bills (with GSTIN)": "B2B बिल (GSTIN वाले)",
+  "Retail (B2C) taxable value": "रिटेल (B2C) टैक्सेबल वैल्यू",
+  "Credit notes (B2B returns)": "क्रेडिट नोट (B2B रिटर्न)",
+  "HSN rows": "HSN लाइनें",
+  bills: "बिल",
+  "Choose the return's month above (e.g. Last month). The zip has b2b, b2cs, cdnr, hsn(b2b), hsn(b2c) and docs — the same sheets Tally / Busy export.":
+    "ऊपर रिटर्न का महीना चुनें (जैसे पिछला महीना)। zip में b2b, b2cs, cdnr, hsn(b2b), hsn(b2c) और docs हैं — वही शीट जो Tally / Busy देते हैं।",
+  "Open GSTR-2B JSON": "GSTR-2B JSON खोलें",
+  "GSTR-2B file": "GSTR-2B फ़ाइल",
+  "GST portal → Returns → GSTR-2B → Download → JSON (free). Open that file here: every supplier bill is checked against your purchases.":
+    "GST पोर्टल → Returns → GSTR-2B → Download → JSON (मुफ़्त)। वह फ़ाइल यहाँ खोलें: हर सप्लायर बिल आपकी ख़रीद से मिलाया जाएगा।",
+  Matched: "मिल गया",
+  "Tax differs": "टैक्स अलग है",
+  "Not entered in MediCare": "MediCare में दर्ज नहीं",
+  "Supplier hasn't reported (no ITC yet)":
+    "सप्लायर ने रिपोर्ट नहीं किया (अभी ITC नहीं)",
+  "Year close": "साल बंद",
+  "Financial year {{fy}} ended on {{date}}":
+    "वित्त वर्ष {{fy}} {{date}} को ख़त्म हुआ",
+  "Closing stock on {{date}}": "{{date}} का क्लोज़िंग स्टॉक",
+  "Closing stock value (at cost)": "क्लोज़िंग स्टॉक वैल्यू (लागत पर)",
+  "— this is next year's opening stock": "— यही अगले साल का ओपनिंग स्टॉक है",
+  "Bill numbers start again from 0001 every 1 April by themselves (INV/{{fy}}/0001).":
+    "हर 1 अप्रैल को बिल नंबर अपने आप 0001 से शुरू होते हैं (INV/{{fy}}/0001)।",
+  "A year-end backup is made on the first day of the new year and kept for ever (Settings → Backup).":
+    "नए साल के पहले दिन साल-अंत बैकअप बनता है और हमेशा रखा जाता है (Settings → Backup)।",
+  "Udhaar balances and stock simply carry on — nothing to close or re-enter.":
+    "उधार बाकी और स्टॉक वैसे ही आगे चलते हैं — कुछ बंद या दोबारा दर्ज नहीं करना।",
+  "Loading older bills…": "पुराने बिल लोड हो रहे हैं…",
 };

@@ -3,6 +3,7 @@
  * customers. Every write answers with what it changed (a ShopPatch) and the
  * same patch goes to every other open counter.
  */
+import { COUNTER_MOVEMENT_TYPES } from "@medicare/domain/shop/history";
 import type { FastifyInstance } from "fastify";
 import type { ShopPatch } from "@medicare/domain/shop/patch";
 import type { Database } from "../db/client";
@@ -30,18 +31,107 @@ export function shopRoutes(
   };
 
   // Reads — everything the screens need
-  app.get("/api/stock", async () => ({
-    batches: m.loadBatches(raw),
-    movements: m.loadMovements(raw),
-  }));
+  // ?movements=purchase → only what counters keep (purchase receipts —
+  // needed to check a purchase cancel); a batch's full history on demand
+  app.get<{ Querystring: { movements?: string } }>(
+    "/api/stock",
+    async (req) => ({
+      batches: m.loadBatches(raw),
+      movements:
+        req.query.movements === "purchase"
+          ? m.loadMovements(
+              raw,
+              `type IN (${COUNTER_MOVEMENT_TYPES.map(() => "?").join(", ")})`,
+              [...COUNTER_MOVEMENT_TYPES],
+            )
+          : m.loadMovements(raw),
+    }),
+  );
+  // Year close: stock as it stood at a moment (e.g. 31 March, 23:59) —
+  // today's stock minus every movement since then
+  app.get("/api/stock/closing", async (req) => {
+    const { at } = s.parse(s.closingQuery, req.query);
+    const since = new Map(
+      (
+        raw
+          .prepare(
+            "SELECT batch_id AS id, SUM(qty_strip_delta) AS strip, SUM(qty_loose_delta) AS loose FROM stock_movements WHERE at >= ? GROUP BY batch_id",
+          )
+          .all(at) as { id: string; strip: number; loose: number }[]
+      ).map((r) => [r.id, r]),
+    );
+    return {
+      at,
+      batches: m
+        .loadBatches(raw)
+        .map((b) => {
+          const d = since.get(b.id);
+          return d
+            ? {
+                ...b,
+                qtyStrip: b.qtyStrip - d.strip,
+                qtyLoose: b.qtyLoose - d.loose,
+              }
+            : b;
+        })
+        .filter((b) => b.qtyStrip > 0 || b.qtyLoose > 0),
+    };
+  });
+  app.get<{ Params: { id: string } }>(
+    "/api/stock/batches/:id/movements",
+    async (req) => ({
+      movements: m.loadMovements(raw, "batch_id = ?", [req.params.id]),
+    }),
+  );
   app.get("/api/purchases", async () => ({
     purchases: m.loadPurchases(raw),
     returns: m.loadPurchaseReturns(raw),
   }));
-  app.get("/api/sales", async () => ({
-    sales: m.loadSales(raw),
-    saleReturns: m.loadSaleReturns(raw),
-  }));
+  /*
+   * Bills. Counters load only what they need (fast, little memory):
+   *   ?since=…        recent bills + every udhaar bill (khata balances)
+   *   ?from=…&to=…    one period, for reports (+ bills its returns belong to)
+   *   (nothing)       everything
+   */
+  app.get("/api/sales", async (req) => {
+    const q = s.parse(s.salesQuery, req.query);
+    if (q.since) {
+      const recent = "created_at >= ? OR status = 'udhaar'";
+      return {
+        sales: m.loadSales(raw, recent, [q.since]),
+        saleReturns: m.loadSaleReturns(
+          raw,
+          `created_at >= ? OR sale_id IN (SELECT id FROM sales WHERE ${recent})`,
+          [q.since, q.since],
+        ),
+      };
+    }
+    if (q.from && q.to) {
+      const inPeriod = "created_at >= ? AND created_at < ?";
+      return {
+        sales: m.loadSales(
+          raw,
+          `(${inPeriod}) OR id IN (SELECT sale_id FROM sale_returns WHERE ${inPeriod})`,
+          [q.from, q.to, q.from, q.to],
+        ),
+        saleReturns: m.loadSaleReturns(raw, inPeriod, [q.from, q.to]),
+      };
+    }
+    return { sales: m.loadSales(raw), saleReturns: m.loadSaleReturns(raw) };
+  });
+  // Older bills by number / customer (search, reprint, returns)
+  app.get("/api/sales/find", async (req) => {
+    const { q } = s.parse(s.findQuery, req.query);
+    const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const found = `SELECT id FROM sales WHERE bill_no LIKE ? ESCAPE '\\' OR customer_name LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT 20`;
+    return {
+      sales: m.loadSales(raw, `id IN (${found})`, [like, like]),
+      saleReturns: m.loadSaleReturns(raw, `sale_id IN (${found})`, [
+        like,
+        like,
+      ]),
+    };
+  });
   app.get("/api/held", async () => ({ items: m.loadHeld(raw) }));
   app.get("/api/customers", async () => ({
     customers: m.loadCustomers(raw),

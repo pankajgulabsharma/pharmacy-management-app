@@ -420,9 +420,10 @@ export function GstTab({
   const max = Math.max(r.outGstPaise, r.inGstPaise, 1);
   const rows = r.rows.map((x) => ({
     ...x,
-    out: splitCgstSgst(x.outGstPaise),
+    out: splitCgstSgst(x.outGstPaise - x.outIgstPaise),
     in: splitCgstSgst(x.inGstPaise),
   }));
+  const anyIgst = r.rows.some((x) => x.outIgstPaise !== 0);
   const sum = (f: (x: (typeof rows)[number]) => number) =>
     formatPaise(rows.reduce((s, x) => s + f(x), 0));
 
@@ -500,13 +501,14 @@ export function GstTab({
 
       <ReportTable
         title="GST by slab"
-        subtitle="Sales minus customer returns · purchases minus debit notes · intra-state (CGST + SGST)"
+        subtitle="Sales minus customer returns · purchases minus debit notes · GSTR-3B summary"
         rows={rows}
         getKey={(x) => String(x.rate)}
         empty="No GST activity"
         footer={[
           "Total",
           sum((x) => x.outTaxablePaise),
+          ...(anyIgst ? [sum((x) => x.outIgstPaise)] : []),
           sum((x) => x.out.cgstPaise),
           sum((x) => x.out.sgstPaise),
           sum((x) => x.inTaxablePaise),
@@ -527,6 +529,17 @@ export function GstTab({
             align: "right",
             render: (x) => formatPaise(x.outTaxablePaise),
           },
+          ...(anyIgst
+            ? [
+                {
+                  key: "oi",
+                  label: "Output IGST",
+                  align: "right" as const,
+                  render: (x: (typeof rows)[number]) =>
+                    formatPaise(x.outIgstPaise),
+                },
+              ]
+            : []),
           {
             key: "oc",
             label: "Output CGST",

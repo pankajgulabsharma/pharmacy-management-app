@@ -54,6 +54,7 @@ import {
 } from "../db/mappers";
 import * as t from "../db/schema";
 import { updateRow, writeTx } from "../db/sync";
+import { usedNumbers } from "./docNumbers";
 import { NotFoundError } from "./errors";
 
 const enforce = (r: RuleResult) => {
@@ -271,13 +272,19 @@ export function createPurchaseReturn(
   return writeTx(raw, () => {
     const purchase = getPurchase(raw, input.purchaseId);
     enforce(canReturnPurchase(purchase));
-    const returns = loadPurchaseReturns(raw);
+    const returns = loadPurchaseReturns(raw, "purchase_id = ?", [purchase.id]);
     const before = loadBatches(raw);
     const { ret, issue } = buildPurchaseReturn(
       purchase,
       input,
       getReturnableLines(purchase, returns, before),
-      nextReturnNo(returns),
+      nextReturnNo(
+        usedNumbers(raw, "purchase_returns", "return_no", now).map((d) => ({
+          returnNo: d.no,
+          createdAt: d.at,
+        })),
+        now,
+      ),
       now,
     );
     const r = applyIssue(before, {

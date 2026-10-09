@@ -70,9 +70,6 @@
       <label class="check"><input type="checkbox" id="lan" />
         <span>Share on the shop network<small>Other counters can connect to this computer. Windows may ask once to allow MediCare on the network — choose “Private networks”.</small></span>
       </label>
-      <label class="check"><input type="checkbox" id="demo" />
-        <span>Start with demo data<small>A sample shop to try things out. Leave off for your real shop. (Only used when there is no data yet.)</small></span>
-      </label>
       <p class="hint">Data folder: <span id="data-dir"></span></p>
     </div>
 
@@ -136,7 +133,7 @@
         if (!(await test())) return;
         await api.saveSetup({ role: "counter", mainUrl: $("url").value });
       } else {
-        await api.saveSetup({ role: "main", lan: $("lan").checked, demo: $("demo").checked });
+        await api.saveSetup({ role: "main", lan: $("lan").checked });
       }
     } finally { $("save").disabled = false; }
   };
@@ -148,7 +145,6 @@
     if (config) {
       pick(config.role);
       $("lan").checked = !!config.lan;
-      $("demo").checked = !!config.demo;
       if (config.mainUrl) $("url").value = config.mainUrl;
     }
     if (params.get("offline")) {

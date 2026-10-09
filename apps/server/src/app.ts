@@ -24,7 +24,7 @@ import { InputError } from "./schemas/medicine";
  * Installed app sets LICENSE_ENFORCE=1; development and tests run without.
  * `npm run dev:server:license` (--license) tries the trial in development.
  */
-const defaultLicense = (): LicenseOptions => ({
+export const defaultLicense = (): LicenseOptions => ({
   enforce:
     process.env.LICENSE_ENFORCE === "1" || process.argv.includes("--license"),
   publicKey: LICENSE_PUBLIC_KEY,
@@ -80,7 +80,7 @@ export function buildApp({
   authRoutes(app, database, license);
   licenseRoutes(app, database, license);
   settingsRoutes(app, database);
-  backupRoutes(app, database, bus, backupDir);
+  backupRoutes(app, database, bus, backupDir, license);
   systemRoutes(app, system);
   catalogRoutes(app, database);
   supplierRoutes(app, database);

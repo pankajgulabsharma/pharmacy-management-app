@@ -9,9 +9,12 @@ import type {
 import type { ShopPatch } from "@medicare/domain/shop/patch";
 import { apiGet, apiRequest, requireServer } from "@/lib/api";
 import { applyShopPatch } from "@/stores/applyShopPatch";
+import { recentSince } from "@medicare/domain/shop/history";
 
 /**
- * Bills, sales returns and held bills. The SERVER takes the stock (FEFO)
+ * Bills, sales returns and held bills. Holds the last 90 days + every
+ * udhaar bill (shop/history); older bills are fetched when needed
+ * (useSalesInRange, useOlderBills). The SERVER takes the stock (FEFO)
  * and saves the bill in one transaction; this store sends the cart and
  * merges what the server saved.
  */
@@ -49,7 +52,9 @@ export const useSalesStore = create<SalesState>()((set) => ({
 
   loadFromServer: async () => {
     const [s, h] = await Promise.all([
-      apiGet<{ sales: Sale[]; saleReturns: SaleReturn[] }>("/api/sales"),
+      apiGet<{ sales: Sale[]; saleReturns: SaleReturn[] }>(
+        `/api/sales?since=${encodeURIComponent(recentSince().toISOString())}`,
+      ),
       apiGet<{ items: HeldBill[] }>("/api/held"),
     ]);
     set({

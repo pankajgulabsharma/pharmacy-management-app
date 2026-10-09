@@ -1,6 +1,7 @@
 import type { StockBatch } from "../inventory/types";
 import { batchKey } from "../inventory/ledger";
 import { newId } from "../lib/id";
+import { nextDocNo } from "../lib/docNo";
 import { cleanText } from "../lib/sanitize";
 import {
   RETURN_REASONS,
@@ -83,14 +84,16 @@ export function getReturnableLines(
   });
 }
 
-/** "DN-0001", "DN-0002", … — next number after the highest existing one */
-export function nextReturnNo(returns: readonly PurchaseReturn[]): string {
-  let max = 0;
-  for (const r of returns) {
-    const n = Number(/^DN-(\d+)$/.exec(r.returnNo)?.[1] ?? 0);
-    if (n > max) max = n;
-  }
-  return `DN-${String(max + 1).padStart(4, "0")}`;
+/** "DN/26-27/0001", … — debit notes (returns to suppliers), per financial year */
+export function nextReturnNo(
+  returns: readonly Pick<PurchaseReturn, "returnNo" | "createdAt">[],
+  now = new Date(),
+): string {
+  return nextDocNo(
+    returns.map((r) => ({ no: r.returnNo, at: r.createdAt })),
+    "DN",
+    now,
+  );
 }
 
 /**

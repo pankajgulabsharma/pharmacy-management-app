@@ -284,6 +284,8 @@ export function saleRows(s: Sale) {
       customerId: s.customerId ?? null,
       imported: s.imported ?? false,
       billedBy: s.billedBy ?? "",
+      customerGstin: s.customerGstin ?? "",
+      interstate: s.interstate ?? false,
     },
     lines: s.lines.map((l, position) => ({ ...l, saleId: s.id, position })),
     allocations: s.lines.flatMap((l) =>
@@ -310,24 +312,17 @@ export function loadSales(
     params,
     "created_at DESC, rowid DESC",
   );
-  const ids = heads.map((h) => h.id as string);
-  // Lines/allocations: by join, so this stays fast however many bills there are
-  const lineRows = selectRows(
-    raw,
-    t.saleLines,
-    ids.length === heads.length && !where ? "" : `sale_id IN ${inList(ids)}`,
-    ids.length === heads.length && !where ? [] : ids,
-    "position",
-  );
+  // Lines/allocations of the same bills: by sub-query (no huge id lists),
+  // so this stays fast however many bills there are
+  const bills = where ? `sale_id IN (SELECT id FROM sales WHERE ${where})` : "";
+  const lineRows = selectRows(raw, t.saleLines, bills, params, "position");
   const lineIds = new Set(lineRows.map((l) => l.id as string));
   const allocs = groupBy(
     selectRows(
       raw,
       t.saleAllocations,
-      where
-        ? `sale_line_id IN (SELECT id FROM sale_lines WHERE sale_id IN ${inList(ids)})`
-        : "",
-      where ? ids : [],
+      where ? `sale_line_id IN (SELECT id FROM sale_lines WHERE ${bills})` : "",
+      params,
       "id",
     ).filter((a) => lineIds.has(a.saleLineId as string)),
     "saleLineId",
@@ -375,6 +370,8 @@ export function loadSales(
       ) as SaleLine[],
     };
     if (h.imported) sale.imported = true;
+    if (h.customerGstin) sale.customerGstin = h.customerGstin;
+    if (h.interstate) sale.interstate = true;
     if (h.billedBy) sale.billedBy = h.billedBy;
     return sale as unknown as Sale;
   });
@@ -407,19 +404,18 @@ export function loadSaleReturns(
     params,
     "created_at DESC",
   );
-  const ids = heads.map((h) => h.id as string);
-  const lineRows = selectRows(
-    raw,
-    t.saleReturnLines,
-    `return_id IN ${inList(ids)}`,
-    ids,
-  );
+  const rets = where
+    ? `return_id IN (SELECT id FROM sale_returns WHERE ${where})`
+    : "";
+  const lineRows = selectRows(raw, t.saleReturnLines, rets, params);
   const batches = groupBy(
     selectRows(
       raw,
       t.saleReturnBatches,
-      `return_line_id IN ${inList(lineRows.map((l) => l.id as string))}`,
-      lineRows.map((l) => l.id as string),
+      where
+        ? `return_line_id IN (SELECT id FROM sale_return_lines WHERE ${rets})`
+        : "",
+      params,
       "id",
     ),
     "returnLineId",
