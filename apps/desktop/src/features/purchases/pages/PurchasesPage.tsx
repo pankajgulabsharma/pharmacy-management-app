@@ -57,8 +57,8 @@ import type {
 } from "@medicare/domain/purchases/types";
 import { getDuePaise, getPaymentStatus } from "@medicare/domain/purchases/calc";
 import {
-  purchaseMatchesQuery,
-  returnMatchesQuery,
+  purchaseReturnSearch,
+  purchaseSearch,
 } from "@medicare/domain/purchases/search";
 import { PurchaseTable } from "../components/PurchaseTable";
 import { PurchaseFormDialog } from "../components/PurchaseFormDialog";
@@ -161,16 +161,15 @@ export default function PurchasesPage() {
 
   const filteredPurchases = useMemo(
     () =>
-      purchases.filter(
-        (p) =>
-          (statusFilter === "all" || statusById.get(p.id) === statusFilter) &&
-          purchaseMatchesQuery(p, deferredQuery),
-      ),
+      purchaseSearch.filter(purchases, deferredQuery, {
+        keep: (p) =>
+          statusFilter === "all" || statusById.get(p.id) === statusFilter,
+      }),
     [purchases, statusById, statusFilter, deferredQuery],
   );
 
   const filteredReturns = useMemo(
-    () => returns.filter((r) => returnMatchesQuery(r, deferredQuery)),
+    () => purchaseReturnSearch.filter(returns, deferredQuery),
     [returns, deferredQuery],
   );
 

@@ -20,6 +20,7 @@ import {
   signedInrFromPaise,
 } from "@medicare/domain/lib/money";
 import { useSalesStore } from "../store/useSalesStore";
+import { saleSearch } from "@medicare/domain/billing/search";
 import {
   BILLING_LIMITS,
   REFUND_MODE_LABELS,
@@ -53,16 +54,6 @@ function formatDateTime(iso: string) {
   return dateTime.format(new Date(iso));
 }
 
-function matches(s: Sale, q: string) {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return true;
-  return (
-    s.billNo.toLowerCase().includes(needle) ||
-    s.customerName.toLowerCase().includes(needle) ||
-    s.lines.some((l) => l.medicineName.toLowerCase().includes(needle))
-  );
-}
-
 export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
   const sales = useSalesStore((s) => s.sales);
   const saleReturns = useSalesStore((s) => s.saleReturns);
@@ -83,9 +74,10 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
 
   const list = useMemo(
     () =>
-      sales
-        .filter((s) => !s.imported && matches(s, deferredQuery))
-        .slice(0, MAX_LIST),
+      saleSearch.filter(sales, deferredQuery, {
+        keep: (s) => !s.imported,
+        limit: MAX_LIST,
+      }),
     [sales, deferredQuery],
   );
   const sale = saleId ? (sales.find((s) => s.id === saleId) ?? null) : null;

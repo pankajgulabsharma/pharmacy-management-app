@@ -4,7 +4,8 @@ import { useInventoryStore } from "@/features/inventory/store/useInventoryStore"
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import type { Medicine } from "@medicare/domain/medicines/types";
-import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
+import { medicineSearch } from "@medicare/domain/medicines/search";
+import { parseQuery } from "@medicare/domain/lib/search";
 import { isExpiringWithin, isExpiryPast } from "@medicare/domain/lib/expiry";
 import { rupeesToPaise } from "@medicare/domain/lib/money";
 import {
@@ -98,47 +99,41 @@ export function useSellableSearch(query: string): SellableItem[] {
     return map;
   }, [batches]);
 
+  /*
+   * Ranking — what the cashier most likely means comes first, so Enter
+   * picks the right medicine: name starts with it → every word in the
+   * name → found by salt / brand / barcode / batch no.; then in stock
+   * before out of stock, then A–Z. Cut to MAX_RESULTS only AFTER ranking.
+   */
   return useMemo(() => {
-    const q = query.trim();
-    if (!q) return [];
+    const q = parseQuery(query);
+    if (!q.tokens.length) return [];
     const now = new Date();
-    const qUpper = q.toUpperCase();
-    const out: SellableItem[] = [];
-
+    const code = query.trim().toUpperCase();
+    const hits: { item: SellableItem; r: number }[] = [];
     for (const m of medicines) {
       if (m.status !== "active") continue;
       const own = byMedicine.get(m.id) ?? [];
-      const batchHit = own.some((b) => b.batchNo.includes(qUpper));
-      if (!batchHit && !medicineMatchesQuery(m, q)) continue;
-
-      out.push(toSellable(m, own, now));
-      if (out.length >= MAX_RESULTS) break;
+      let r = medicineSearch.rank(m, q);
+      if (
+        r < 0 &&
+        code.length >= 3 &&
+        own.some((b) => b.batchNo.includes(code))
+      )
+        r = 2;
+      if (r >= 0) hits.push({ item: toSellable(m, own, now), r });
     }
-
-    /*
-     * Ranking — what the cashier most likely means comes first, so Enter
-     * picks the right medicine:
-     *   1. name starts with the query   ("vit" → Vitamin C)
-     *   2. a word in the name starts with it
-     *   3. matched only by salt / brand / barcode / batch
-     * then in-stock before out-of-stock, then alphabetical.
-     */
-    const ql = q.toLowerCase();
-    const rank = (name: string) => {
-      const n = name.toLowerCase();
-      if (n.startsWith(ql)) return 0;
-      if (n.split(/\s+/).some((w) => w.startsWith(ql)) || n.includes(ql))
-        return 1;
-      return 2;
-    };
-    const stockRank = (x: SellableItem) =>
+    const empty = (x: SellableItem) =>
       x.limits.maxStrip + x.limits.maxLoose > 0 ? 0 : 1;
-    return out.sort(
-      (a, b) =>
-        rank(a.medicine.name) - rank(b.medicine.name) ||
-        stockRank(a) - stockRank(b) ||
-        a.medicine.name.localeCompare(b.medicine.name),
-    );
+    return hits
+      .sort(
+        (a, b) =>
+          a.r - b.r ||
+          empty(a.item) - empty(b.item) ||
+          a.item.medicine.name.localeCompare(b.item.medicine.name),
+      )
+      .slice(0, MAX_RESULTS)
+      .map((h) => h.item);
   }, [query, medicines, byMedicine]);
 }
 

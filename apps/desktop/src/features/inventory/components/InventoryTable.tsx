@@ -131,7 +131,10 @@ function buildRowView(
     expiring,
     looseOk,
     packLabel: formatPackLabel(b.unit, b.unitsPerStrip),
-    subtitle: `${b.brand} · ${CATEGORY_LABELS[b.category]}`,
+    // Salt shown so a same-salt match (Dolo 650 for "paracetamol") is clear
+    subtitle: [b.salt, b.brand, CATEGORY_LABELS[b.category]]
+      .filter(Boolean)
+      .join(" · "),
     stockText,
     stockClass: stockTextClass(status),
     stockValuePaise: batchCostPaise(b, b),

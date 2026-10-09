@@ -47,7 +47,7 @@ import { MedicineImportDialog } from "../components/MedicineImportDialog";
 import type { ImportRow } from "@medicare/domain/medicines/csv";
 import { BarcodeLabelDialog } from "../components/BarcodeLabelDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
-import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
+import { medicineSearch } from "@medicare/domain/medicines/search";
 
 /** Chips — exclusive, they add up to All (active medicines by stockLevel) */
 type StatusFilter = "all" | "in_stock" | "low_only" | "out" | "inactive";
@@ -153,20 +153,24 @@ export default function MedicinesPage() {
     return map;
   }, [batches]);
 
-  const filtered = useMemo(
-    () =>
-      items.filter((m) => {
-        if (statusFilter !== "all" && bucket(m) !== statusFilter) return false;
-        if (categoryFilter !== "all" && m.category !== categoryFilter)
-          return false;
-        const q = deferredQuery.trim().toUpperCase();
-        return (
-          medicineMatchesQuery(m, deferredQuery) ||
-          (q.length >= 3 && (batchText.get(m.id) ?? "").includes(q))
-        );
-      }),
-    [items, deferredQuery, statusFilter, categoryFilter, batchText],
-  );
+  const filtered = useMemo(() => {
+    const keep = (m: MedicineWithStock) =>
+      (statusFilter === "all" || bucket(m) === statusFilter) &&
+      (categoryFilter === "all" || m.category === categoryFilter);
+    const hits = medicineSearch.filter(items, deferredQuery, { keep });
+    // A batch number typed ("DL24118") finds its medicine too
+    const code = deferredQuery.trim().toUpperCase();
+    if (code.length < 3) return hits;
+    const found = new Set(hits);
+    return hits.concat(
+      items.filter(
+        (m) =>
+          !found.has(m) &&
+          keep(m) &&
+          (batchText.get(m.id) ?? "").includes(code),
+      ),
+    );
+  }, [items, deferredQuery, statusFilter, categoryFilter, batchText]);
 
   const filterOptions = useMemo<FilterChipOption<StatusFilter>[]>(
     () => [

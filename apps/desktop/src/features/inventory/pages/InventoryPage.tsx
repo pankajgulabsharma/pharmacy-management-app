@@ -38,7 +38,7 @@ import type {
 } from "@medicare/domain/inventory/types";
 import { InventoryTable } from "../components/InventoryTable";
 import { StockAdjustDialog } from "../components/StockAdjustDialog";
-import { inventoryMatchesQuery } from "@medicare/domain/inventory/search";
+import { inventorySearch } from "@medicare/domain/inventory/search";
 import { batchStatuses, type BatchStatus } from "../utils/stock";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
@@ -97,11 +97,9 @@ export default function InventoryPage() {
 
   const filtered = useMemo(() => {
     const want = statusFilter === "all" ? null : FILTER_STATUS[statusFilter];
-    return items.filter(
-      (b) =>
-        (!want || statuses.get(b.id) === want) &&
-        inventoryMatchesQuery(b, deferredQuery),
-    );
+    return inventorySearch.filter(items, deferredQuery, {
+      keep: (b) => !want || statuses.get(b.id) === want,
+    });
   }, [items, deferredQuery, statusFilter, statuses]);
 
   // Keyboard: ↑↓ select · Enter adjust · H history · / search

@@ -13,7 +13,7 @@ import {
   type MedicineWithStock,
   formatPackLabel,
 } from "@medicare/domain/medicines/types";
-import { medicineMatchesQuery } from "@medicare/domain/medicines/search";
+import { medicineSearch } from "@medicare/domain/medicines/search";
 
 const MAX_RESULTS = 8;
 
@@ -39,17 +39,11 @@ export const MedicinePicker = memo(function MedicinePicker({
   const deferredQuery = useDeferredValue(query);
 
   const results = useMemo(() => {
-    const q = deferredQuery.trim();
-    if (!q) return [];
-    const out: MedicineWithStock[] = [];
-    for (const m of medicines) {
-      if (m.status !== "active") continue;
-      if (medicineMatchesQuery(m, q)) {
-        out.push(m);
-        if (out.length >= MAX_RESULTS) break;
-      }
-    }
-    return out;
+    if (!deferredQuery.trim()) return [];
+    return medicineSearch.filter(medicines, deferredQuery, {
+      keep: (m) => m.status === "active",
+      limit: MAX_RESULTS,
+    });
   }, [medicines, deferredQuery]);
 
   // Derived, so it never points past the end of a shorter result list

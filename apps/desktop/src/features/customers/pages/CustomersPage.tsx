@@ -44,6 +44,7 @@ import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerFormDialog } from "../components/CustomerFormDialog";
 import { ReceivePaymentDialog } from "../components/ReceivePaymentDialog";
 import { CustomerStatementDialog } from "../components/CustomerStatementDialog";
+import { customerSearch } from "@medicare/domain/customers/search";
 
 /** "All" + one chip per status; chips never overlap and add up to All */
 type Filter = "all" | CustomerStatus;
@@ -192,14 +193,8 @@ export default function CustomersPage() {
   }, [rows]);
 
   const filtered = useMemo(() => {
-    const q = dq.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (filter !== "all" && statusOf(r) !== filter) return false;
-      return (
-        !q ||
-        r.name.toLowerCase().includes(q) ||
-        r.phone.includes(q.replace(/\D/g, "") || "\u0000")
-      );
+    return customerSearch.filter(rows, dq, {
+      keep: (r) => filter === "all" || statusOf(r) === filter,
     });
   }, [rows, dq, filter]);
 

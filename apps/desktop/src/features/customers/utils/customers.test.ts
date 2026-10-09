@@ -89,8 +89,12 @@ describe("customer rules", () => {
 describe("customer search ranking", () => {
   it("puts the name that STARTS with the text first (never the wrong account)", () => {
     expect(searchCustomers(demoCustomers, "neha")[0].name).toBe("Neha Gupta"); // not Sneha Patel
-    expect(searchCustomers(demoCustomers, "neha").map((c) => c.name)).toContain(
-      "Sneha Patel",
+    // Words match from their start: "neha" is not inside "Sneha"
+    expect(
+      searchCustomers(demoCustomers, "neha").map((c) => c.name),
+    ).not.toContain("Sneha Patel");
+    expect(searchCustomers(demoCustomers, "gupta neha")[0].name).toBe(
+      "Neha Gupta",
     );
   });
   it("finds by surname and by mobile", () => {

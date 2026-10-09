@@ -40,7 +40,7 @@ import type {
   SupplierWithSummary,
 } from "@medicare/domain/suppliers/types";
 import { formToSupplierInput } from "@medicare/domain/suppliers/validation";
-import { supplierMatchesQuery } from "@medicare/domain/suppliers/search";
+import { supplierSearch } from "@medicare/domain/suppliers/search";
 import { SupplierTable } from "../components/SupplierTable";
 import {
   SUPPLIER_STATUS_LABEL,
@@ -116,20 +116,15 @@ export default function SuppliersPage() {
   }, [items]);
 
   const filtered = useMemo(() => {
-    return (
-      items
-        .filter(
-          (s) =>
-            (filter === "all" || supplierStatus(s) === filter) &&
-            supplierMatchesQuery(s, deferredQuery),
-        )
-        // Most money owed first — what a shop owner checks first
-        .sort(
-          (a, b) =>
-            b.outstandingPaise - a.outstandingPaise ||
-            a.name.localeCompare(b.name),
-        )
+    // Most money owed first — what a shop owner checks first (a search
+    // puts the best name match on top, keeping this order for ties)
+    const byOwed = [...items].sort(
+      (a, b) =>
+        b.outstandingPaise - a.outstandingPaise || a.name.localeCompare(b.name),
     );
+    return supplierSearch.filter(byOwed, deferredQuery, {
+      keep: (s) => filter === "all" || supplierStatus(s) === filter,
+    });
   }, [items, filter, deferredQuery]);
 
   const filterOptions = useMemo<FilterChipOption<Filter>[]>(
