@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search, ScanBarcode, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { caretToEndOnFocusClick } from "@/lib/dom";
 
 type Props = {
   query: string;
@@ -31,6 +32,7 @@ export function MedicineSearchBar({
         spellCheck={false}
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
+        onMouseDown={caretToEndOnFocusClick}
         placeholder={t("billing.searchPlaceholder")}
         className={cn(
           "pl-9 pr-[120px] h-9 w-full rounded-lg !text-[11px] font-normal",

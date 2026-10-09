@@ -2,6 +2,7 @@ import { memo, type ComponentProps, type Ref } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { caretToEndOnFocusClick } from "@/lib/dom";
 import { useTr } from "@/hooks/useTr";
 
 const SIZE = {
@@ -66,6 +67,10 @@ export const SearchInput = memo(function SearchInput({
         enterKeyHint="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onMouseDown={(e) => {
+          inputProps?.onMouseDown?.(e);
+          if (!e.defaultPrevented) caretToEndOnFocusClick(e);
+        }}
         onKeyDown={(e) => {
           inputProps?.onKeyDown?.(e);
           if (e.defaultPrevented) return;

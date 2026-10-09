@@ -14,6 +14,7 @@ import {
   formatPackLabel,
 } from "@medicare/domain/medicines/types";
 import { medicineSearch } from "@medicare/domain/medicines/search";
+import { caretToEndOnFocusClick } from "@/lib/dom";
 
 const MAX_RESULTS = 8;
 
@@ -88,6 +89,7 @@ export const MedicinePicker = memo(function MedicinePicker({
           setActive(0);
         }}
         onKeyDown={onKeyDown}
+        onMouseDown={caretToEndOnFocusClick}
         placeholder="Add medicine — search name, salt, brand or scan barcode…"
         className={cn(fieldClass, "pl-9")}
         aria-label="Add medicine to purchase"

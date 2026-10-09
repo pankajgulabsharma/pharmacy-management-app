@@ -8,6 +8,7 @@ import { useCustomerSummaries } from "@/features/customers/hooks/useCustomerSumm
 import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
 import type { Customer } from "@medicare/domain/customers/types";
 import { searchCustomers } from "@medicare/domain/customers/search";
+import { caretToEndOnFocusClick } from "@/lib/dom";
 
 type Props = {
   /** Selected account, or null */
@@ -118,6 +119,7 @@ export function CustomerAccountPicker({
       <input
         autoFocus
         value={query}
+        onMouseDown={caretToEndOnFocusClick}
         onChange={(e) => {
           setQuery(e.target.value);
           setActive(0);

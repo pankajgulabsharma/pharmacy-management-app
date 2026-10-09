@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+
 /**
  * Focus an input and put the caret after its text — use after filling a
  * field programmatically (e.g. "Pay full"), so the user can keep typing.
@@ -14,6 +16,20 @@ export function focusAtEnd(el: HTMLInputElement | null): void {
       // Some input types (date, number) don't support selection ranges
     }
   });
+}
+
+/**
+ * onMouseDown for search boxes: clicking into a box that is NOT focused
+ * puts the caret after the text typed earlier (not wherever the click
+ * landed, e.g. the start). Once focused, clicks place the caret normally.
+ */
+export function caretToEndOnFocusClick(e: MouseEvent<HTMLInputElement>): void {
+  const el = e.currentTarget;
+  if (e.button !== 0 || document.activeElement === el || !el.value) return;
+  e.preventDefault();
+  el.focus();
+  const end = el.value.length;
+  el.setSelectionRange(end, end);
 }
 
 /** Opens the native picker of a date/time input (Chrome, Edge, Safari 16+, Firefox 101+) */
