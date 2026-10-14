@@ -131,9 +131,6 @@ export function LibraryList({
                   <p className="text-[11px] tabular-nums text-foreground">
                     ₹{formatPaise(x.mrpPaise)}
                   </p>
-                  <p className="text-[9px] text-muted-foreground">
-                    {tr("MRP (2022)")}
-                  </p>
                 </div>
               ) : null}
               <div className="shrink-0 min-w-[64px] flex justify-end whitespace-nowrap">

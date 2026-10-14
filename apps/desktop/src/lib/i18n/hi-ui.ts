@@ -839,7 +839,6 @@ export const HI_UI: Record<string, string> = {
   "Not in stock": "स्टॉक में नहीं",
   "Check the spelling, or search by salt, barcode or batch number.":
     "स्पेलिंग जाँचें, या साल्ट, बारकोड या बैच नंबर से खोजें।",
-  "MRP (2022)": "MRP (2022)",
   "No medicine matches “{{q}}”.": "“{{q}}” से कोई दवा नहीं मिली।",
   "Type 3+ letters to search the Medicine Library.":
     "मेडिसिन लाइब्रेरी में खोजने के लिए 3+ अक्षर लिखें।",

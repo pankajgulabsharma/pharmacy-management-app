@@ -12,6 +12,7 @@ import { useSalesStore } from "@/features/billing/store/useSalesStore";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import type { ShopPatch } from "@medicare/domain/shop/patch";
 import { applyShopPatch } from "./applyShopPatch";
+import { can } from "@medicare/domain/auth/permissions";
 
 /**
  * Live connection to the server — screens update by themselves, no refresh.
@@ -36,10 +37,12 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
   settings: () => useSettingsStore.getState().loadFromServer(),
   license: () => useLicenseStore.getState().loadFromServer(),
   // My role may have changed; the owner's Users screen refreshes too
+  // (only an owner may read the user list — anyone else would get "no")
   users: async () => {
     await useAuthStore.getState().refreshMe();
     const users = useUserStore.getState();
-    if (users.loaded) await users.load();
+    const role = useAuthStore.getState().session?.user.role;
+    if (users.loaded && can(role, "admin")) await users.load();
   },
 };
 
@@ -64,6 +67,8 @@ type ServerState = {
 };
 
 let inFlight: Promise<void> | null = null;
+/** Bumped on sign-out: a load still running for the last person is ignored */
+let session = 0;
 let stream: EventSource | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let focusHooked = false;
@@ -80,14 +85,17 @@ export const useServerStore = create<ServerState>()((set, get) => ({
   lastSyncAt: null,
 
   sync: () => {
+    const mine = session;
     inFlight ??= (async () => {
       set({ status: "checking" });
       try {
         await Promise.all(
           [...Object.values(LOADERS), ...SHOP_LOADERS].map((load) => load()),
         );
+        if (mine !== session) return;
         set({ status: "online", error: null, lastSyncAt: Date.now() });
       } catch (err) {
+        if (mine !== session) return;
         set({
           status: "offline",
           error:
@@ -96,7 +104,7 @@ export const useServerStore = create<ServerState>()((set, get) => ({
               : "Could not load from the server",
         });
       } finally {
-        inFlight = null;
+        if (mine === session) inFlight = null;
       }
     })();
     return inFlight;
@@ -160,6 +168,10 @@ export const useServerStore = create<ServerState>()((set, get) => ({
 
   disconnect: () => {
     closeStream();
+    // The next person starts clean: no half-finished load, no owner-only lists
+    session++;
+    inFlight = null;
+    useUserStore.setState({ users: [], loaded: false });
     set({ status: "checking", error: null, lastSyncAt: null });
   },
 }));

@@ -19,6 +19,10 @@ export function AppLayout() {
   }, []);
   // Screens wait for the first load, so they never show empty/old numbers
   const loaded = useServerStore((s) => s.lastSyncAt !== null);
+  // First load failed (server down…) → say so, never spin for ever
+  const loadError = useServerStore((s) =>
+    s.status === "offline" ? s.error : null,
+  );
   return (
     <div className="h-screen flex overflow-hidden bg-background">
       <Sidebar />
@@ -32,8 +36,23 @@ export function AppLayout() {
             <KeepAliveOutlet key={i18n.language} />
           ) : (
             <div className="h-full flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {tr("Loading shop data…")}
+              {loadError ? (
+                <>
+                  <span>{tr(loadError)}</span>
+                  <button
+                    type="button"
+                    onClick={() => void useServerStore.getState().sync()}
+                    className="h-7 rounded-md border border-border px-2.5 text-[11px] font-medium text-foreground hover:bg-muted"
+                  >
+                    {tr("Try again")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {tr("Loading shop data…")}
+                </>
+              )}
             </div>
           )}
         </main>

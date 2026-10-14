@@ -3,6 +3,7 @@ import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { apiGet, ApiError } from "@/lib/api";
 import { useServerStore } from "./useServerStore";
+import { useUserStore } from "@/features/settings/store/useUserStore";
 
 const initial = {
   med: useMedicineStore.getState(),
@@ -74,5 +75,27 @@ describe("loading medicines from the server", () => {
     )) as ApiError;
     expect(err).toBeInstanceOf(ApiError);
     expect(err.kind).toBe("timeout");
+  });
+});
+
+describe("sign out → someone else signs in", () => {
+  it("a cashier after the owner gets the shop loaded (no owner-only lists)", async () => {
+    // The owner had Settings → Users open
+    useUserStore.setState({ loaded: true });
+    useServerStore.getState().disconnect(); // sign-out
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        calls.push(url);
+        return /\/api\/users/.test(url)
+          ? json({ error: "Your role can't do this" }, 403)
+          : json({ items: [], count: 0 });
+      }),
+    );
+    await useServerStore.getState().sync();
+    expect(calls.some((u) => /\/api\/users/.test(u))).toBe(false);
+    expect(useServerStore.getState().status).toBe("online");
+    expect(useServerStore.getState().lastSyncAt).not.toBeNull();
   });
 });
