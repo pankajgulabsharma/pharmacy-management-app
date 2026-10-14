@@ -35,12 +35,21 @@ import {
 import type {
   MedicineCategory,
   MedicineFormValues,
-  MedicineInput,
   MedicineWithStock,
 } from "@medicare/domain/medicines/types";
-import { CATEGORY_LABELS } from "@medicare/domain/medicines/types";
+import {
+  CATEGORY_LABELS,
+  emptyMedicineForm,
+} from "@medicare/domain/medicines/types";
+import {
+  libraryToForm,
+  type LibraryItem,
+} from "@medicare/domain/medicines/library";
+import { useLibrarySearch } from "../library/useLibrarySearch";
+import { LibraryList } from "../library/LibraryList";
 import { useMedicineStore } from "../store/useMedicineStore";
 import { useMedicinesWithStock } from "../hooks/useMedicinesWithStock";
+import { saveError, useSaveMedicine } from "../hooks/useSaveMedicine";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
@@ -75,39 +84,9 @@ function isOut(m: MedicineWithStock) {
   return stockLevel(m) === "out";
 }
 
-/** Form strings → typed master input (the store sanitises again) */
-function formToInput(v: MedicineFormValues): MedicineInput {
-  return {
-    name: v.name,
-    salt: v.salt,
-    brand: v.brand,
-    category: v.category,
-    hsn: v.hsn,
-    barcode: v.barcode,
-    rack: v.rack,
-    unit: v.unit,
-    unitsPerStrip: Number(v.unitsPerStrip) || 1,
-    allowLoose: v.allowLoose,
-    mrp: Number(v.mrp) || 0,
-    salePrice: Number(v.salePrice) || 0,
-    minStock: Number(v.minStock) || 0,
-    gstPercent: v.gstPercent,
-    schedule: v.schedule,
-    status: v.status,
-  };
-}
-
-/** The server's own message ("Name is required", "still has stock"…) */
-function saveError(err: unknown): string {
-  return err instanceof Error ? tr(err.message) : tr("Could not save");
-}
-
 export default function MedicinesPage() {
   // Master data + live stock from inventory (single source of truth)
   const items = useMedicinesWithStock();
-  const addMedicine = useMedicineStore((s) => s.addMedicine);
-  const savingRef = useRef(false);
-  const updateMedicine = useMedicineStore((s) => s.updateMedicine);
   const removeMedicine = useMedicineStore((s) => s.removeMedicine);
   const importMedicines = useMedicineStore((s) => s.importMedicines);
 
@@ -185,8 +164,18 @@ export default function MedicinesPage() {
 
   /* ---------------- handlers ---------------- */
 
+  /** New medicine filled from the Medicine Library */
+  const [prefill, setPrefill] = useState<MedicineFormValues | null>(null);
+
   const openAdd = useCallback(() => {
     setEditing(null);
+    setPrefill(null);
+    setDialogOpen(true);
+  }, []);
+
+  const addFromLibrary = useCallback((item: LibraryItem) => {
+    setEditing(null);
+    setPrefill(libraryToForm(item, emptyMedicineForm()));
     setDialogOpen(true);
   }, []);
 
@@ -198,6 +187,7 @@ export default function MedicinesPage() {
   const closeForm = useCallback(() => {
     setDialogOpen(false);
     setEditing(null);
+    setPrefill(null);
   }, []);
 
   const openImport = useCallback(() => setImportOpen(true), []);
@@ -232,27 +222,13 @@ export default function MedicinesPage() {
     [items, removeMedicine],
   );
 
+  const saveMedicine = useSaveMedicine();
   const handleSave = useCallback(
-    (values: MedicineFormValues, editId: string | null) => {
-      if (savingRef.current) return; // ignore a double Enter / double click
-      savingRef.current = true;
-      void (async () => {
-        try {
-          const input = formToInput(values);
-          if (editId) await updateMedicine(editId, input);
-          else await addMedicine(input);
-          // Close only after the database has saved it
-          setDialogOpen(false);
-          setEditing(null);
-          toast.success(editId ? "Medicine updated" : "Medicine added");
-        } catch (err) {
-          toast.error(saveError(err)); // dialog stays open — nothing typed is lost
-        } finally {
-          savingRef.current = false;
-        }
-      })();
+    async (values: MedicineFormValues, editId: string | null) => {
+      // Close only after the database has saved it
+      if (await saveMedicine(values, editId)) closeForm();
     },
-    [addMedicine, updateMedicine],
+    [saveMedicine, closeForm],
   );
 
   const handleImport = useCallback(
@@ -290,6 +266,11 @@ export default function MedicinesPage() {
   // Keyboard: ↑↓ select · Enter/E edit · N new · Delete · / search
   // Cashiers see the list; changing it is for pharmacist / owner
   const canEdit = useCan("stock");
+  // Nothing in the shop's list → maybe it's in the Medicine Library
+  const library = useLibrarySearch(
+    deferredQuery,
+    canEdit && filtered.length === 0,
+  );
   const nav = useListNavigation({
     items: filtered,
     getKey: (m: MedicineWithStock) => m.id,
@@ -408,18 +389,27 @@ export default function MedicinesPage() {
         />
       </div>
 
-      <MedicineTable
-        items={filtered}
-        onEdit={canEdit ? openEdit : undefined}
-        onDelete={canEdit ? setDeleteTarget : undefined}
-        onLabels={openLabels}
-        selectedId={nav.selectedKey}
-        onSelect={nav.select}
-      />
+      {filtered.length === 0 && library.items.length > 0 ? (
+        <LibraryList
+          items={library.items}
+          onPick={addFromLibrary}
+          className="rounded-xl border border-border bg-card overflow-auto min-h-0"
+        />
+      ) : (
+        <MedicineTable
+          items={filtered}
+          onEdit={canEdit ? openEdit : undefined}
+          onDelete={canEdit ? setDeleteTarget : undefined}
+          onLabels={openLabels}
+          selectedId={nav.selectedKey}
+          onSelect={nav.select}
+        />
+      )}
 
       <MedicineFormDialog
         open={dialogOpen}
         medicine={editing}
+        initial={prefill}
         onClose={closeForm}
         onSave={handleSave}
       />

@@ -58,6 +58,7 @@ async function runServer(c: Config) {
   await server?.close();
   server = null;
   process.env.MIGRATIONS_DIR = res("drizzle");
+  process.env.LIBRARY_DATA = res("library/medicines.tsv.br");
   process.env.LICENSE_ENFORCE = "1"; // trial / licence key / on hold
   process.env.APP_VERSION = app.getVersion(); // written next to off-site backups
   server = await startServer({

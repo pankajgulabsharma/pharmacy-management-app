@@ -15,12 +15,17 @@ import {
 } from "@medicare/domain/medicines/types";
 import { medicineSearch } from "@medicare/domain/medicines/search";
 import { caretToEndOnFocusClick } from "@/lib/dom";
+import type { LibraryItem } from "@medicare/domain/medicines/library";
+import { useLibrarySearch } from "@/features/medicines/library/useLibrarySearch";
+import { LibraryList } from "@/features/medicines/library/LibraryList";
 
 const MAX_RESULTS = 8;
 
 type Props = {
   medicines: readonly MedicineWithStock[];
   onPick: (m: MedicineWithStock) => void;
+  /** Not in the shop's medicines → add it from the Medicine Library */
+  onPickLibrary?: (item: LibraryItem) => void;
   disabled?: boolean;
 };
 
@@ -32,6 +37,7 @@ type Props = {
 export const MedicinePicker = memo(function MedicinePicker({
   medicines,
   onPick,
+  onPickLibrary,
   disabled,
 }: Props) {
   const listId = useId();
@@ -47,8 +53,15 @@ export const MedicinePicker = memo(function MedicinePicker({
     });
   }, [medicines, deferredQuery]);
 
+  // None of the shop's medicines match → Medicine Library
+  const library = useLibrarySearch(
+    deferredQuery,
+    !!onPickLibrary && results.length === 0,
+  ).items;
+  const count = results.length || library.length;
+
   // Derived, so it never points past the end of a shorter result list
-  const activeIndex = Math.min(active, Math.max(0, results.length - 1));
+  const activeIndex = Math.min(active, Math.max(0, count - 1));
   const open = query.trim() !== "";
 
   const pick = (m: MedicineWithStock) => {
@@ -56,11 +69,16 @@ export const MedicinePicker = memo(function MedicinePicker({
     setQuery("");
     setActive(0);
   };
+  const pickLibrary = (item: LibraryItem) => {
+    onPickLibrary?.(item);
+    setQuery("");
+    setActive(0);
+  };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActive(Math.min(activeIndex + 1, results.length - 1));
+      setActive(Math.min(activeIndex + 1, count - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActive(Math.max(activeIndex - 1, 0));
@@ -69,6 +87,7 @@ export const MedicinePicker = memo(function MedicinePicker({
       e.preventDefault();
       const m = results[activeIndex];
       if (m) pick(m);
+      else if (library[activeIndex]) pickLibrary(library[activeIndex]);
     } else if (e.key === "Escape" && query) {
       // Clear the search instead of closing the dialog
       e.stopPropagation();
@@ -98,13 +117,22 @@ export const MedicinePicker = memo(function MedicinePicker({
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={
-          open && results[activeIndex] ? `${listId}-${activeIndex}` : undefined
+          open && count > 0 ? `${listId}-${activeIndex}` : undefined
         }
         autoComplete="off"
         spellCheck={false}
       />
 
-      {open && (
+      {open && results.length === 0 && library.length > 0 ? (
+        <LibraryList
+          items={library}
+          onPick={pickLibrary}
+          activeIndex={activeIndex}
+          onHover={setActive}
+          idPrefix={listId}
+          className="absolute left-0 right-0 top-full mt-1 z-30 max-h-80 overflow-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
+        />
+      ) : open ? (
         <ul
           id={listId}
           role="listbox"
@@ -152,7 +180,7 @@ export const MedicinePicker = memo(function MedicinePicker({
             ))
           )}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 });

@@ -2,8 +2,9 @@
  * Puts the app together for Electron:
  *  1. main process + the whole server  → dist/main.js (one file)
  *  2. preload                          → dist/preload.cjs
- *  3. screens (apps/desktop/dist), table updates (apps/server/drizzle) and
- *     the window icon → res/, shipped next to the app by electron-builder
+ *  3. screens (apps/desktop/dist), table updates (apps/server/drizzle), the
+ *     Medicine Library (apps/server/library) and the window icon → res/,
+ *     shipped next to the app by electron-builder
  * Run `npm run build` in the project root first (builds the screens).
  */
 import { build } from "esbuild";
@@ -55,6 +56,7 @@ await build({
 for (const [from, to] of [
   [ui, "../res/app-ui"],
   [at("../../apps/server/drizzle"), "../res/drizzle"],
+  [at("../../apps/server/library"), "../res/library"],
   [at("../build/icon.png"), "../res/icon.png"],
 ]) {
   rmSync(at(to), { recursive: true, force: true });

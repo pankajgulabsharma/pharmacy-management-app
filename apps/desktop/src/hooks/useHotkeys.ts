@@ -17,7 +17,7 @@ export type HotkeyBinding = {
 };
 
 /** Keys that never type text, so they are safe to use even inside inputs */
-const SAFE_IN_INPUT = /^(F\d{1,2}|Mod\+|Alt\+|Escape$)/;
+const SAFE_IN_INPUT = /^((Shift\+)?F\d{1,2}|Mod\+|Alt\+|Escape$)/;
 
 /**
  * Registers keyboard shortcuts for the lifetime of the component.

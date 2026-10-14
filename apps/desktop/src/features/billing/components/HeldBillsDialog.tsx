@@ -10,7 +10,7 @@ import { tr } from "@/lib/i18n";
 type Props = {
   open: boolean;
   held: HeldBill[];
-  /** Current cart has items — resuming will replace it */
+  /** Bill on screen has items and no tab is free — resuming holds it first */
   cartHasItems: boolean;
   onResume: (id: string) => void;
   onDiscard: (id: string) => void;

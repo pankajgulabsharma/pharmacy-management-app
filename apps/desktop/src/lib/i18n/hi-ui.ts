@@ -816,4 +816,19 @@ export const HI_UI: Record<string, string> = {
   "Udhaar balances and stock simply carry on — nothing to close or re-enter.":
     "उधार बाकी और स्टॉक वैसे ही आगे चलते हैं — कुछ बंद या दोबारा दर्ज नहीं करना।",
   "Loading older bills…": "पुराने बिल लोड हो रहे हैं…",
+  "Open bills": "खुले बिल",
+  "Close (bill goes to Held bills)": "बंद करें (बिल रोके गए बिलों में जाएगा)",
+  "New bill tab": "नया बिल टैब",
+  "New bill tab (up to 10 customers)": "नया बिल टैब (10 ग्राहक तक)",
+  "Previous / next bill tab (Ctrl+1 … 9 in the app)":
+    "पिछला / अगला बिल टैब (ऐप में Ctrl+1 … 9)",
+  "Not in your medicines — from the Medicine Library":
+    "आपकी दवाइयों में नहीं — मेडिसिन लाइब्रेरी से",
+  "Medicine Library": "मेडिसिन लाइब्रेरी",
+  "Price in 2022 — check the pack": "2022 का दाम — पैक पर देखें",
+  "Same salt in stock": "स्टॉक में यही साल्ट",
+  "Type the name — pick from the Medicine Library to fill the rest":
+    "नाम लिखें — मेडिसिन लाइब्रेरी से चुनें, बाकी अपने आप भरेगा",
+  "Filled from the Medicine Library (2022 data). Check MRP, HSN, GST and schedule on the pack before saving.":
+    "मेडिसिन लाइब्रेरी (2022) से भरा गया। सेव करने से पहले पैक पर MRP, HSN, GST और शेड्यूल जाँच लें।",
 };

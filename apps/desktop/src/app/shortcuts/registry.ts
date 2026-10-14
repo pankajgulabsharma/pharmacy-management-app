@@ -126,6 +126,10 @@ export const KEYS = {
   nextPayment: ["F4", "Alt+P"],
   /** Jump to the amount box of the chosen payment method */
   payAmount: "Alt+A",
+  /** Bill tabs — Ctrl+T / Ctrl+1…9 work in the installed app (browsers keep them) */
+  newBillTab: ["Mod+T", "Shift+F2"],
+  prevBillTab: "Alt+PageUp",
+  nextBillTab: "Alt+PageDown",
   heldBills: ["F6", "Alt+L"],
   holdBill: ["F7", "Alt+W"],
   saveBill: ["F8", "Mod+S"],
@@ -192,6 +196,11 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: KEYS.nextPayment, label: "Next payment method" },
       { keys: KEYS.savePrintBill, label: "Save & print — one key bill" },
       { keys: KEYS.saveBill, label: "Save without printing" },
+      { keys: KEYS.newBillTab, label: "New bill tab (up to 10 customers)" },
+      {
+        keys: [KEYS.prevBillTab, KEYS.nextBillTab],
+        label: "Previous / next bill tab (Ctrl+1 … 9 in the app)",
+      },
       { keys: KEYS.holdBill, label: "Hold bill" },
       { keys: KEYS.heldBills, label: "Held bills" },
       { keys: KEYS.salesReturn, label: "Sales return" },

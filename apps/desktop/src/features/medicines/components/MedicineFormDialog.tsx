@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent, type KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,10 +34,19 @@ import {
   validateMedicineForm,
   type FieldErrors,
 } from "@medicare/domain/medicines/validation";
+import {
+  libraryToForm,
+  type LibraryItem,
+} from "@medicare/domain/medicines/library";
+import { tr } from "@/lib/i18n";
+import { useLibrarySearch } from "../library/useLibrarySearch";
+import { LibraryList } from "../library/LibraryList";
 
 type Props = {
   open: boolean;
   medicine: Medicine | null;
+  /** New medicine already filled in (e.g. picked from the Medicine Library) */
+  initial?: MedicineFormValues | null;
   onClose: () => void;
   onSave: (values: MedicineFormValues, editId: string | null) => void;
 };
@@ -46,25 +55,69 @@ type Props = {
  * Mounts the form only while open (keyed by the medicine), so every open
  * starts from fresh values — no reset effect needed.
  */
-export function MedicineFormDialog({ open, medicine, onClose, onSave }: Props) {
+export function MedicineFormDialog({
+  open,
+  medicine,
+  initial,
+  onClose,
+  onSave,
+}: Props) {
   if (!open) return null;
   return (
     <MedicineForm
-      key={medicine?.id ?? "new"}
+      key={medicine?.id ?? initial?.name ?? "new"}
       medicine={medicine}
+      initial={initial}
       onClose={onClose}
       onSave={onSave}
     />
   );
 }
 
-function MedicineForm({ medicine, onClose, onSave }: Omit<Props, "open">) {
+function MedicineForm({
+  medicine,
+  initial,
+  onClose,
+  onSave,
+}: Omit<Props, "open">) {
   const titleId = useId();
+  const libId = useId();
   const isEdit = Boolean(medicine);
   const [values, setValues] = useState<MedicineFormValues>(() =>
-    medicine ? medicineToForm(medicine) : emptyMedicineForm(),
+    medicine ? medicineToForm(medicine) : (initial ?? emptyMedicineForm()),
   );
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  // New medicine: suggestions from the Medicine Library while typing the name
+  const [fromLibrary, setFromLibrary] = useState(Boolean(initial));
+  const [libClosed, setLibClosed] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [libActive, setLibActive] = useState(0);
+  const library = useLibrarySearch(
+    values.name,
+    !isEdit && !fromLibrary && !libClosed && nameFocused,
+  );
+  const libItems = library.items;
+  const libIndex = Math.min(libActive, libItems.length - 1);
+  const fillFromLibrary = (item: LibraryItem) => {
+    setValues((prev) => libraryToForm(item, prev));
+    setErrors({});
+    setFromLibrary(true);
+  };
+  const onNameKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (libItems.length === 0) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const d = e.key === "ArrowDown" ? 1 : -1;
+      setLibActive(Math.max(0, Math.min(libItems.length - 1, libIndex + d)));
+    } else if (e.key === "Enter") {
+      e.preventDefault(); // pick, don't submit
+      fillFromLibrary(libItems[libIndex]);
+    } else if (e.key === "Escape") {
+      e.stopPropagation(); // close the list, not the dialog
+      setLibClosed(true);
+    }
+  };
 
   const setField =
     <K extends keyof MedicineFormValues>(key: K) =>
@@ -126,21 +179,62 @@ function MedicineForm({ medicine, onClose, onSave }: Omit<Props, "open">) {
       </div>
 
       <form onSubmit={handleSubmit} className="p-5 space-y-4" noValidate>
+        {fromLibrary && !isEdit ? (
+          <p
+            role="note"
+            className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-300"
+          >
+            {tr(
+              "Filled from the Medicine Library (2022 data). Check MRP, HSN, GST and schedule on the pack before saving.",
+            )}
+          </p>
+        ) : null}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <Field
             label="Medicine name *"
             error={errors.name}
             className="sm:col-span-2"
           >
-            <Input
-              value={values.name}
-              onChange={(e) => setField("name")(e.target.value)}
-              data-autofocus
-              maxLength={120}
-              placeholder="e.g. Dolo 650 / Ascoril LS Syrup"
-              className={fieldClass}
-              autoComplete="off"
-            />
+            <div className="relative">
+              <Input
+                value={values.name}
+                onChange={(e) => {
+                  setField("name")(e.target.value);
+                  setLibActive(0);
+                  setLibClosed(false);
+                }}
+                onKeyDown={onNameKeyDown}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => setNameFocused(false)}
+                data-autofocus
+                maxLength={120}
+                placeholder={
+                  isEdit
+                    ? "e.g. Dolo 650 / Ascoril LS Syrup"
+                    : tr(
+                        "Type the name — pick from the Medicine Library to fill the rest",
+                      )
+                }
+                className={fieldClass}
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={libItems.length > 0}
+                aria-controls={libId}
+                aria-activedescendant={
+                  libItems.length ? `${libId}-${libIndex}` : undefined
+                }
+              />
+              {libItems.length > 0 ? (
+                <LibraryList
+                  items={libItems}
+                  onPick={fillFromLibrary}
+                  activeIndex={libIndex}
+                  onHover={setLibActive}
+                  idPrefix={libId}
+                  className="absolute left-0 right-0 top-full mt-1 z-30 max-h-80 overflow-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
+                />
+              ) : null}
+            </div>
           </Field>
           <Field label="Category *">
             <select

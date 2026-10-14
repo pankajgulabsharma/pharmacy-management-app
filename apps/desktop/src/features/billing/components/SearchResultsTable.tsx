@@ -10,6 +10,11 @@ import { BatchExpiry } from "./BatchExpiry";
 import { formatPaise } from "@medicare/domain/lib/money";
 import type { SellableItem } from "../hooks/useBillingData";
 import { tr } from "@/lib/i18n";
+import { useLibrarySearch } from "@/features/medicines/library/useLibrarySearch";
+import { LibraryList } from "@/features/medicines/library/LibraryList";
+
+/** "Cefixime (200mg) + Ofloxacin (200mg)" → "Cefixime" */
+const firstSalt = (salt: string) => salt.split(/[+(]/)[0].trim();
 
 type Props = {
   results: SellableItem[];
@@ -17,6 +22,8 @@ type Props = {
   focusedIndex: number;
   onSelect: (item: SellableItem) => void;
   onHoverIndex: (index: number) => void;
+  /** Search the shop's stock for this salt (same medicine, other brand) */
+  onSearch: (q: string) => void;
 };
 
 export function SearchResultsTable({
@@ -25,8 +32,11 @@ export function SearchResultsTable({
   focusedIndex,
   onSelect,
   onHoverIndex,
+  onSearch,
 }: Props) {
   const { t } = useTranslation();
+  // Not in this shop → what it is (Medicine Library), to find the same salt
+  const library = useLibrarySearch(query, results.length === 0, 5).items;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Arrow keys move the highlight — keep that row on screen
@@ -43,11 +53,19 @@ export function SearchResultsTable({
   }
   if (results.length === 0) {
     return (
-      <EmptyState
-        icon={SearchX}
-        title={`${t("billing.noResults")} “${query.trim()}”`}
-        description="Check the spelling, or search by salt, barcode or batch number."
-      />
+      <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+        <EmptyState
+          icon={SearchX}
+          title={`${t("billing.noResults")} “${query.trim()}”`}
+          description="Check the spelling, or search by salt, barcode or batch number."
+        />
+        <LibraryList
+          items={library}
+          actionLabel="Same salt in stock"
+          onPick={(x) => x.salt && onSearch(firstSalt(x.salt))}
+          className="rounded-lg border border-border bg-card shrink-0"
+        />
+      </div>
     );
   }
 

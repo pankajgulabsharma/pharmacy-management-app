@@ -8,6 +8,8 @@ import { DEFAULT_BACKUP_DIR, DEFAULT_DB_FILE, openDatabase } from "./db/client";
 import { ensureOwner } from "./auth/store";
 import { startAutoBackup } from "./backup/backup";
 import { copyOffsite } from "./backup/offsite";
+import { openLibrary } from "./library/library";
+import { dirname, resolve } from "node:path";
 
 export type ServerOptions = {
   dbFile?: string;
@@ -42,8 +44,15 @@ export async function startServer({
   const stopBackups = startAutoBackup(database.raw, backupDir, (b) => {
     copyOffsite(database.raw, backupDir, license, b);
   });
+  // Built in the background on first start; search works once it's ready
+  const library = openLibrary(
+    resolve(dirname(dbFile), "medicine-library.sqlite"),
+    undefined,
+    log,
+  );
   const app = buildApp({
     database,
+    library,
     backupDir,
     license,
     appDir,
@@ -53,6 +62,7 @@ export async function startServer({
     await app.listen({ port, host });
   } catch (err) {
     stopBackups();
+    library.close();
     database.close();
     throw err;
   }
@@ -65,6 +75,7 @@ export async function startServer({
     close: async () => {
       stopBackups();
       await app.close();
+      library.close();
       database.close();
     },
   };

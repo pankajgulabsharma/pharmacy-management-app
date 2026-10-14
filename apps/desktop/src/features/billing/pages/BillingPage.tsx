@@ -31,6 +31,13 @@ import { CustomerAccountPicker } from "../components/CustomerAccountPicker";
 import { SalesReturnPanel } from "../components/SalesReturnPanel";
 import { ReceiptDialog } from "../components/ReceiptDialog";
 import { HeldBillsDialog } from "../components/HeldBillsDialog";
+import { BillTabs } from "../components/BillTabs";
+import {
+  MAX_BILL_TABS,
+  useBillTabsStore,
+  useDraftField,
+  type BillDraft,
+} from "../store/useBillTabsStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useSalesStore } from "../store/useSalesStore";
 import {
@@ -44,7 +51,6 @@ import {
   EMPTY_PAYMENT,
   PAYMENT_METHOD_LABELS,
   type PaymentMethod,
-  type CartLine,
   type PaymentDraft,
   type Sale,
 } from "@medicare/domain/billing/types";
@@ -86,20 +92,34 @@ export default function BillingPage() {
   );
 
   const [mode, setMode] = useState<"billing" | "return">("billing");
-  /** Customer account for udhaar (required when paying by udhaar) */
-  const [udhaarCustomerId, setUdhaarCustomerId] = useState<string | null>(null);
   /** Bill picked from "Recent bills" → opens Sales Return on it */
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
-  const [customerName, setCustomerName] = useState("");
-  /** B2B (GST) bill: buyer's GSTIN — "" for a normal retail bill */
-  const [customerGstin, setCustomerGstin] = useState<string | null>(null);
   const shopGstin = useSettingsStore((s) => s.shop.gstin);
-  const [doctor, setDoctor] = useState<string>(() => doctors[0] ?? "");
-  const [counter, setCounter] = useState<string>(defaultCounter);
+
+  // The bill on screen is the active tab's draft (kept on this computer)
+  const drafts = useBillTabsStore((s) => s.drafts);
+  const activeId = useBillTabsStore((s) => s.activeId);
+  const openTab = useBillTabsStore((s) => s.open);
+  const selectTab = useBillTabsStore((s) => s.select);
+  const closeTab = useBillTabsStore((s) => s.close);
+  const updateDraft = useBillTabsStore((s) => s.update);
+  const draft = drafts.find((d) => d.id === activeId) ?? drafts[0];
+  const { cart, customerName, customerGstin, udhaarCustomerId } = draft;
+  /** Customer account for udhaar (required when paying by udhaar) */
+  const doctor = draft.doctor ?? doctors[0] ?? "";
+  const counter = draft.counter ?? defaultCounter;
+  const payment = draft.payment ?? freshPayment;
+
+  const setCart = useDraftField(draft.id, "cart");
+  const setCustomerName = useDraftField(draft.id, "customerName");
+  const setCustomerGstin = useDraftField(draft.id, "customerGstin");
+  const setUdhaarCustomerId = useDraftField(draft.id, "udhaarCustomerId");
+  const setDoctor = useDraftField(draft.id, "doctor");
+  const setCounter = useDraftField(draft.id, "counter");
+  const setPayment = useDraftField(draft.id, "payment");
+
   const [query, setQuery] = useState("");
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [cart, setCart] = useState<CartLine[]>([]);
-  const [payment, setPayment] = useState<PaymentDraft>(freshPayment);
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<{
     sale: Sale;
@@ -244,7 +264,7 @@ export default function BillingPage() {
       setQuery("");
       setFocusedIndex(0);
     },
-    [cart],
+    [cart, setCart],
   );
 
   const changeQty = useCallback(
@@ -255,7 +275,7 @@ export default function BillingPage() {
         ),
       );
     },
-    [],
+    [setCart],
   );
 
   const changeDiscount = useCallback(
@@ -264,20 +284,58 @@ export default function BillingPage() {
         prev.map((l) => (l.lineId === lineId ? { ...l, discountPercent } : l)),
       );
     },
-    [],
+    [setCart],
   );
 
-  const removeLine = useCallback((lineId: string) => {
-    setCart((prev) => prev.filter((l) => l.lineId !== lineId));
-  }, []);
+  const removeLine = useCallback(
+    (lineId: string) =>
+      setCart((prev) => prev.filter((l) => l.lineId !== lineId)),
+    [setCart],
+  );
 
-  const resetBill = useCallback(() => {
-    setUdhaarCustomerId(null);
-    setCart([]);
-    setPayment(freshPayment);
-    setCustomerName("");
-    setCustomerGstin(null);
-  }, [freshPayment]);
+  /** Empties a bill (keeps its tab, doctor and counter) */
+  const resetBill = useCallback(
+    (id: string = draft.id) =>
+      updateDraft(id, {
+        udhaarCustomerId: null,
+        cart: [],
+        payment: null,
+        customerName: "",
+        customerGstin: null,
+        netPaise: 0,
+      }),
+    [updateDraft, draft.id],
+  );
+
+  /* ---------------- bill tabs ---------------- */
+
+  // The tab label shows each bill's total
+  const netPaise = bill.totals.netPaise;
+  useEffect(() => {
+    if (draft.netPaise !== netPaise) updateDraft(draft.id, { netPaise });
+  }, [draft.id, draft.netPaise, netPaise, updateDraft]);
+
+  // Another tab → fresh search, cursor back in it
+  const [shownId, setShownId] = useState(draft.id);
+  if (shownId !== draft.id) {
+    setShownId(draft.id);
+    setQuery("");
+    setFocusedIndex(0);
+    setSelectedLineId(null);
+  }
+  useEffect(() => focusSearch(), [draft.id, focusSearch]);
+
+  const newTab = useCallback(() => {
+    if (!openTab())
+      toast.info(`${MAX_BILL_TABS} bills are open`, {
+        description: "Save or hold one to start another",
+      });
+  }, [openTab]);
+
+  const switchTab = (step: number) => {
+    const i = drafts.findIndex((d) => d.id === draft.id);
+    selectTab(drafts[(i + step + drafts.length) % drafts.length].id);
+  };
 
   /* ---------------- save / hold ---------------- */
 
@@ -286,6 +344,7 @@ export default function BillingPage() {
       if (savingRef.current || blockReason) return; // double-submit guard
       savingRef.current = true;
       setSaving(true);
+      const id = draft.id; // the cashier may switch tabs while it saves
       try {
         // The server checks stock, takes it (FEFO) and saves — all or nothing
         const sale = await completeSale({
@@ -297,7 +356,8 @@ export default function BillingPage() {
           payment,
           ...(customerGstin ? { customerGstin } : {}),
         });
-        resetBill();
+        // Saved → its tab closes (the last tab is emptied for the next customer)
+        closeTab(id);
         setSelectedLineId(null);
         focusSearch();
         if (print) {
@@ -322,40 +382,72 @@ export default function BillingPage() {
       doctor,
       counter,
       payment,
-      resetBill,
+      closeTab,
+      draft.id,
       focusSearch,
       udhaarCustomerId,
       customerGstin,
     ],
   );
 
-  const holdCurrent = useCallback(async (): Promise<boolean> => {
-    try {
-      await holdBill({ customerName, doctor, counter, lines: cart });
-      resetBill();
-      return true;
-    } catch (err) {
-      toast.error(errorMessage(err, "Could not hold the bill"));
-      return false;
-    }
-  }, [holdBill, customerName, doctor, counter, cart, resetBill]);
+  /** Parks a bill in "Held bills" (server) and empties / closes its tab */
+  const holdDraft = useCallback(
+    async (d: BillDraft, close: boolean): Promise<boolean> => {
+      try {
+        await holdBill({
+          customerName: d.customerName,
+          doctor: d.doctor ?? doctors[0] ?? "",
+          counter: d.counter ?? defaultCounter,
+          lines: d.cart,
+        });
+        if (close) closeTab(d.id);
+        else resetBill(d.id);
+        return true;
+      } catch (err) {
+        toast.error(errorMessage(err, "Could not hold the bill"));
+        return false;
+      }
+    },
+    [holdBill, doctors, defaultCounter, closeTab, resetBill],
+  );
 
   const handleHold = useCallback(async () => {
-    if (await holdCurrent())
+    if (await holdDraft(draft, false))
       toast.success("Bill held", { description: "Find it under “Held bills”" });
-  }, [holdCurrent]);
+  }, [holdDraft, draft]);
+
+  /** ✕ on a tab: an empty bill just closes, one with items is held first */
+  const handleCloseTab = useCallback(
+    async (id: string) => {
+      const d = drafts.find((x) => x.id === id);
+      if (!d) return;
+      if (d.cart.length === 0) closeTab(id);
+      else if (await holdDraft(d, true))
+        toast.success("Bill held", {
+          description: "Find it under “Held bills”",
+        });
+    },
+    [drafts, closeTab, holdDraft],
+  );
 
   const handleResume = useCallback(
     async (id: string) => {
-      // Never lose the bill on screen: hold it first
-      if (cart.length > 0 && !(await holdCurrent())) return;
+      // Never lose the bill on screen: open the held one in a new tab, or
+      // (all 10 tabs busy) hold this one first
+      const intoNewTab = cart.length > 0 && drafts.length < MAX_BILL_TABS;
+      if (cart.length > 0 && !intoNewTab && !(await holdDraft(draft, false)))
+        return;
       try {
         const h = await takeHeld(id);
-        setCart(h.lines);
-        setCustomerName(h.customerName);
-        setDoctor(h.doctor || (doctors[0] ?? ""));
-        setCounter(h.counter || defaultCounter);
-        setPayment(freshPayment);
+        const restored = {
+          cart: h.lines,
+          customerName: h.customerName,
+          doctor: h.doctor || null,
+          counter: h.counter || null,
+          payment: null,
+        };
+        if (intoNewTab) openTab(restored);
+        else updateDraft(draft.id, restored);
         setHeldOpen(false);
         toast.info("Held bill resumed", {
           description: "Stock and prices were re-checked",
@@ -364,7 +456,15 @@ export default function BillingPage() {
         toast.error(errorMessage(err, "Could not resume the bill"));
       }
     },
-    [cart.length, holdCurrent, takeHeld, doctors, defaultCounter, freshPayment],
+    [
+      cart.length,
+      drafts.length,
+      draft,
+      holdDraft,
+      takeHeld,
+      openTab,
+      updateDraft,
+    ],
   );
 
   /* ---------------- keyboard ---------------- */
@@ -548,7 +648,28 @@ export default function BillingPage() {
       { keys: KEYS.saveBill, handler: () => handleSave(false) },
       { keys: KEYS.savePrintBill, handler: () => handleSave(true) },
       { keys: KEYS.salesReturn, handler: () => setMode("return") },
-      { keys: KEYS.clearBill, enabled: cart.length > 0, handler: resetBill },
+      {
+        keys: KEYS.clearBill,
+        enabled: cart.length > 0,
+        handler: () => resetBill(),
+      },
+
+      // Bill tabs
+      { keys: KEYS.newBillTab, handler: newTab },
+      {
+        keys: KEYS.prevBillTab,
+        enabled: drafts.length > 1,
+        handler: () => switchTab(-1),
+      },
+      {
+        keys: KEYS.nextBillTab,
+        enabled: drafts.length > 1,
+        handler: () => switchTab(1),
+      },
+      ...drafts.slice(0, 9).map((d, i) => ({
+        keys: `Mod+${i + 1}`,
+        handler: () => selectTab(d.id),
+      })),
     ],
     mode === "billing",
   );
@@ -576,6 +697,14 @@ export default function BillingPage() {
     <div className="h-full w-full p-3 overflow-hidden box-border bg-background">
       <div className="h-full grid grid-cols-12 gap-3 min-h-0">
         <div className="col-span-12 xl:col-span-9 flex flex-col gap-2.5 min-h-0 overflow-hidden">
+          <BillTabs
+            drafts={drafts}
+            activeId={draft.id}
+            onSelect={selectTab}
+            onNew={newTab}
+            onClose={(id) => void handleCloseTab(id)}
+          />
+
           <BillingContextBar
             customerName={customerName}
             onCustomerChange={setCustomerName}
@@ -605,7 +734,7 @@ export default function BillingPage() {
             {cart.length > 0 && (
               <button
                 type="button"
-                onClick={resetBill}
+                onClick={() => resetBill()}
                 className="h-9 shrink-0 rounded-lg border border-border px-3 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 {tr("Clear All")}
@@ -641,6 +770,10 @@ export default function BillingPage() {
               focusedIndex={focusedIndex}
               onSelect={addToCart}
               onHoverIndex={setFocusedIndex}
+              onSearch={(q) => {
+                handleQueryChange(q);
+                searchRef.current?.focus();
+              }}
             />
           ) : cart.length > 0 ? (
             <BillItemsTable
@@ -705,7 +838,7 @@ export default function BillingPage() {
       <HeldBillsDialog
         open={heldOpen}
         held={held}
-        cartHasItems={cart.length > 0}
+        cartHasItems={cart.length > 0 && drafts.length >= MAX_BILL_TABS}
         onResume={handleResume}
         onDiscard={(id) =>
           discardHeld(id).catch((err: unknown) =>

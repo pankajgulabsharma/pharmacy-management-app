@@ -45,6 +45,16 @@ import {
   validatePurchaseDraft,
 } from "@medicare/domain/purchases/validation";
 import { MedicinePicker } from "./MedicinePicker";
+import { MedicineFormDialog } from "@/features/medicines/components/MedicineFormDialog";
+import { useSaveMedicine } from "@/features/medicines/hooks/useSaveMedicine";
+import {
+  libraryToForm,
+  type LibraryItem,
+} from "@medicare/domain/medicines/library";
+import {
+  emptyMedicineForm,
+  type MedicineFormValues,
+} from "@medicare/domain/medicines/types";
 import {
   PurchaseLinesEditor,
   type LineChangeHandler,
@@ -177,6 +187,27 @@ function PurchaseForm({
     });
   }, []);
 
+  // A medicine not in the shop yet: fill it from the Medicine Library,
+  // check, save — then it's on the bill
+  const [newMedicine, setNewMedicine] = useState<MedicineFormValues | null>(
+    null,
+  );
+  const saveMedicine = useSaveMedicine();
+  const pickLibrary = useCallback(
+    (item: LibraryItem) =>
+      setNewMedicine(libraryToForm(item, emptyMedicineForm())),
+    [],
+  );
+  const saveNewMedicine = useCallback(
+    async (values: MedicineFormValues) => {
+      const m = await saveMedicine(values, null);
+      if (!m) return;
+      setNewMedicine(null);
+      addLine(m);
+    },
+    [saveMedicine, addLine],
+  );
+
   const updateLine = useCallback<LineChangeHandler>((key, field, value) => {
     setDraft((d) => ({
       ...d,
@@ -246,231 +277,247 @@ function PurchaseForm({
   const h = errors.header;
 
   return (
-    <ModalShell
-      open
-      onClose={requestClose}
-      labelledBy={titleId}
-      className="max-w-6xl h-[92vh] flex flex-col overflow-hidden"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Truck className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <h2 id={titleId} className="text-sm font-semibold">
-              {editing
-                ? `Edit purchase · ${editing.invoiceNo}`
-                : "New purchase"}
-            </h2>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {editing
-                ? `Revision ${editing.revision} → ${editing.revision + 1} · stock will be re-posted · Ctrl + S to save`
-                : "Enter the supplier's invoice · Ctrl + S to save"}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={requestClose}
-          aria-label="Close"
-          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        onKeyDown={onFormKeyDown}
-        noValidate
-        className="flex-1 min-h-0 flex flex-col"
+    <>
+      <ModalShell
+        open
+        onClose={requestClose}
+        labelledBy={titleId}
+        className="max-w-6xl h-[92vh] flex flex-col overflow-hidden"
       >
-        {/* Invoice details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-4 pt-3 shrink-0">
-          <FormField
-            label="Supplier *"
-            htmlFor="purchase-supplier"
-            error={h.supplierId}
-            hint={
-              supplier
-                ? `GSTIN ${supplier.gstin} · ${supplier.city}`
-                : undefined
-            }
-            className="lg:col-span-2"
-          >
-            <select
-              id="purchase-supplier"
-              data-autofocus
-              value={draft.supplierId}
-              onChange={(e) => setHeader("supplierId", e.target.value)}
-              aria-invalid={Boolean(h.supplierId)}
-              className={cn(fieldClass, h.supplierId && invalidFieldClass)}
-            >
-              <option value="">Select supplier…</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <FormField
-            label="Supplier invoice no. *"
-            htmlFor="purchase-invoice-no"
-            error={h.invoiceNo}
-          >
-            <Input
-              id="purchase-invoice-no"
-              value={draft.invoiceNo}
-              onChange={(e) =>
-                setHeader(
-                  "invoiceNo",
-                  toCodeInput(e.target.value, PURCHASE_LIMITS.invoiceNoMax),
-                )
-              }
-              placeholder="e.g. SGP/26-27/1184"
-              aria-invalid={Boolean(h.invoiceNo)}
-              className={cn(
-                fieldClass,
-                "font-mono",
-                h.invoiceNo && invalidFieldClass,
-              )}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </FormField>
-
-          <FormField
-            label="Invoice date *"
-            htmlFor="purchase-invoice-date"
-            error={h.invoiceDate}
-          >
-            <DateInput
-              id="purchase-invoice-date"
-              value={draft.invoiceDate}
-              max={toISODate(today)}
-              onChange={(e) => setHeader("invoiceDate", e.target.value)}
-              aria-invalid={Boolean(h.invoiceDate)}
-              className={cn(fieldClass, h.invoiceDate && invalidFieldClass)}
-            />
-          </FormField>
-        </div>
-
-        {/* Item search */}
-        <div className="px-4 pt-3 shrink-0">
-          <MedicinePicker medicines={medicines} onPick={addLine} />
-          {h.lines ? (
-            <p className="mt-1 text-[10px] text-red-500" role="alert">
-              {h.lines}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Items */}
-        <div ref={linesRef} className="flex-1 min-h-0 flex flex-col px-4 pt-3">
-          <PurchaseLinesEditor
-            lines={draft.lines}
-            errors={errors.lines}
-            today={today}
-            onChange={updateLine}
-            onRemove={removeLine}
-          />
-        </div>
-
-        {/* Notes + totals */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_240px_280px] items-start gap-3 px-4 pt-3 shrink-0">
-          <FormField
-            label="Notes"
-            htmlFor="purchase-notes"
-            hint="Visible only inside the app"
-          >
-            <textarea
-              id="purchase-notes"
-              value={draft.notes}
-              onChange={(e) => setHeader("notes", e.target.value)}
-              maxLength={PURCHASE_LIMITS.notesMax}
-              rows={4}
-              placeholder="e.g. 2 strips damaged, credit note promised"
-              className={cn(fieldClass, "h-auto py-2 resize-none")}
-            />
-          </FormField>
-
-          <PurchaseTotalsPanel
-            totals={totals}
-            paid={draft.paid}
-            paidError={h.paid}
-            dueDate={dueDate}
-            creditDays={supplier?.creditDays ?? null}
-            onPaidChange={onPaidChange}
-            lockedPaidPaise={editing ? editing.paidPaise : undefined}
-            returnedPaise={editing?.returnedPaise ?? 0}
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-border px-4 py-3 shrink-0">
-          {confirmDiscard ? (
-            <p
-              className="text-[11px] text-orange-600 dark:text-orange-400"
-              role="alert"
-            >
-              {isEdit
-                ? "Discard your changes? The invoice stays as it was."
-                : "Discard this purchase? Everything entered will be lost."}
-            </p>
-          ) : (
-            <p className="text-[11px] text-muted-foreground">
-              {isEdit
-                ? "Stock will be re-posted as"
-                : "Stock will be added for"}{" "}
-              {totals.totalQty + totals.totalFreeQty} packs
-            </p>
-          )}
-
-          <div className="flex items-center gap-2 shrink-0">
-            {confirmDiscard ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 rounded-lg text-[12px]"
-                  onClick={() => setConfirmDiscard(false)}
-                >
-                  Keep editing
-                </Button>
-                <Button
-                  type="button"
-                  className="h-9 rounded-lg text-[12px] bg-red-600 text-white hover:bg-red-700"
-                  onClick={onClose}
-                >
-                  Discard
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 rounded-lg text-[12px]"
-                  onClick={requestClose}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="h-9 rounded-lg text-[12px]">
-                  {isEdit ? "Save changes" : "Save purchase"}
-                  {totals.netPaise > 0
-                    ? ` · ₹${formatPaise(totals.netPaise)}`
-                    : ""}
-                </Button>
-              </>
-            )}
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Truck className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <h2 id={titleId} className="text-sm font-semibold">
+                {editing
+                  ? `Edit purchase · ${editing.invoiceNo}`
+                  : "New purchase"}
+              </h2>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {editing
+                  ? `Revision ${editing.revision} → ${editing.revision + 1} · stock will be re-posted · Ctrl + S to save`
+                  : "Enter the supplier's invoice · Ctrl + S to save"}
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label="Close"
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      </form>
-    </ModalShell>
+
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          onKeyDown={onFormKeyDown}
+          noValidate
+          className="flex-1 min-h-0 flex flex-col"
+        >
+          {/* Invoice details */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-4 pt-3 shrink-0">
+            <FormField
+              label="Supplier *"
+              htmlFor="purchase-supplier"
+              error={h.supplierId}
+              hint={
+                supplier
+                  ? `GSTIN ${supplier.gstin} · ${supplier.city}`
+                  : undefined
+              }
+              className="lg:col-span-2"
+            >
+              <select
+                id="purchase-supplier"
+                data-autofocus
+                value={draft.supplierId}
+                onChange={(e) => setHeader("supplierId", e.target.value)}
+                aria-invalid={Boolean(h.supplierId)}
+                className={cn(fieldClass, h.supplierId && invalidFieldClass)}
+              >
+                <option value="">Select supplier…</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <FormField
+              label="Supplier invoice no. *"
+              htmlFor="purchase-invoice-no"
+              error={h.invoiceNo}
+            >
+              <Input
+                id="purchase-invoice-no"
+                value={draft.invoiceNo}
+                onChange={(e) =>
+                  setHeader(
+                    "invoiceNo",
+                    toCodeInput(e.target.value, PURCHASE_LIMITS.invoiceNoMax),
+                  )
+                }
+                placeholder="e.g. SGP/26-27/1184"
+                aria-invalid={Boolean(h.invoiceNo)}
+                className={cn(
+                  fieldClass,
+                  "font-mono",
+                  h.invoiceNo && invalidFieldClass,
+                )}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </FormField>
+
+            <FormField
+              label="Invoice date *"
+              htmlFor="purchase-invoice-date"
+              error={h.invoiceDate}
+            >
+              <DateInput
+                id="purchase-invoice-date"
+                value={draft.invoiceDate}
+                max={toISODate(today)}
+                onChange={(e) => setHeader("invoiceDate", e.target.value)}
+                aria-invalid={Boolean(h.invoiceDate)}
+                className={cn(fieldClass, h.invoiceDate && invalidFieldClass)}
+              />
+            </FormField>
+          </div>
+
+          {/* Item search */}
+          <div className="px-4 pt-3 shrink-0">
+            <MedicinePicker
+              medicines={medicines}
+              onPick={addLine}
+              onPickLibrary={pickLibrary}
+            />
+            {h.lines ? (
+              <p className="mt-1 text-[10px] text-red-500" role="alert">
+                {h.lines}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Items */}
+          <div
+            ref={linesRef}
+            className="flex-1 min-h-0 flex flex-col px-4 pt-3"
+          >
+            <PurchaseLinesEditor
+              lines={draft.lines}
+              errors={errors.lines}
+              today={today}
+              onChange={updateLine}
+              onRemove={removeLine}
+            />
+          </div>
+
+          {/* Notes + totals */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_240px_280px] items-start gap-3 px-4 pt-3 shrink-0">
+            <FormField
+              label="Notes"
+              htmlFor="purchase-notes"
+              hint="Visible only inside the app"
+            >
+              <textarea
+                id="purchase-notes"
+                value={draft.notes}
+                onChange={(e) => setHeader("notes", e.target.value)}
+                maxLength={PURCHASE_LIMITS.notesMax}
+                rows={4}
+                placeholder="e.g. 2 strips damaged, credit note promised"
+                className={cn(fieldClass, "h-auto py-2 resize-none")}
+              />
+            </FormField>
+
+            <PurchaseTotalsPanel
+              totals={totals}
+              paid={draft.paid}
+              paidError={h.paid}
+              dueDate={dueDate}
+              creditDays={supplier?.creditDays ?? null}
+              onPaidChange={onPaidChange}
+              lockedPaidPaise={editing ? editing.paidPaise : undefined}
+              returnedPaise={editing?.returnedPaise ?? 0}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border px-4 py-3 shrink-0">
+            {confirmDiscard ? (
+              <p
+                className="text-[11px] text-orange-600 dark:text-orange-400"
+                role="alert"
+              >
+                {isEdit
+                  ? "Discard your changes? The invoice stays as it was."
+                  : "Discard this purchase? Everything entered will be lost."}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                {isEdit
+                  ? "Stock will be re-posted as"
+                  : "Stock will be added for"}{" "}
+                {totals.totalQty + totals.totalFreeQty} packs
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 shrink-0">
+              {confirmDiscard ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-lg text-[12px]"
+                    onClick={() => setConfirmDiscard(false)}
+                  >
+                    Keep editing
+                  </Button>
+                  <Button
+                    type="button"
+                    className="h-9 rounded-lg text-[12px] bg-red-600 text-white hover:bg-red-700"
+                    onClick={onClose}
+                  >
+                    Discard
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-lg text-[12px]"
+                    onClick={requestClose}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="h-9 rounded-lg text-[12px]">
+                    {isEdit ? "Save changes" : "Save purchase"}
+                    {totals.netPaise > 0
+                      ? ` · ₹${formatPaise(totals.netPaise)}`
+                      : ""}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </form>
+      </ModalShell>
+      <MedicineFormDialog
+        open={newMedicine !== null}
+        medicine={null}
+        initial={newMedicine}
+        onClose={() => setNewMedicine(null)}
+        onSave={(values) => void saveNewMedicine(values)}
+      />
+    </>
   );
 }

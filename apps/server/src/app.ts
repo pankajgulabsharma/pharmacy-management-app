@@ -12,6 +12,8 @@ import { backupRoutes } from "./routes/backups";
 import { serveApp } from "./static";
 import { systemRoutes, type SystemHooks } from "./routes/system";
 import { licenseRoutes } from "./routes/license";
+import { libraryRoutes } from "./routes/library";
+import type { Library } from "./library/library";
 import type { LicenseOptions } from "./license/state";
 import { LICENSE_PUBLIC_KEY } from "./license/public-key";
 import { machineCode } from "./license/machine";
@@ -42,6 +44,7 @@ export function buildApp({
   appDir,
   system = { lanEnabled: () => process.env.HOST === "0.0.0.0" },
   license = defaultLicense(),
+  library,
 }: {
   database: Database;
   bus?: EventBus;
@@ -53,6 +56,8 @@ export function buildApp({
   system?: SystemHooks;
   /** Licence checking (on in the installed app) */
   license?: LicenseOptions;
+  /** Medicine Library search (none in tests) */
+  library?: Library;
 }): FastifyInstance {
   const app = Fastify({ logger: false });
   cors(app);
@@ -83,6 +88,7 @@ export function buildApp({
   backupRoutes(app, database, bus, backupDir, license);
   systemRoutes(app, system);
   catalogRoutes(app, database);
+  libraryRoutes(app, library);
   supplierRoutes(app, database);
   shopRoutes(app, database, bus);
 
