@@ -116,6 +116,22 @@ describe("licence", () => {
     expect((await status()).message).toMatch(/ends in 11 days/);
   });
 
+  it("a trial key of the length you chose (45 days): trial, then on hold — no grace", async () => {
+    const r = await activate(
+      makeKey({ trial: true, expiresAt: "2026-11-21", counters: 1 }),
+    );
+    expect(r.json()).toMatchObject({
+      status: "trial",
+      canWork: true,
+      daysLeft: 45,
+    });
+    expect(r.json().message).toMatch(/Trial: 45 days left/);
+    now = new Date("2026-11-22T10:00:00");
+    expect(await status()).toMatchObject({ status: "expired", canWork: false });
+    // the real key afterwards
+    expect((await activate(makeKey())).json().status).toBe("active");
+  });
+
   it("after the last day: 7 days grace, then on hold until a new key", async () => {
     await activate(makeKey());
     now = new Date("2027-10-03T10:00:00");

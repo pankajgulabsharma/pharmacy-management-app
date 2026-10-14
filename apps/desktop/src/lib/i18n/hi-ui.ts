@@ -830,5 +830,45 @@ export const HI_UI: Record<string, string> = {
   "Type the name — pick from the Medicine Library to fill the rest":
     "नाम लिखें — मेडिसिन लाइब्रेरी से चुनें, बाकी अपने आप भरेगा",
   "Filled from the Medicine Library. Please check MRP, HSN, GST and schedule on the pack before saving.":
-    "मेडिसिन लाइब्रेरी (2022) से भरा गया। सेव करने से पहले पैक पर MRP, HSN, GST और शेड्यूल जाँच लें।",
+    "मेडिसिन लाइब्रेरी से भरा गया। सेव करने से पहले पैक पर MRP, HSN, GST और शेड्यूल जाँच लें।",
+  "Not in your shop — found in the Medicine Library":
+    "आपकी दुकान में नहीं — मेडिसिन लाइब्रेरी में मिली",
+  "Same salt in stock? Click it to see those medicines and sell one of them.":
+    "यही साल्ट स्टॉक में है? क्लिक करें — वो दवाइयाँ दिखेंगी, उनमें से एक बेचें।",
+  "{{n}} same salt in stock": "{{n}} यही साल्ट स्टॉक में",
+  "Not in stock": "स्टॉक में नहीं",
+  "Check the spelling, or search by salt, barcode or batch number.":
+    "स्पेलिंग जाँचें, या साल्ट, बारकोड या बैच नंबर से खोजें।",
+  "MRP (2022)": "MRP (2022)",
+  "No medicine matches “{{q}}”.": "“{{q}}” से कोई दवा नहीं मिली।",
+  "Type 3+ letters to search the Medicine Library.":
+    "मेडिसिन लाइब्रेरी में खोजने के लिए 3+ अक्षर लिखें।",
+  "Add it in Medicines first.": "पहले इसे Medicines में जोड़ें।",
+  "New to your shop? Pick it — the medicine form opens filled in.":
+    "दुकान में नई है? चुनें — दवा का फ़ॉर्म भरा हुआ खुलेगा।",
+  "Pick one — the medicine form opens filled in; check and save, it goes on this bill.":
+    "एक चुनें — फ़ॉर्म भरा हुआ खुलेगा; जाँचकर सेव करें, यह इस बिल में जुड़ जाएगी।",
+  "Pick one to add it — the medicine form opens filled in.":
+    "जोड़ने के लिए चुनें — दवा का फ़ॉर्म भरा हुआ खुलेगा।",
+  "You can't change your own role": "आप अपना रोल नहीं बदल सकते",
+  "Allowed to": "इजाज़त",
+  Always: "हमेशा",
+  "Edit {{name}}": "{{name}} बदलें",
+  "Username: {{u}} (can't be changed)": "यूज़रनेम: {{u}} (बदला नहीं जा सकता)",
+  "What each role can do": "हर रोल क्या कर सकता है",
+  "Tick what pharmacists and cashiers may use. Their screens, buttons and the server follow at once. Settings, users, backups and licence stay with the owner.":
+    "फार्मासिस्ट और कैशियर क्या इस्तेमाल कर सकते हैं, टिक करें। उनकी स्क्रीन, बटन और सर्वर तुरंत बदलते हैं। सेटिंग्स, यूज़र, बैकअप और लाइसेंस सिर्फ़ मालिक के पास।",
+  "Who can sign in, and with which role. Changes apply on every counter at once.":
+    "कौन साइन इन कर सकता है, किस रोल से। बदलाव हर काउंटर पर तुरंत लागू।",
+  "Billing & customers": "बिलिंग और ग्राहक",
+  "Bills, held bills, sales returns, customers and udhaar":
+    "बिल, रोके गए बिल, बिक्री वापसी, ग्राहक और उधार",
+  "Medicines & stock": "दवाइयाँ और स्टॉक",
+  "Add / edit medicines, stock adjust, barcode labels":
+    "दवा जोड़ना / बदलना, स्टॉक सुधार, बारकोड लेबल",
+  "Purchases & suppliers": "खरीद और सप्लायर",
+  "Purchase bills, returns to supplier, supplier payments":
+    "खरीद बिल, सप्लायर को वापसी, सप्लायर भुगतान",
+  "Sales, profit, GST and stock reports":
+    "बिक्री, मुनाफ़ा, GST और स्टॉक रिपोर्ट",
 };

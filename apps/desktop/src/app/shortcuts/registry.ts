@@ -15,7 +15,11 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { can, type Permission } from "@medicare/domain/auth/permissions";
+import {
+  can,
+  type Permission,
+  type RoleAccess,
+} from "@medicare/domain/auth/permissions";
 import type { Role } from "@medicare/domain/auth/types";
 
 export type NavItem = {
@@ -58,14 +62,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Purchases",
     icon: Truck,
     keys: "Alt+5",
-    perm: "stock",
+    perm: "purchases",
   },
   {
     to: "/suppliers",
     label: "Suppliers",
     icon: Users,
     keys: "Alt+6",
-    perm: "stock",
+    perm: "purchases",
   },
   {
     to: "/customers",
@@ -90,8 +94,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 ];
 
 /** The screens this role may open (sidebar + Alt+number keys) */
-export const navItemsFor = (role: Role | undefined) =>
-  NAV_ITEMS.filter((i) => !i.perm || can(role, i.perm));
+export const navItemsFor = (role: Role | undefined, access?: RoleAccess) =>
+  NAV_ITEMS.filter((i) => !i.perm || can(role, i.perm, access));
 
 /**
  * Keys used in code — change a key here and it changes everywhere.

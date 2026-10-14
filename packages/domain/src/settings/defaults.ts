@@ -1,4 +1,5 @@
 import { DEFAULT_BILL_PREFIX } from "../lib/docNo";
+import { DEFAULT_ROLE_ACCESS } from "../auth/permissions";
 import type { Settings } from "./types";
 
 /** Factory defaults — also what "Reset to defaults" restores */
@@ -28,4 +29,5 @@ export const DEFAULT_SETTINGS: Settings = {
     "Dr. Suresh Rao, MD",
   ],
   counters: ["Counter 1", "Counter 2", "Counter 3"],
+  roles: DEFAULT_ROLE_ACCESS,
 };

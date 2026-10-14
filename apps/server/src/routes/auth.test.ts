@@ -146,6 +146,33 @@ describe("roles — the server refuses, not just the screen", () => {
     expect((await call("GET", "/api/users", p)).statusCode).toBe(403);
   });
 
+  it("the owner changes what a role may do — the server follows at once", async () => {
+    const owner = await signIn(app);
+    const c = await signIn(app, "cashier");
+    const put = (roles: unknown) =>
+      call("PUT", "/api/settings", owner, { roles });
+    expect(
+      (await put({ cashier: ["sell", "purchases"], pharmacist: ["sell"] }))
+        .statusCode,
+    ).toBe(200);
+    expect((await call("POST", "/api/purchases", c, {})).statusCode).toBe(400);
+    const p = await signIn(app, "pharmacist");
+    expect((await call("POST", "/api/stock/adjust", p, {})).statusCode).toBe(
+      403,
+    );
+    // never admin, whatever is sent
+    await put({ cashier: ["admin"], pharmacist: [] });
+    expect((await call("PUT", "/api/settings", c, {})).statusCode).toBe(403);
+    expect(
+      (await call("GET", "/api/settings", owner)).json().settings.roles,
+    ).toEqual({ cashier: [], pharmacist: [] });
+    // back to the usual
+    await put({
+      pharmacist: ["sell", "stock", "purchases", "reports"],
+      cashier: ["sell"],
+    });
+  });
+
   it("a route nobody listed is owner-only", () => {
     expect(requiredPermission("POST", "/api/something-new")).toBe("admin");
     expect(requiredPermission("GET", "/api/something-new")).toBeNull();

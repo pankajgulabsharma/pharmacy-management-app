@@ -393,6 +393,7 @@ export default function MedicinesPage() {
         <LibraryList
           items={library.items}
           onPick={addFromLibrary}
+          hint="Pick one to add it — the medicine form opens filled in."
           className="rounded-xl border border-border bg-card overflow-auto min-h-0"
         />
       ) : (

@@ -109,7 +109,10 @@ export default function PurchasesPage() {
   const [form, setForm] = useState<{ open: boolean; editingId: string | null }>(
     { open: intent.new === "1", editingId: null },
   );
-  const [viewingId, setViewingId] = useState<string | null>(null);
+  // Supplier → "Recent invoices" opens one here: /purchases?view=<id>
+  const [viewingId, setViewingId] = useState<string | null>(
+    intent.view?.slice(0, 80) ?? null,
+  );
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [returnForId, setReturnForId] = useState<string | null>(null);
   const [viewingReturnId, setViewingReturnId] = useState<string | null>(null);

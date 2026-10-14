@@ -1,5 +1,15 @@
 import { useId, useMemo } from "react";
-import { Building2, Lock, Mail, Pencil, Phone, Trash2, X } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  Lock,
+  Mail,
+  Pencil,
+  Phone,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -39,6 +49,12 @@ function Details({
   onDelete,
 }: Omit<Props, "supplier"> & { s: SupplierWithSummary }) {
   const titleId = useId();
+  const navigate = useNavigate();
+  /** The invoice opens in Purchases — with its items, payments and returns */
+  const openInvoice = (id: string) => {
+    onClose();
+    navigate(`/purchases?view=${encodeURIComponent(id)}`);
+  };
   const purchases = usePurchaseStore((st) => st.purchases);
   const returns = usePurchaseStore((st) => st.returns);
 
@@ -187,6 +203,9 @@ function Details({
         <section>
           <h3 className="text-[11px] font-semibold text-foreground mb-1.5">
             Recent invoices ({s.invoiceCount} active)
+            <span className="ml-1.5 font-normal text-muted-foreground">
+              · click one to open it
+            </span>
           </h3>
           {recentInvoices.length === 0 ? (
             <p className="text-[11px] text-muted-foreground">
@@ -222,9 +241,21 @@ function Details({
                     const meta =
                       PAYMENT_STATUS_META[getPaymentStatus(p, today)];
                     return (
-                      <tr key={p.id} className="border-t border-border/60">
+                      <tr
+                        key={p.id}
+                        tabIndex={0}
+                        title="Open this invoice"
+                        onClick={() => openInvoice(p.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") openInvoice(p.id);
+                        }}
+                        className="border-t border-border/60 cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/60"
+                      >
                         <td className="px-3 py-2">
-                          <CodeChip>{p.invoiceNo}</CodeChip>
+                          <span className="inline-flex items-center gap-1.5">
+                            <CodeChip>{p.invoiceNo}</CodeChip>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                          </span>
                         </td>
                         <td className="px-3 py-2 tabular-nums">
                           {formatISODate(p.invoiceDate)}

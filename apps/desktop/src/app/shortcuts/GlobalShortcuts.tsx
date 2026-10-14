@@ -1,3 +1,4 @@
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHotkeys } from "@/hooks/useHotkeys";
@@ -12,9 +13,10 @@ export function GlobalShortcuts() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const [helpOpen, setHelpOpen] = useState(false);
   const role = useAuthStore((s) => s.session?.user.role);
+  const access = useSettingsStore((s) => s.roles);
 
   useHotkeys([
-    ...navItemsFor(role).map((item) => ({
+    ...navItemsFor(role, access).map((item) => ({
       keys: item.keys,
       handler: () => navigate(item.to),
     })),

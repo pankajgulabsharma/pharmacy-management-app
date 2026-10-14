@@ -8,6 +8,7 @@ import { ROLES, type Role, type User } from "@medicare/domain/auth/types";
 import { can, type Permission } from "@medicare/domain/auth/permissions";
 import { ApiError, apiGet, apiRequest, setApiAuth } from "@/lib/api";
 import { useNow } from "@/hooks/useNow";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * Who is signed in. The SERVER checks the password and issues a token;
@@ -216,5 +217,6 @@ export function useCurrentUser(): User | null {
 
 /** May the signed-in person do this? (hides buttons — the server enforces it) */
 export function useCan(p: Permission): boolean {
-  return useAuthStore((s) => can(s.session?.user.role, p));
+  const access = useSettingsStore((s) => s.roles);
+  return useAuthStore((s) => can(s.session?.user.role, p, access));
 }

@@ -48,6 +48,7 @@ const plural = (n: number, one: string, many: string) =>
  */
 export function useShopAlerts(): ShopAlert[] {
   const role = useAuthStore((s) => s.session?.user.role);
+  const access = useSettingsStore((s) => s.roles);
   const batches = useInventoryStore((s) => s.batches);
   const medicines = useMedicinesWithStock();
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
@@ -69,7 +70,9 @@ export function useShopAlerts(): ShopAlert[] {
         desc: tr(licence.message),
         icon: BadgeCheck,
         level: !licence.canWork || licence.status === "grace" ? "red" : "amber",
-        to: can(role, "admin") ? "/settings?section=license" : "/dashboard",
+        to: can(role, "admin", access)
+          ? "/settings?section=license"
+          : "/dashboard",
       });
     const stock = stockReport(batches, medicines, expiringDays);
 
@@ -83,7 +86,7 @@ export function useShopAlerts(): ShopAlert[] {
         to: "/inventory?status=expired",
       });
 
-    if (can(role, "stock")) {
+    if (can(role, "purchases", access)) {
       const dues = duesSummary(purchases, new Date());
       if (dues.overdueCount)
         list.push({
@@ -144,7 +147,7 @@ export function useShopAlerts(): ShopAlert[] {
         to: "/medicines?status=low_only",
       });
 
-    if (can(role, "sell")) {
+    if (can(role, "sell", access)) {
       const sums = customerSummaries(customers, sales, saleReturns, payments);
       let owed = 0;
       let over = 0;
@@ -189,6 +192,7 @@ export function useShopAlerts(): ShopAlert[] {
     return list;
   }, [
     role,
+    access,
     batches,
     medicines,
     expiringDays,

@@ -24,6 +24,7 @@ const settingsChange = z
     inventory: section.optional(),
     doctors: list.optional(),
     counters: list.optional(),
+    roles: section.optional(),
   })
   .strict();
 

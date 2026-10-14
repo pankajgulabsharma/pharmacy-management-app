@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { can } from "./permissions";
+import { can, cleanRoleAccess } from "./permissions";
 import { checkPassword, cleanNewUser, cleanUserUpdate } from "./users";
 import type { UserRecord } from "./types";
 
@@ -23,6 +23,25 @@ describe("roles", () => {
     expect(can("pharmacist", "admin")).toBe(false);
     expect(can("owner", "admin")).toBe(true);
     expect(can(null, "sell")).toBe(false);
+  });
+
+  it("the owner decides what pharmacists and cashiers may do", () => {
+    const access = cleanRoleAccess({
+      pharmacist: ["sell", "reports", "admin", "junk"],
+      cashier: ["sell", "purchases"],
+    });
+    expect(access).toEqual({
+      pharmacist: ["sell", "reports"],
+      cashier: ["sell", "purchases"],
+    });
+    expect(can("pharmacist", "stock", access)).toBe(false);
+    expect(can("pharmacist", "admin", access)).toBe(false); // never
+    expect(can("cashier", "purchases", access)).toBe(true);
+    expect(can("owner", "stock", cleanRoleAccess({ pharmacist: [] }))).toBe(
+      true,
+    );
+    // nothing saved yet → the usual defaults
+    expect(cleanRoleAccess(undefined).cashier).toEqual(["sell"]);
   });
 });
 

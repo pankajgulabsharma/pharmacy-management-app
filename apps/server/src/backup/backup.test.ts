@@ -1,9 +1,11 @@
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { gunzipSync } from "node:zlib";
@@ -198,6 +200,20 @@ describe("backup & restore", () => {
     await again.first;
     again();
     expect(listBackups(d).filter((b) => b.kind === "year-end")).toHaveLength(1);
+  });
+
+  it("development: only the last 10 days of backups are kept", async () => {
+    const d = join(dir, "dev10");
+    mkdirSync(d, { recursive: true });
+    const old = join(d, "medicare-20200101-100000-manual.sqlite.gz");
+    writeFileSync(old, "x");
+    utimesSync(old, new Date("2020-01-01"), new Date("2020-01-01"));
+    const stop = startAutoBackup(database.raw, d, undefined, 10);
+    await stop.first;
+    stop();
+    const kinds = listBackups(d).map((b) => b.kind);
+    expect(kinds).toContain("auto");
+    expect(kinds).not.toContain("manual"); // the 2020 one is gone
   });
 
   it("automatic: one a day, only the last 30 kept", async () => {

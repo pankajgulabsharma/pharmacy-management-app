@@ -41,7 +41,7 @@ export function GlobalSearch() {
   const [index, setIndex] = useState(0);
   const [bill, setBill] = useState<Sale | null>(null);
 
-  const canStock = useCan("stock");
+  const canPurchases = useCan("purchases");
   const medicines = useMedicineStore((s) => s.medicines);
   const sales = useSalesStore((s) => s.sales);
   const customers = useCustomerStore((s) => s.customers);
@@ -61,10 +61,18 @@ export function GlobalSearch() {
         medicines,
         sales: allSales,
         customers,
-        suppliers: canStock ? suppliers : undefined,
-        purchases: canStock ? purchases : undefined,
+        suppliers: canPurchases ? suppliers : undefined,
+        purchases: canPurchases ? purchases : undefined,
       }),
-    [deferred, medicines, allSales, customers, suppliers, purchases, canStock],
+    [
+      deferred,
+      medicines,
+      allSales,
+      customers,
+      suppliers,
+      purchases,
+      canPurchases,
+    ],
   );
   const active = Math.min(index, Math.max(0, hits.length - 1));
 

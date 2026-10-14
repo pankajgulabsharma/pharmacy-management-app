@@ -11,6 +11,8 @@ type Props = {
   /** Plain-language consequence, e.g. "Stock will be removed from inventory." */
   description: ReactNode;
   confirmLabel: string;
+  /** Safe button (default "Keep it") */
+  cancelLabel?: string;
   tone?: "danger" | "default";
   icon?: LucideIcon;
   /** Extra inputs (reason, notes…) */
@@ -29,6 +31,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = "Keep it",
   tone = "danger",
   icon: Icon = AlertTriangle,
   children,
@@ -87,7 +90,7 @@ export function ConfirmDialog({
           onClick={onClose}
           data-autofocus
         >
-          Keep it
+          {tr(cancelLabel)}
         </Button>
         <Button
           type="button"

@@ -13,6 +13,11 @@
  *       app (Settings → Licence). --until 2027-03-31 instead of --days.
  *       Every key is also listed in ~/.medicare-vendor/issued.csv.
  *
+ *   npm run license -- issue --shop "Gupta Medical" --machine 7KQ2-M9XD-4TRA-PZ6E --trial --months 1.5
+ *       A TRIAL of the length you choose (--days 15, --months 1.5 = 45
+ *       days, --months 2.5 = 75 days…). Shown as "trial" in the app, no
+ *       grace days after it. Later give a normal key — same machine code.
+ *
  *   npm run license -- show MC1.xxxx.yyyy
  *       What is inside a key.
  */
@@ -93,8 +98,15 @@ if (cmd === "keygen") {
     fail("--counters must be 1–50");
   const today = new Date();
   let until = arg("until");
+  const trial = rest.includes("--trial");
   if (!until) {
-    const days = Number(arg("days") ?? 365);
+    const months = arg("months");
+    if (months !== undefined && !(Number(months) > 0 && Number(months) <= 120))
+      fail("--months must be a number like 1, 1.5 or 2.5");
+    const days =
+      months !== undefined
+        ? Math.round(Number(months) * 30)
+        : Number(arg("days") ?? (trial ? 30 : 365));
     if (!Number.isInteger(days) || days < 1)
       fail("--days must be a whole number");
     until = ymd(new Date(today.getTime() + (days - 1) * 86_400_000));
@@ -109,6 +121,7 @@ if (cmd === "keygen") {
     issuedAt: ymd(today),
     expiresAt: until,
     counters,
+    ...(trial ? { trial: true } : {}),
   };
   const body = `MC1.${Buffer.from(JSON.stringify(data)).toString("base64url")}`;
   const sig = sign(
@@ -122,10 +135,10 @@ if (cmd === "keygen") {
     appendFileSync(csv, "licence,shop,machine,issued,expires,counters,key\n");
   appendFileSync(
     csv,
-    `${data.id},"${shop.replace(/"/g, '""')}",${machine},${data.issuedAt},${until},${counters},${key}\n`,
+    `${data.id}${trial ? " (trial)" : ""},"${shop.replace(/"/g, '""')}",${machine},${data.issuedAt},${until},${counters},${key}\n`,
   );
   console.log(
-    `✓ ${data.id} for ${shop} — works until ${until} (end of day), ${counters} computer(s)\n`,
+    `✓ ${data.id} for ${shop} — ${trial ? "TRIAL " : ""}works until ${until} (end of day), ${counters} computer(s)\n`,
   );
   console.log(key);
   console.log(`\n(Saved in ${csv})`);

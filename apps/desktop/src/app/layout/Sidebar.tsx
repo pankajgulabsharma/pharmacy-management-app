@@ -20,6 +20,7 @@ export function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen);
   const shopName = useSettingsStore((s) => s.shop.name);
   const role = useAuthStore((s) => s.session?.user.role);
+  const access = useSettingsStore((s) => s.roles);
 
   return (
     <aside
@@ -61,7 +62,7 @@ export function Sidebar() {
 
       {/* Screens, one after another */}
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1">
-        {navItemsFor(role).map((item) => (
+        {navItemsFor(role, access).map((item) => (
           <NavItemLink key={item.to} item={item} open={open} />
         ))}
       </nav>

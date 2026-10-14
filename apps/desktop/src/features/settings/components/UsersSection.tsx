@@ -1,6 +1,14 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { KeyRound, UserPlus } from "lucide-react";
+import { Check, KeyRound, Pencil, UserPlus } from "lucide-react";
+import {
+  GRANTABLE,
+  PERMISSION_LABELS,
+  STAFF_ROLES,
+  type GrantablePermission,
+  type StaffRole,
+} from "@medicare/domain/auth/permissions";
+import { useSettingsStore } from "../store/useSettingsStore";
 import {
   ROLE_LABELS,
   ROLES,
@@ -19,12 +27,6 @@ import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useUserStore } from "../store/useUserStore";
 import { SettingsCard } from "./SettingsCard";
 
-const ROLE_HELP: Record<Role, string> = {
-  owner: "Everything, incl. settings and users",
-  pharmacist: "Billing, stock, purchases, suppliers, reports",
-  cashier: "Billing, returns and customers only",
-};
-
 const showError = (err: unknown) =>
   toast.error(err instanceof Error ? err.message : "Could not save");
 
@@ -33,6 +35,7 @@ export function UsersSection() {
   const { users, loaded, load, update } = useUserStore();
   const meId = useAuthStore((s) => s.session?.user.id);
   const [resetFor, setResetFor] = useState<UserRecord | null>(null);
+  const [editFor, setEditFor] = useState<UserRecord | null>(null);
 
   useEffect(() => {
     void load().catch(showError);
@@ -48,18 +51,8 @@ export function UsersSection() {
       <AddUserCard />
       <SettingsCard
         title="Users & roles"
-        description="Who can sign in, and what each role may do. Changes apply on every counter at once."
+        description="Who can sign in, and with which role. Changes apply on every counter at once."
       >
-        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
-          {ROLES.map((r) => (
-            <li key={r} className="rounded-lg bg-muted/40 px-2.5 py-2">
-              <b className="text-foreground">{tr(ROLE_LABELS[r])}</b>
-              <span className="block text-muted-foreground">
-                {tr(ROLE_HELP[r])}
-              </span>
-            </li>
-          ))}
-        </ul>
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-[12px]">
             <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -109,21 +102,33 @@ export function UsersSection() {
                         {u.username}
                       </td>
                       <td className="px-3 py-2">
-                        <select
-                          aria-label={`${tr("Role")} — ${u.name}`}
-                          value={u.role}
-                          disabled={me}
-                          onChange={(e) =>
-                            change(u, { role: e.target.value as Role })
-                          }
-                          className={cn(cellInputClass, "w-32")}
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>
-                              {tr(ROLE_LABELS[r])}
-                            </option>
-                          ))}
-                        </select>
+                        {me ? (
+                          // Your own role can't be changed (another owner can)
+                          <span
+                            className="inline-flex h-7 items-center text-[11px] font-medium"
+                            title={tr("You can't change your own role")}
+                          >
+                            {tr(ROLE_LABELS[u.role])}
+                          </span>
+                        ) : (
+                          <select
+                            aria-label={`${tr("Role")} — ${u.name}`}
+                            value={u.role}
+                            onChange={(e) =>
+                              change(u, { role: e.target.value as Role })
+                            }
+                            className={cn(
+                              cellInputClass,
+                              "w-32 cursor-pointer appearance-auto",
+                            )}
+                          >
+                            {ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {tr(ROLE_LABELS[r])}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
@@ -141,6 +146,15 @@ export function UsersSection() {
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setEditFor(u)}
+                          className="h-7 rounded-md text-[11px] gap-1"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          {tr("Edit")}
+                        </Button>
                         {me ? null : (
                           <>
                             <Button
@@ -174,6 +188,18 @@ export function UsersSection() {
           </table>
         </div>
       </SettingsCard>
+      <RoleAccessCard />
+      {editFor ? (
+        <EditUserDialog
+          user={editFor}
+          me={editFor.id === meId}
+          onSave={(patch) => {
+            change(editFor, patch);
+            setEditFor(null);
+          }}
+          onClose={() => setEditFor(null)}
+        />
+      ) : null}
       {resetFor ? (
         <ResetPasswordDialog
           user={resetFor}
@@ -343,6 +369,143 @@ function ResetPasswordDialog({
           className={fieldClass}
         />
       </FormField>
+    </ConfirmDialog>
+  );
+}
+
+/** Owner: what pharmacists and cashiers may do (screens + buttons + server) */
+function RoleAccessCard() {
+  const roles = useSettingsStore((s) => s.roles);
+  const setRoles = useSettingsStore((s) => s.setRoles);
+  const toggle = (role: StaffRole, p: GrantablePermission) => {
+    const has = roles[role].includes(p);
+    const next = {
+      ...roles,
+      [role]: has
+        ? roles[role].filter((x) => x !== p)
+        : GRANTABLE.filter((x) => x === p || roles[role].includes(x)),
+    };
+    setRoles(next).then(() => toast.success(tr("Saved")), showError);
+  };
+  return (
+    <SettingsCard
+      title="What each role can do"
+      description="Tick what pharmacists and cashiers may use. Their screens, buttons and the server follow at once. Settings, users, backups and licence stay with the owner."
+    >
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-[12px]">
+          <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">
+                {tr("Allowed to")}
+              </th>
+              <th className="px-3 py-2 text-center font-medium w-24">
+                {tr(ROLE_LABELS.owner)}
+              </th>
+              {STAFF_ROLES.map((r) => (
+                <th key={r} className="px-3 py-2 text-center font-medium w-24">
+                  {tr(ROLE_LABELS[r])}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {GRANTABLE.map((p) => (
+              <tr key={p} className="border-t border-border/60">
+                <td className="px-3 py-2">
+                  <span className="font-medium">
+                    {tr(PERMISSION_LABELS[p].label)}
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {tr(PERMISSION_LABELS[p].help)}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <Check
+                    className="inline h-4 w-4 text-emerald-600"
+                    aria-label={tr("Always")}
+                  />
+                </td>
+                {STAFF_ROLES.map((r) => (
+                  <td key={r} className="px-3 py-2 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`${tr(ROLE_LABELS[r])} — ${tr(PERMISSION_LABELS[p].label)}`}
+                      checked={roles[r].includes(p)}
+                      onChange={() => toggle(r, p)}
+                      className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SettingsCard>
+  );
+}
+
+/** Change a person's name and role (username stays — it's how they sign in) */
+function EditUserDialog({
+  user,
+  me,
+  onSave,
+  onClose,
+}: {
+  user: UserRecord;
+  me: boolean;
+  onSave: (patch: Partial<UserRecord>) => void;
+  onClose: () => void;
+}) {
+  const id = useId();
+  const [name, setName] = useState(user.name);
+  const [role, setRole] = useState<Role>(user.role);
+  return (
+    <ConfirmDialog
+      open
+      tone="default"
+      icon={Pencil}
+      title={tr("Edit {{name}}", { name: user.name })}
+      description={tr("Username: {{u}} (can't be changed)", {
+        u: user.username,
+      })}
+      confirmLabel="Save"
+      cancelLabel="Cancel"
+      confirmDisabled={name.trim().length < 2}
+      onConfirm={() => onSave({ name: name.trim(), role })}
+      onClose={onClose}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <FormField label="Full name" htmlFor={`${id}-name`}>
+          <input
+            id={`${id}-name`}
+            data-autofocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={fieldClass}
+          />
+        </FormField>
+        <FormField
+          label="Role"
+          htmlFor={`${id}-role`}
+          hint={me ? "You can't change your own role" : undefined}
+        >
+          <select
+            id={`${id}-role`}
+            value={role}
+            disabled={me}
+            onChange={(e) => setRole(e.target.value as Role)}
+            className={fieldClass}
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {tr(ROLE_LABELS[r])}
+              </option>
+            ))}
+          </select>
+        </FormField>
+      </div>
     </ConfirmDialog>
   );
 }

@@ -7,6 +7,7 @@ import type {
   Settings,
   ShopProfile,
 } from "@medicare/domain/settings/types";
+import type { RoleAccess } from "@medicare/domain/auth/permissions";
 import { apiGet, apiRequest } from "@/lib/api";
 
 /**
@@ -22,6 +23,7 @@ type SettingsState = Settings & {
   updateInventory: (inventory: InventoryPrefs) => Promise<void>;
   setDoctors: (doctors: string[]) => Promise<void>;
   setCounters: (counters: string[]) => Promise<void>;
+  setRoles: (roles: RoleAccess) => Promise<void>;
   resetToDefaults: () => Promise<void>;
 };
 
@@ -46,6 +48,7 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   updateInventory: (inventory) => save({ inventory }),
   setDoctors: (doctors) => save({ doctors }),
   setCounters: (counters) => save({ counters }),
+  setRoles: (roles) => save({ roles }),
   resetToDefaults: () => save(DEFAULT_SETTINGS),
 }));
 

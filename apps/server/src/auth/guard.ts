@@ -5,7 +5,12 @@
  */
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { DatabaseSync } from "node:sqlite";
-import { can, type Permission } from "@medicare/domain/auth/permissions";
+import {
+  can,
+  cleanRoleAccess,
+  type Permission,
+  type RoleAccess,
+} from "@medicare/domain/auth/permissions";
 import type { UserRecord } from "@medicare/domain/auth/types";
 import { resolveSession } from "./store";
 import { licenseState, type LicenseOptions } from "../license/state";
@@ -32,10 +37,8 @@ const WRITE_RULES: [RegExp, Permission][] = [
     /^\/api\/(sales|sale-returns|held|customers|customer-payments)(\/|$)/,
     "sell",
   ],
-  [
-    /^\/api\/(medicines|suppliers|purchases|purchase-returns|stock)(\/|$)/,
-    "stock",
-  ],
+  [/^\/api\/(medicines|stock)(\/|$)/, "stock"],
+  [/^\/api\/(suppliers|purchases|purchase-returns)(\/|$)/, "purchases"],
   [/^\/api\/(settings|users|backups|license)(\/|$)/, "admin"],
 ];
 
@@ -48,6 +51,18 @@ export function requiredPermission(
   if (method === "GET")
     return /^\/api\/(users|backups)(\/|$)/.test(path) ? "admin" : null;
   return WRITE_RULES.find(([re]) => re.test(path))?.[1] ?? "admin";
+}
+
+/** What the owner allowed pharmacists / cashiers (Settings → Users) */
+function roleAccess(raw: DatabaseSync): RoleAccess {
+  const row = raw
+    .prepare("SELECT value_json FROM settings WHERE key = 'roles'")
+    .get() as { value_json: string } | undefined;
+  try {
+    return cleanRoleAccess(row ? JSON.parse(row.value_json) : null);
+  } catch {
+    return cleanRoleAccess(null);
+  }
 }
 
 function tokenOf(req: FastifyRequest, path: string): string {
@@ -81,7 +96,7 @@ export function authGuard(
     if (session.user.mustChangePassword && !path.startsWith("/api/auth/"))
       throw new AuthError("Please choose a new password first", 403);
     const need = requiredPermission(req.method, path);
-    if (need && !can(session.user.role, need))
+    if (need && !can(session.user.role, need, roleAccess(raw)))
       throw new AuthError("Your role can't do this — ask the owner", 403);
     // Licence on hold → look, report, back up — but no new bills / changes
     if (req.method !== "GET" && !ON_HOLD_ALLOWED.test(path)) {

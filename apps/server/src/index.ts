@@ -9,7 +9,14 @@ const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 4000);
 
 try {
-  const server = await startServer({ host, port, appDir: process.env.APP_DIR });
+  const server = await startServer({
+    host,
+    port,
+    appDir: process.env.APP_DIR,
+    // Development: only the last 10 days of backups (the installed app
+    // keeps them the normal way — it doesn't start from here)
+    backupKeepDays: 10,
+  });
   const shown = host === "127.0.0.1" || host === "0.0.0.0" ? "localhost" : host;
   console.log(`MediCare server running → http://${shown}:${port}/health`);
   console.log(`Database: ${server.dbFile}`);

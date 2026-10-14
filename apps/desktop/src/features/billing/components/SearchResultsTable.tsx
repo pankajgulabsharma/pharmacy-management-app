@@ -11,10 +11,7 @@ import { formatPaise } from "@medicare/domain/lib/money";
 import type { SellableItem } from "../hooks/useBillingData";
 import { tr } from "@/lib/i18n";
 import { useLibrarySearch } from "@/features/medicines/library/useLibrarySearch";
-import { LibraryList } from "@/features/medicines/library/LibraryList";
-
-/** "Cefixime (200mg) + Ofloxacin (200mg)" → "Cefixime" */
-const firstSalt = (salt: string) => salt.split(/[+(]/)[0].trim();
+import { LibraryAlternatives } from "./LibraryAlternatives";
 
 type Props = {
   results: SellableItem[];
@@ -36,7 +33,12 @@ export function SearchResultsTable({
 }: Props) {
   const { t } = useTranslation();
   // Not in this shop → what it is (Medicine Library), to find the same salt
-  const library = useLibrarySearch(query, results.length === 0, 5).items;
+  // Not in this shop → the Medicine Library (3+ letters: "ka" is noise)
+  const library = useLibrarySearch(
+    query.trim().length >= 3 ? query : "",
+    results.length === 0,
+    6,
+  ).items;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Arrow keys move the highlight — keep that row on screen
@@ -52,19 +54,27 @@ export function SearchResultsTable({
     return <EmptyState icon={ScanBarcode} title={t("billing.typeToSearch")} />;
   }
   if (results.length === 0) {
-    return (
-      <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+    const title = `${t("billing.noResults")} “${query.trim()}”`;
+    if (library.length === 0)
+      return (
         <EmptyState
           icon={SearchX}
-          title={`${t("billing.noResults")} “${query.trim()}”`}
+          title={title}
           description="Check the spelling, or search by salt, barcode or batch number."
         />
-        <LibraryList
-          items={library}
-          actionLabel="Same salt in stock"
-          onPick={(x) => x.salt && onSearch(firstSalt(x.salt))}
-          className="rounded-lg border border-border bg-card shrink-0"
-        />
+      );
+    return (
+      <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-auto">
+        <p className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-[11px] text-muted-foreground flex items-center gap-2">
+          <SearchX className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            <b className="text-foreground font-medium">{title}</b> ·{" "}
+            {tr(
+              "Check the spelling, or search by salt, barcode or batch number.",
+            )}
+          </span>
+        </p>
+        <LibraryAlternatives items={library} onSearch={onSearch} />
       </div>
     );
   }

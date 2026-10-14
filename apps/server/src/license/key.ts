@@ -20,6 +20,8 @@ export type LicenseData = {
   expiresAt: string;
   /** How many computers may bill at the same time (main computer included) */
   counters: number;
+  /** A trial of the length you chose (shown as "trial", no grace days) */
+  trial?: boolean;
 };
 
 const b64 = (s: string) => Buffer.from(s, "base64url");

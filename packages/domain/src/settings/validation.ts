@@ -1,4 +1,5 @@
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../billing/types";
+import { cleanRoleAccess } from "../auth/permissions";
 import { cleanPrefix } from "../lib/docNo";
 import { checkGstin } from "../lib/gstin";
 import { RuleError } from "../lib/errors";
@@ -162,6 +163,7 @@ export function sanitizeSettings(raw: unknown): Settings {
       ? cleanList(r.doctors, L.maxDoctors, L.doctorMax)
       : d.doctors,
     counters: safeCounters,
+    roles: cleanRoleAccess(r.roles),
   };
 }
 

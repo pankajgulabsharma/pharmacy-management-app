@@ -37,7 +37,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases",
         element: (
-          <Allowed perm="stock">
+          <Allowed perm="purchases">
             <PurchasesPage />
           </Allowed>
         ),
@@ -45,7 +45,7 @@ export const router = createBrowserRouter([
       {
         path: "suppliers",
         element: (
-          <Allowed perm="stock">
+          <Allowed perm="purchases">
             <SuppliersPage />
           </Allowed>
         ),

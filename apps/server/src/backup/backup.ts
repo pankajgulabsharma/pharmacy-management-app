@@ -148,6 +148,17 @@ function pruneAuto(dir: string) {
     rmSync(join(dir, b.name), { force: true });
 }
 
+/**
+ * Development only: backups older than `days` are deleted (all kinds), so
+ * the Backup list stays short while testing. Shops never use this.
+ */
+export function pruneOlderThan(dir: string, days: number, now = new Date()) {
+  const cutoff = now.getTime() - days * 86_400_000;
+  for (const b of listBackups(dir))
+    if (Date.parse(b.createdAt) < cutoff)
+      rmSync(join(dir, b.name), { force: true });
+}
+
 /** Is this file really a MediCare database, and undamaged? */
 export function checkBackupFile(file: string) {
   let db: DatabaseSync | null = null;
@@ -317,6 +328,8 @@ export function startAutoBackup(
   raw: DatabaseSync,
   dir: string,
   after: (b: BackupInfo) => void | Promise<void> = () => {},
+  /** Development: keep only this many days of backups */
+  keepDays?: number,
 ) {
   let running = false;
   const tick = async () => {
@@ -324,6 +337,7 @@ export function startAutoBackup(
     running = true;
     try {
       const now = new Date();
+      if (keepDays) pruneOlderThan(dir, keepDays, now);
       if (needsYearEnd(raw, dir, now))
         await after(await createBackup(raw, dir, "year-end", now));
       const last = listBackups(dir).find((b) => b.kind === "auto");

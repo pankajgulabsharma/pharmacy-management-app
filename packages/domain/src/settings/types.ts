@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "../billing/types";
+import type { RoleAccess } from "../auth/permissions";
 
 export type ShopProfile = {
   name: string;
@@ -33,6 +34,8 @@ export type Settings = {
   inventory: InventoryPrefs;
   doctors: string[];
   counters: string[];
+  /** What pharmacists and cashiers may do (the owner decides) */
+  roles: RoleAccess;
 };
 
 export const SETTINGS_LIMITS = {

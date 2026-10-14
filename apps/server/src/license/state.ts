@@ -101,6 +101,24 @@ export function licenseState(
     const end = endOfDay(d.expiresAt);
     const left = Math.ceil((end - now) / DAY);
     const withLicense = { ...base, license: d, counters: d.counters };
+    // Trial key (you chose its length: 15 days, 45 days…) — no grace after it
+    if (d.trial)
+      return now <= end
+        ? {
+            ...withLicense,
+            status: "trial",
+            canWork: true,
+            daysLeft: left,
+            message: `Trial: ${left} day${left === 1 ? "" : "s"} left (till ${d.expiresAt}). Enter a licence key in Settings → Licence.`,
+          }
+        : {
+            ...withLicense,
+            status: "expired",
+            canWork: false,
+            daysLeft: 0,
+            message:
+              "The trial is over. The software is on hold — enter a licence key to continue. Your data is safe.",
+          };
     if (now <= end)
       return {
         ...withLicense,

@@ -47,6 +47,7 @@ import {
 import { MedicinePicker } from "./MedicinePicker";
 import { MedicineFormDialog } from "@/features/medicines/components/MedicineFormDialog";
 import { useSaveMedicine } from "@/features/medicines/hooks/useSaveMedicine";
+import { useCan } from "@/features/auth/store/useAuthStore";
 import {
   libraryToForm,
   type LibraryItem,
@@ -193,6 +194,7 @@ function PurchaseForm({
     null,
   );
   const saveMedicine = useSaveMedicine();
+  const canAddMedicine = useCan("stock");
   const pickLibrary = useCallback(
     (item: LibraryItem) =>
       setNewMedicine(libraryToForm(item, emptyMedicineForm())),
@@ -397,7 +399,7 @@ function PurchaseForm({
             <MedicinePicker
               medicines={medicines}
               onPick={addLine}
-              onPickLibrary={pickLibrary}
+              onPickLibrary={canAddMedicine ? pickLibrary : undefined}
             />
             {h.lines ? (
               <p className="mt-1 text-[10px] text-red-500" role="alert">

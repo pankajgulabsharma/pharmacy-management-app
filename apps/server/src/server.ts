@@ -19,6 +19,8 @@ export type ServerOptions = {
   port?: number;
   /** Built app screens to serve (installed app / other counters) */
   appDir?: string;
+  /** Development: keep only this many days of backups (shops: unset) */
+  backupKeepDays?: number;
   /** Switch shop-network sharing (installed app) */
   setLan?: (enabled: boolean) => Promise<void>;
   log?: (msg: string) => void;
@@ -30,6 +32,7 @@ export async function startServer({
   host = "127.0.0.1",
   port = 4000,
   appDir,
+  backupKeepDays,
   setLan,
   log = console.log,
 }: ServerOptions = {}) {
@@ -41,9 +44,14 @@ export async function startServer({
     );
   const license = defaultLicense();
   // Every automatic backup also goes to the owner's Drive / pen drive folder
-  const stopBackups = startAutoBackup(database.raw, backupDir, (b) => {
-    copyOffsite(database.raw, backupDir, license, b);
-  });
+  const stopBackups = startAutoBackup(
+    database.raw,
+    backupDir,
+    (b) => {
+      copyOffsite(database.raw, backupDir, license, b);
+    },
+    backupKeepDays,
+  );
   // Built in the background on first start; search works once it's ready
   const library = openLibrary(
     resolve(dirname(dbFile), "medicine-library.sqlite"),
