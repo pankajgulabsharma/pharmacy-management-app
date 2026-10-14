@@ -185,7 +185,7 @@ function MedicineForm({
             className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-300"
           >
             {tr(
-              "Filled from the Medicine Library (2022 data). Check MRP, HSN, GST and schedule on the pack before saving.",
+              "Filled from the Medicine Library. Please check MRP, HSN, GST and schedule on the pack before saving.",
             )}
           </p>
         ) : null}

@@ -505,7 +505,7 @@ export default function BillingPage() {
     );
     // A line never drops to 0 — remove it with Delete instead
     if (strip + lse === 0) {
-      toast.info("Quantity can't be 0 — press Delete to remove the line");
+      toast.info("Quantity can't be 0 — Click on remove to remove the line");
       return;
     }
     changeQty(selectedLine.lineId, strip, lse);

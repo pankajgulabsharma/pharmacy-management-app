@@ -829,6 +829,6 @@ export const HI_UI: Record<string, string> = {
   "Same salt in stock": "स्टॉक में यही साल्ट",
   "Type the name — pick from the Medicine Library to fill the rest":
     "नाम लिखें — मेडिसिन लाइब्रेरी से चुनें, बाकी अपने आप भरेगा",
-  "Filled from the Medicine Library (2022 data). Check MRP, HSN, GST and schedule on the pack before saving.":
+  "Filled from the Medicine Library. Please check MRP, HSN, GST and schedule on the pack before saving.":
     "मेडिसिन लाइब्रेरी (2022) से भरा गया। सेव करने से पहले पैक पर MRP, HSN, GST और शेड्यूल जाँच लें।",
 };
