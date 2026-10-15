@@ -1,7 +1,23 @@
 # MediCare Pharmacy
 
-Desktop point-of-sale for a medical shop: billing, stock (batch + expiry),
-purchases, suppliers, customer udhaar, GST reports.
+Desktop point-of-sale for an Indian medical shop: billing, stock (batch +
+expiry), purchases, suppliers, customer udhaar, GST reports. Works fully
+offline on the shop's own computers; nothing in it costs the shop money
+every month (no cloud, no SMS gateway, no paid API).
+
+## What's inside (for a shop owner)
+
+| Area                   | What it does                                                                                                                                                                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Billing**            | Keyboard-first (F-keys, barcode scanner), up to 10 bills open at once (tabs), FEFO batches, loose tablets, discounts, cash / UPI / card / split / udhaar, hold & resume, sales return, print (thermal / A5 / A4 GST) and WhatsApp bill |
+| **Medicine Library**   | ~2.4 lakh Indian medicines (name, company, pack, salt + strength, 2022 MRP) built in and offline — pick one instead of typing; HSN / GST / schedule suggested                                                                          |
+| **Substitutes**        | Same salt + same strength + same form only (Dolo 650 ↔ Calpol 650, never Calpol 500 or a syrup); "N substitutes in stock" on an out-of-stock medicine                                                                                  |
+| **Stock**              | Batch, expiry, rack, min stock, low / out / expiring alerts, stock adjust with reason, full batch history                                                                                                                              |
+| **Purchases**          | Supplier invoices with free qty, discount, GST; **import the distributor's invoice file (CSV)**; dues, payments, debit notes, cancel / edit rules                                                                                      |
+| **Customers**          | Udhaar khata with credit limit, old udhaar, payments, statements; **refill reminders** on WhatsApp for regular buyers                                                                                                                  |
+| **Reports**            | Sales, purchases, GST (GSTR-1 files, GSTR-3B, GSTR-2B match), stock value, **what to order**, **dead stock**, **profit by medicine / company**, medicines sold day by day, Schedule H1 / X / NDPS register                             |
+| **Shop**               | Several counters on the shop network (live updates), roles (owner / pharmacist / cashier, owner decides access), daily backups (+ Google Drive / pen drive), licence keys, free auto-updates, Hindi / English                          |
+| **Switching software** | Import medicines + opening stock, customers + old udhaar, suppliers + old dues from Marg / Tally / Excel — and **Undo** a wrong file                                                                                                   |
 
 ## Project layout (monorepo — npm workspaces)
 
@@ -67,6 +83,22 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 16. ✅ Free auto-updates, Schedule H / H1 / X (register), import from old software (Marg / Tally / Excel), bill on WhatsApp
 17. ✅ One search for the whole app (same rules on every screen)
 18. ✅ Backups to Google Drive / pen drive (+ licence details), financial-year bill numbers, GST returns (GSTR-1 files, GSTR-2B match, B2B / IGST bills), year close, fast loading after years of bills
+19. ✅ Medicine Library (~2.4 lakh medicines, offline search) + bill tabs (10 bills at once)
+20. ✅ Owner-defined role access, edit users, trial licence keys of any length
+21. ✅ Medicines sold day by day, sales return by day, switching from other software (customers / suppliers with old balances)
+22. ✅ Customer-linked bills (mobile for WhatsApp), big lists drawn fast, shop details on screen
+23. ✅ Software name vs shop name, Schedule H / H1 / X / NDPS like Marg (patient address on the register)
+24. ✅ Low / out counts agree everywhere; customer's saved mobile / address on the bill (edits update the account)
+25. ✅ Save a walk-in as a customer from billing; text limits shown
+26. ✅ Default udhaar limit for new customers; udhaar due shown on Edit customer
+27. ✅ Schedule register draws only visible rows
+28. ✅ Medicine strength + substitutes only on salt + strength + form
+29. ✅ Undo a medicine import
+30. ✅ Screens load on first use (smaller app files)
+31. ✅ Undo customer / supplier imports
+32. ✅ What to order, dead stock, profit by medicine / company
+33. ✅ Refill reminders on WhatsApp
+34. ✅ Distributor's invoice file → purchase lines
 
 ## Windows installer
 
@@ -132,11 +164,25 @@ just for installers (e.g. `medicare-releases`), set the repository
 variable `UPDATE_REPO` = `you/medicare-releases` and a secret
 `RELEASES_TOKEN` (a GitHub token allowed to write to it).
 
-## Schedule H / H1 / X
+## Medicine Library & substitutes
+
+- **~2.4 lakh medicines** (A-Z Medicine Dataset of India, CC BY-SA 4.0)
+  ship with the app and are searched offline (`apps/server/library/`).
+  Typing a medicine the shop doesn't have shows library matches; one click
+  fills the Add-medicine form (name, company, pack, salt, strength, MRP of
+  2022, suggested HSN / GST / schedule) — the shop checks the pack and saves.
+- **Strength** is its own field ("650 mg", "250 mg/5 ml", "500 mg + 125 mg").
+  Medicines saved before it are read from the name ("Dolo 650" → 650 mg)
+  and the form offers "Use 650 mg?".
+- **Substitute = same salt + same strength + same form.** Billing shows
+  "N substitutes in stock" on an out-of-stock medicine, and for a medicine
+  the shop doesn't keep, which library item has a substitute in stock.
+
+## Schedule H / H1 / X / NDPS
 
 Set the schedule on each medicine (Medicines → edit). Billing then asks
-for the prescribing doctor (H, H1, X) and the patient's name (H1, X); the
-printed bill marks them `[Sch. H1]`. **Reports → Schedule register** (H1 · X · NDPS) lists every
+for the prescribing doctor (H, H1, X, NDPS) and the patient's name and
+address (H1, X, NDPS); the printed bill marks them `[Sch. H1]`. **Reports → Schedule register** (H1 · X · NDPS) lists every
 H1 / X supply (date, bill, patient, doctor, medicine, batch, qty) — export
 to keep with the shop's records (3 years).
 
@@ -144,15 +190,54 @@ to keep with the shop's records (3 years).
 
 Medicines → **Import**: a CSV from Excel, or an export from Marg / Tally /
 GoFrugal ("Save as CSV"). Columns are recognised by their usual names
-(item name, company, pack, batch, expiry, closing stock, MRP, P.rate, GST…);
-one row per batch is fine. Creates the medicines **and** their opening
-stock in one go — all rows or none; medicines already in the list are not
-duplicated.
+(item name, company, pack, salt / strength, batch, expiry, closing stock,
+MRP, P.rate, GST…); one row per batch is fine. Creates the medicines **and**
+their opening stock in one go — all rows or none; medicines already in the
+list are not duplicated.
+
+Settings → **Coming from other software** also imports **customers** (with
+old udhaar) and **suppliers** (with old dues).
+
+**Undo a wrong file**: every import is listed under _Recent imports_ (and
+the toast after importing has Undo). Undo removes what the file created —
+and the opening stock it added — as long as nothing from it has been used
+(sold, purchased, paid, adjusted); otherwise it says which one is in use and
+changes nothing.
+
+## Distributor's invoice → purchase
+
+Purchases → New → **Import invoice file**: the CSV the distributor sends
+(Marg / Retailio / any software, or Excel → Save as CSV). Item, batch,
+expiry, qty, free, rate, MRP, disc %, GST %, invoice no. and date are read;
+medicines are matched by barcode or exact name, any other spelling is shown
+with a suggestion to accept (never guessed silently). The lines land in the
+form — check and save as usual.
+
+## What to order, dead stock, profit
+
+- **Reports → Stock → What to order**: enough for the next 15 / 30 / 45
+  days at the speed of the last 30 / 60 / 90 days (all bills, minus customer
+  returns), never below the medicine's minimum; stock that expires before it
+  would sell isn't counted. Shows the last supplier and the estimated cost;
+  **Copy for WhatsApp** pastes the order to the distributor.
+- **Reports → Stock → Dead stock**: in stock but not sold for 60 / 90 / 180
+  days — the money locked in it, last sale, expiry (return it in time).
+- **Reports → Sales → Profit by medicine / company**: sales − landed cost of
+  the exact batches sold; sort by lowest margin to see what to renegotiate.
+
+## Refill reminders (free)
+
+A saved customer who bought the same medicine on 2+ bills (BP, sugar,
+thyroid…) appears under **Customers → Refills due** a few days before their
+usual gap runs out (overdue ones first; the bell shows the count). One
+**WhatsApp** per customer lists all their medicines; **Done** hides it until
+they buy again. No SMS, no cost.
 
 ## Bill on WhatsApp
 
 On a saved bill (or any bill found with Ctrl+K) → **WhatsApp** → mobile
-number → WhatsApp opens with the bill typed out; press Send. Free — no
+number (filled in for a saved customer) → WhatsApp opens with the bill
+typed out; press Send. Free — no
 SMS gateway or API (SMS would need a paid gateway).
 
 ## Licences (selling to many shops)
