@@ -8,7 +8,8 @@ import {
   type KeyboardEvent,
 } from "react";
 import { toast } from "sonner";
-import { Truck, X } from "lucide-react";
+import { FileUp, Truck, X } from "lucide-react";
+import { tr } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import {
   type Purchase,
   type PurchaseDraft,
   type PurchaseHeaderField,
+  type PurchaseLineDraft,
   type Supplier,
 } from "@medicare/domain/purchases/types";
 import { calcTotals } from "@medicare/domain/purchases/calc";
@@ -45,6 +47,7 @@ import {
   validatePurchaseDraft,
 } from "@medicare/domain/purchases/validation";
 import { MedicinePicker } from "./MedicinePicker";
+import { InvoiceImportDialog } from "./InvoiceImportDialog";
 import { MedicineFormDialog } from "@/features/medicines/components/MedicineFormDialog";
 import { useSaveMedicine } from "@/features/medicines/hooks/useSaveMedicine";
 import { useCan } from "@/features/auth/store/useAuthStore";
@@ -208,6 +211,35 @@ function PurchaseForm({
       addLine(m);
     },
     [saveMedicine, addLine],
+  );
+
+  // Lines from the distributor's file; its invoice no. / date fill empty fields
+  const [importOpen, setImportOpen] = useState(false);
+  const addImported = useCallback(
+    (
+      lines: PurchaseLineDraft[],
+      header: { invoiceNo: string; invoiceDate: string },
+    ) => {
+      setDraft((d) => ({
+        ...d,
+        invoiceNo:
+          d.invoiceNo ||
+          toCodeInput(header.invoiceNo, PURCHASE_LIMITS.invoiceNoMax),
+        invoiceDate:
+          header.invoiceDate && header.invoiceDate <= toISODate(today)
+            ? header.invoiceDate
+            : d.invoiceDate,
+        lines: [...d.lines, ...lines].slice(0, PURCHASE_LIMITS.maxLines),
+      }));
+      setConfirmDiscard(false);
+      setImportOpen(false);
+      toast.success(
+        tr("{{n}} lines added — check batch, expiry and rate, then save", {
+          n: lines.length,
+        }),
+      );
+    },
+    [today],
   );
 
   const updateLine = useCallback<LineChangeHandler>((key, field, value) => {
@@ -396,11 +428,25 @@ function PurchaseForm({
 
           {/* Item search */}
           <div className="px-4 pt-3 shrink-0">
-            <MedicinePicker
-              medicines={medicines}
-              onPick={addLine}
-              onPickLibrary={canAddMedicine ? pickLibrary : undefined}
-            />
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <MedicinePicker
+                  medicines={medicines}
+                  onPick={addLine}
+                  onPickLibrary={canAddMedicine ? pickLibrary : undefined}
+                />
+              </div>
+              {/* Distributor's file instead of typing every line */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+                className="h-9 shrink-0 rounded-lg text-[12px] gap-1.5"
+              >
+                <FileUp className="h-3.5 w-3.5" />
+                {tr("Import invoice file")}
+              </Button>
+            </div>
             {h.lines ? (
               <p className="mt-1 text-[10px] text-red-500" role="alert">
                 {h.lines}
@@ -513,6 +559,14 @@ function PurchaseForm({
           </div>
         </form>
       </ModalShell>
+      {importOpen ? (
+        <InvoiceImportDialog
+          medicines={medicines}
+          room={PURCHASE_LIMITS.maxLines - draft.lines.length}
+          onClose={() => setImportOpen(false)}
+          onAdd={addImported}
+        />
+      ) : null}
       <MedicineFormDialog
         open={newMedicine !== null}
         medicine={null}

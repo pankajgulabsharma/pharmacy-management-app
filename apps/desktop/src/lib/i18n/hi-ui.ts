@@ -1107,4 +1107,22 @@ export const HI_UI: Record<string, string> = {
   "due today": "आज बाकी",
   "in {{n}} days": "{{n}} दिन में",
   "Reminder sent — marked done": "याद दिलाया — हो गया मार्क किया",
+  "Import invoice file": "इनवॉइस फ़ाइल इम्पोर्ट",
+  "Import the distributor's invoice": "डिस्ट्रीब्यूटर का इनवॉइस इम्पोर्ट करें",
+  "CSV from the distributor (Marg, Retailio…) or Excel → Save as CSV. Lines are added to this purchase — check them, then save.":
+    "डिस्ट्रीब्यूटर की CSV (Marg, Retailio…) या Excel → Save as CSV। लाइनें इस खरीद में जुड़ेंगी — जाँच कर सेव करें।",
+  "Please choose a .csv file (Excel → Save as CSV)":
+    "कृपया .csv फ़ाइल चुनें (Excel → Save as CSV)",
+  "File is larger than 2 MB": "फ़ाइल 2 MB से बड़ी है",
+  "Invoice file": "इनवॉइस फ़ाइल",
+  "{{n}} lines matched to your medicines": "{{n}} लाइनें आपकी दवाइयों से मिलीं",
+  "Not found in your medicines — pick the right one, or add it later":
+    "आपकी दवाइयों में नहीं मिली — सही दवा चुनें, या बाद में जोड़ें",
+  "add the medicine first": "पहले दवा जोड़ें",
+  "Add {{n}} lines": "{{n}} लाइनें जोड़ें",
+  "Add lines": "लाइनें जोड़ें",
+  "{{n}} lines added — check batch, expiry and rate, then save":
+    "{{n}} लाइनें जुड़ीं — बैच, एक्सपायरी और रेट जाँचें, फिर सेव करें",
+  "No “item name” column found": "“item name” कॉलम नहीं मिला",
+  "No “qty” column found": "“qty” कॉलम नहीं मिला",
 };
