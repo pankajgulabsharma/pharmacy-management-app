@@ -3,7 +3,7 @@ import { SCHEDULE_LABELS } from "@medicare/domain/medicines/schedule";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 
-/** Small "Rx" / "H1" / "X" mark next to a medicine name (nothing for OTC) */
+/** Small "Rx" / "H1" / "X" / "NDPS" mark next to a medicine name (nothing for OTC) */
 export function ScheduleBadge({
   schedule,
   className,
@@ -12,7 +12,7 @@ export function ScheduleBadge({
   className?: string;
 }) {
   if (!schedule) return null;
-  const strict = schedule === "H1" || schedule === "X";
+  const strict = schedule !== "H";
   return (
     <span
       title={tr(SCHEDULE_LABELS[schedule])}

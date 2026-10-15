@@ -51,7 +51,7 @@ import {
   buildSaleReturn,
   nextSaleReturnNo,
 } from "@medicare/domain/billing/saleReturn";
-import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
+import { DEMO_SETTINGS } from "@medicare/domain/settings/defaults";
 import type {
   Customer,
   CustomerPayment,
@@ -61,8 +61,8 @@ import {
   nextReceiptNo,
 } from "@medicare/domain/customers/ledger";
 
-const DOCTORS = DEFAULT_SETTINGS.doctors;
-const COUNTERS = DEFAULT_SETTINGS.counters;
+const DOCTORS = DEMO_SETTINGS.doctors;
+const COUNTERS = DEMO_SETTINGS.counters;
 
 /** Demo customer accounts (khata) — named customers get one */
 export const DEMO_CUSTOMER_LIST: Customer[] = [

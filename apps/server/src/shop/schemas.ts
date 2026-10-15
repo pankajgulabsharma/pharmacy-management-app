@@ -48,6 +48,7 @@ export const saleInput = z
     customerName: str(200),
     customerId: id.nullish(),
     customerGstin: str(20).optional(),
+    patientAddress: str(300).optional(),
     doctor: str(200),
     counter: str(60),
     payment: z

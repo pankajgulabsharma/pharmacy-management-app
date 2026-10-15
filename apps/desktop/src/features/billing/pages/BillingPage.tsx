@@ -1,4 +1,7 @@
-import { scheduleRule } from "@medicare/domain/medicines/schedule";
+import {
+  needsRegister,
+  scheduleRule,
+} from "@medicare/domain/medicines/schedule";
 import { ApiError } from "@/lib/api";
 import {
   useCallback,
@@ -166,6 +169,11 @@ export default function BillingPage() {
     [sales, billPrefix],
   );
 
+  /** A register drug (H1 / X / NDPS) on the bill → ask the patient's address */
+  const needsAddress = bill.lines.some((l) =>
+    needsRegister(l.medicine?.schedule),
+  );
+
   /** Why the bill can't be saved yet (shown under the Save button) */
   const blockReason = useMemo(() => {
     if (cart.length === 0) return "Add at least one medicine";
@@ -298,6 +306,7 @@ export default function BillingPage() {
       updateDraft(id, {
         udhaarCustomerId: null,
         customerId: null,
+        patientAddress: "",
         cart: [],
         payment: null,
         customerName: "",
@@ -357,6 +366,9 @@ export default function BillingPage() {
           counter,
           payment,
           ...(customerGstin ? { customerGstin } : {}),
+          ...(needsAddress && draft.patientAddress?.trim()
+            ? { patientAddress: draft.patientAddress }
+            : {}),
         });
         // Saved → its tab closes (the last tab is emptied for the next customer)
         closeTab(id);
@@ -390,6 +402,8 @@ export default function BillingPage() {
       udhaarCustomerId,
       customerGstin,
       customerId,
+      needsAddress,
+      draft.patientAddress,
     ],
   );
 
@@ -718,6 +732,11 @@ export default function BillingPage() {
               updateDraft(draft.id, { customerName: "", customerId: null })
             }
             customerId={customerId}
+            needsPatientAddress={needsAddress}
+            patientAddress={draft.patientAddress ?? ""}
+            onPatientAddressChange={(v) =>
+              updateDraft(draft.id, { patientAddress: v })
+            }
             onPickCustomer={(c) =>
               updateDraft(draft.id, {
                 customerName: c.name,

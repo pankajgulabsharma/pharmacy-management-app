@@ -1,3 +1,5 @@
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { APP_NAME } from "@medicare/domain/settings/defaults";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -17,6 +19,11 @@ export function AppLayout() {
     connect();
     return disconnect;
   }, []);
+  // Window / taskbar title: this shop, in this software
+  const shopName = useSettingsStore((s) => s.shop.name);
+  useEffect(() => {
+    document.title = `${shopName} · ${APP_NAME}`;
+  }, [shopName]);
   // Screens wait for the first load, so they never show empty/old numbers
   const loaded = useServerStore((s) => s.lastSyncAt !== null);
   // First load failed (server down…) → say so, never spin for ever

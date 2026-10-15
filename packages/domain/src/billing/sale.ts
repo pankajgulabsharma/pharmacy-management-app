@@ -269,6 +269,9 @@ export function buildSale(
       customerId: input.customerId ?? null,
       returnedPaise: 0,
       ...b2b,
+      ...(input.patientAddress?.trim()
+        ? { patientAddress: cleanText(input.patientAddress, 160) }
+        : {}),
     },
     change,
   };

@@ -113,7 +113,21 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
             .sort(newestFirst),
     [sales, older, deferredQuery, searching, since],
   );
-  const hasOlder = !searching && sales.some((s) => s.createdAt < since);
+  // Only bills that CAN be returned count (imported history can't), so
+  // "Show 7 more days" never shows a button that adds nothing
+  const olderBill = useMemo(
+    () =>
+      searching
+        ? undefined
+        : sales
+            .filter((s) => !s.imported && s.createdAt < since)
+            .reduce<string | undefined>(
+              (max, s) => (!max || s.createdAt > max ? s.createdAt : max),
+              undefined,
+            ),
+    [sales, since, searching],
+  );
+  const hasOlder = olderBill !== undefined;
   const returnsDone = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
     return saleReturns
@@ -126,14 +140,32 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
       )
       .sort(newestFirst);
   }, [saleReturns, deferredQuery, since]);
-  const olderReturns =
-    !searching && saleReturns.some((r) => r.createdAt < since);
-  const moreButton = (show: boolean) =>
+  const olderReturn = searching
+    ? undefined
+    : saleReturns
+        .filter((r) => r.createdAt < since)
+        .reduce<string | undefined>(
+          (max, r) => (!max || r.createdAt > max ? r.createdAt : max),
+          undefined,
+        );
+  const olderReturns = olderReturn !== undefined;
+  /** 7 more days — and at least back to the next older one (shop closed days) */
+  const showMore = (next?: string) =>
+    setDays((d) => {
+      if (!next) return d + DAYS_STEP;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const back = Math.ceil(
+        (today.getTime() - new Date(next).setHours(0, 0, 0, 0)) / 86_400_000,
+      );
+      return Math.max(d + DAYS_STEP, back + 1);
+    });
+  const moreButton = (show: boolean, next?: string) =>
     show ? (
       <div className="p-2 flex justify-center border-t border-border/60">
         <button
           type="button"
-          onClick={() => setDays((d) => d + DAYS_STEP)}
+          onClick={() => showMore(next)}
           className="h-7 rounded-md border border-border px-3 text-[11px] font-medium hover:bg-muted"
         >
           {tr("Show 7 more days")}
@@ -374,7 +406,7 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
                       pickSale(s);
                     }
                   }}
-                  footer={moreButton(olderReturns)}
+                  footer={moreButton(olderReturns, olderReturn)}
                 />
               )
             ) : list.length === 0 ? (
@@ -393,7 +425,7 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
                 selectedId={nav.selectedKey}
                 onPick={pickSale}
                 listRef={listRef}
-                footer={moreButton(hasOlder)}
+                footer={moreButton(hasOlder, olderBill)}
               />
             )}
           </>

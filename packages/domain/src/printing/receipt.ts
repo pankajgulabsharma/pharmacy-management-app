@@ -120,7 +120,11 @@ export type ReceiptInput = {
 
 /** " [Sch. H1]" after Rx medicines on the printed bill */
 const schMark = (l: { schedule?: string }) =>
-  l.schedule ? ` [Sch. ${esc(l.schedule)}]` : "";
+  !l.schedule
+    ? ""
+    : l.schedule === "NDPS"
+      ? " [NDPS]"
+      : ` [Sch. ${esc(l.schedule)}]`;
 
 export function receiptHtml(input: ReceiptInput): string {
   return isThermal(input.format) ? thermal(input) : sheet(input);
@@ -167,7 +171,7 @@ body { margin: 0; padding: 2mm ${narrow ? 1.5 : 3}mm; width: ${w + (narrow ? 3 :
 ${shop.gstin ? `<div>GSTIN ${esc(shop.gstin)}</div>` : ""}<div>DL ${esc(shop.drugLicense)}</div>
 <div class="b" style="margin-top:3px">TAX INVOICE</div></div>
 <div class="rule"></div>
-${kv("Bill", sale.billNo)}${kv("Date", when(sale.createdAt))}${kv("Customer", sale.customerName)}${sale.customerGstin ? kv("GSTIN", sale.customerGstin) : ""}
+${kv("Bill", sale.billNo)}${kv("Date", when(sale.createdAt))}${kv("Customer", sale.customerName)}${sale.patientAddress ? kv("Address", sale.patientAddress) : ""}${sale.customerGstin ? kv("GSTIN", sale.customerGstin) : ""}
 ${sale.doctor ? kv("Doctor", sale.doctor) : ""}${sale.counter ? kv("Counter", sale.counter) : ""}${sale.billedBy ? kv("Billed by", sale.billedBy) : ""}
 <div class="rule"></div>${items}<div class="rule"></div>
 ${kv("Items", String(sale.lines.length))}${kv("Subtotal", money(t.grossPaise))}
@@ -264,7 +268,7 @@ tr { page-break-inside: avoid; }`;
 <div>${shop.gstin ? `GSTIN ${esc(shop.gstin)} · ` : ""}DL ${esc(shop.drugLicense)}</div></div>
 <div><div class="title">TAX INVOICE</div>
 <div class="r">Bill <b>${esc(sale.billNo)}</b></div><div class="r">${esc(when(sale.createdAt))}</div></div></div>
-<div class="meta"><div><b>${sale.customerGstin ? "Buyer" : "Patient / Customer"}:</b> ${esc(sale.customerName)}${sale.customerGstin ? `<br><b>Buyer GSTIN:</b> ${esc(sale.customerGstin)} · <b>Place of supply:</b> ${esc(placeOfSupply(sale.customerGstin))}` : ""}${sale.doctor ? `<br><b>Prescribed by:</b> ${esc(sale.doctor)}` : ""}</div>
+<div class="meta"><div><b>${sale.customerGstin ? "Buyer" : "Patient / Customer"}:</b> ${esc(sale.customerName)}${sale.patientAddress ? `<br>${esc(sale.patientAddress)}` : ""}${sale.customerGstin ? `<br><b>Buyer GSTIN:</b> ${esc(sale.customerGstin)} · <b>Place of supply:</b> ${esc(placeOfSupply(sale.customerGstin))}` : ""}${sale.doctor ? `<br><b>Prescribed by:</b> ${esc(sale.doctor)}` : ""}</div>
 <div class="r">${sale.counter ? `Counter: ${esc(sale.counter)}<br>` : ""}${sale.billedBy ? `Billed by: ${esc(sale.billedBy)}` : ""}</div></div>
 <table class="items"><thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Batch</th><th>Exp</th><th>Qty</th><th>MRP</th><th>Rate</th><th>Disc</th><th>GST</th><th>Amount</th></tr></thead>
 <tbody>${rows}</tbody></table>

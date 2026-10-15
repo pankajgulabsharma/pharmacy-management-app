@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { Keyboard, MapPin, Phone } from "lucide-react";
+import { Keyboard, MapPin, Phone, Store } from "lucide-react";
+import { APP_NAME } from "@medicare/domain/settings/defaults";
 import { cn } from "@/lib/utils";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
@@ -8,14 +9,6 @@ import { KEYS, navItemsFor, type NavItem } from "@/app/shortcuts/registry";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useTr } from "@/hooks/useTr";
 import { tr } from "@/lib/i18n";
-
-/** "Shop 4, Station Road, Thane (W) 400601" → "Thane (W) 400601" */
-const shortPlace = (address: string) =>
-  address
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean)
-    .at(-1) ?? "";
 
 const keyText = (keys: string | readonly string[]) =>
   formatCombo(preferredCombo(keys)).join(" ");
@@ -56,17 +49,12 @@ export function Sidebar() {
         </div>
         {open ? (
           <div className="min-w-0">
-            <p
-              className="text-[13px] font-semibold text-white truncate leading-tight"
-              title={shopName}
-            >
-              {shopName}
+            {/* The software's name — fixed; the shop's is in the card below */}
+            <p className="text-[13px] font-semibold text-white truncate leading-tight">
+              {APP_NAME}
             </p>
-            <p
-              className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate"
-              title={shop.address}
-            >
-              {shortPlace(shop.address) || "Pharmacy POS"}
+            <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+              Pharmacy POS
             </p>
           </div>
         ) : null}
@@ -80,12 +68,21 @@ export function Sidebar() {
       </nav>
 
       {/* The shop — same details as printed on every bill */}
-      {open && shop.address ? (
+      {open ? (
         <div className="shrink-0 mx-3 mb-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[10.5px] leading-snug text-slate-400">
-          <p className="flex gap-2" title={shop.address}>
-            <MapPin className="h-3.5 w-3.5 shrink-0 mt-px text-indigo-300" />
-            <span className="line-clamp-2">{shop.address}</span>
+          <p
+            className="flex gap-2 text-[12px] font-semibold text-white"
+            title={shopName}
+          >
+            <Store className="h-3.5 w-3.5 shrink-0 mt-0.5 text-indigo-300" />
+            <span className="line-clamp-2">{shopName}</span>
           </p>
+          {shop.address ? (
+            <p className="flex gap-2 mt-1.5" title={shop.address}>
+              <MapPin className="h-3.5 w-3.5 shrink-0 mt-px text-indigo-300" />
+              <span className="line-clamp-2">{shop.address}</span>
+            </p>
+          ) : null}
           {shop.phone ? (
             <p className="flex gap-2 mt-1.5">
               <Phone className="h-3.5 w-3.5 shrink-0 text-indigo-300" />

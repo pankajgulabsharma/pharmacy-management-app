@@ -71,6 +71,13 @@
       "when": 1792063783778,
       "tag": "0009_customer_opening",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792073642319,
+      "tag": "0010_patient_address",
+      "breakpoints": true
     }
   ]
 }

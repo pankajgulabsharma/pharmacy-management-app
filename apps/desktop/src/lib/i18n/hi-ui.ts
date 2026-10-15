@@ -964,4 +964,17 @@ export const HI_UI: Record<string, string> = {
   "Saved customers — pick to link the bill (mobile for WhatsApp)":
     "सेव ग्राहक — चुनें तो बिल उनसे जुड़ेगा (WhatsApp के लिए मोबाइल)",
   "Send this bill on WhatsApp": "यह बिल WhatsApp पर भेजें",
+  "Add your shop details": "अपनी दुकान की जानकारी भरें",
+  Missing: "बाकी",
+  "they print on every bill.": "ये हर बिल पर छपती हैं।",
+  "shop name": "दुकान का नाम",
+  address: "पता",
+  "drug licence no.": "ड्रग लाइसेंस नं.",
+  "Patient's address (for the H1 / NDPS register)":
+    "मरीज़ का पता (H1 / NDPS रजिस्टर के लिए)",
+  "Patient's address": "मरीज़ का पता",
+  "NDPS — narcotic / psychotropic (register)":
+    "NDPS — नशीली / मनोदैहिक दवा (रजिस्टर)",
+  "Schedule X (register, keep Rx copy)":
+    "शेड्यूल X (रजिस्टर, पर्ची की कॉपी रखें)",
 };

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerNameInput } from "./CustomerNameInput";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,10 @@ type Props = {
   /** F3 focuses this */
   customerRef?: React.Ref<HTMLInputElement>;
   onClearCustomer: () => void;
+  /** A register drug (H1 / X / NDPS) is on the bill → patient's address */
+  needsPatientAddress: boolean;
+  patientAddress: string;
+  onPatientAddressChange: (v: string) => void;
   /** Saved customer the bill is linked to (null = typed name only) */
   customerId: string | null;
   onPickCustomer: (c: Customer) => void;
@@ -47,6 +52,9 @@ export function BillingContextBar({
   onClearCustomer,
   customerId,
   onPickCustomer,
+  needsPatientAddress,
+  patientAddress,
+  onPatientAddressChange,
   prescribedBy,
   onPrescribedByChange,
   counter,
@@ -58,6 +66,7 @@ export function BillingContextBar({
   canB2b,
 }: Props) {
   const { t } = useTranslation();
+  const doctorListId = useId();
   const showGstin = canB2b && gstin !== null;
 
   return (
@@ -101,6 +110,21 @@ export function BillingContextBar({
             </button>
           ) : null}
         </div>
+        {needsPatientAddress ? (
+          <Input
+            value={patientAddress}
+            onChange={(e) =>
+              onPatientAddressChange(e.target.value.slice(0, 160))
+            }
+            placeholder={tr("Patient's address (for the H1 / NDPS register)")}
+            aria-label={tr("Patient's address")}
+            className={cn(
+              fieldStyle,
+              "pl-3 border-red-500/30 bg-red-500/[0.03]",
+            )}
+            autoComplete="off"
+          />
+        ) : null}
         {showGstin ? (
           <Input
             value={gstin ?? ""}
@@ -122,18 +146,22 @@ export function BillingContextBar({
           </span>
           {t("billing.prescribedBy")}
         </label>
-        <select
+        {/* Pick a saved doctor, or type one not in the list (like a new
+            prescription from another clinic) — saved lists in Settings */}
+        <Input
+          list={doctorListId}
           value={prescribedBy}
-          onChange={(e) => onPrescribedByChange(e.target.value)}
+          onChange={(e) => onPrescribedByChange(e.target.value.slice(0, 80))}
+          placeholder={t("billing.selectDoctor")}
+          aria-label={t("billing.prescribedBy")}
           className={cn(fieldStyle, "px-3 text-foreground")}
-        >
-          <option value="">{t("billing.selectDoctor")}</option>
+          autoComplete="off"
+        />
+        <datalist id={doctorListId}>
           {doctors.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
+            <option key={d} value={d} />
           ))}
-        </select>
+        </datalist>
       </div>
 
       {/* Counter */}

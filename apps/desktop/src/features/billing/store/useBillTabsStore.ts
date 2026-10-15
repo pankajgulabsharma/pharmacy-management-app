@@ -20,6 +20,8 @@ export type BillDraft = {
   customerName: string;
   /** Saved customer picked for this bill (null = typed name only) */
   customerId: string | null;
+  /** Patient's address — asked when a register drug (H1 / X / NDPS) is on the bill */
+  patientAddress?: string;
   /** B2B bill: buyer's GSTIN (null = retail bill) */
   customerGstin: string | null;
   /** null = the shop's default (first doctor / default counter) */
@@ -87,6 +89,7 @@ function cleanDrafts(v: unknown): BillDraft[] {
         : [],
       customerName: str(d.customerName),
       customerId: strOrNull(d.customerId),
+      patientAddress: str(d.patientAddress),
       customerGstin: strOrNull(d.customerGstin),
       doctor: strOrNull(d.doctor),
       counter: strOrNull(d.counter),

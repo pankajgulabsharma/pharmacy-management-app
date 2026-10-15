@@ -37,7 +37,7 @@ async function save(change: Partial<Settings>) {
   useSettingsStore.setState(sanitizeSettings(r.settings));
 }
 
-export const useSettingsStore = create<SettingsState>()((set) => ({
+export const useSettingsStore = create<SettingsState>()((set, get) => ({
   ...DEFAULT_SETTINGS,
   loadFromServer: async () => {
     const r = await apiGet<{ settings: Settings }>("/api/settings");
@@ -49,7 +49,9 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setDoctors: (doctors) => save({ doctors }),
   setCounters: (counters) => save({ counters }),
   setRoles: (roles) => save({ roles }),
-  resetToDefaults: () => save(DEFAULT_SETTINGS),
+  // The shop's own details (name, address, GSTIN, licence) are kept
+  resetToDefaults: () =>
+    save({ ...DEFAULT_SETTINGS, shop: get().shop }),
 }));
 
 /* Read-outside-React helpers (pure utils use these as defaults) */

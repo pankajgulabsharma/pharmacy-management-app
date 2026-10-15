@@ -529,7 +529,7 @@ export function DataSection() {
       <ConfirmDialog
         open={confirm}
         title="Reset all settings?"
-        description="Shop profile, billing defaults, expiry windows, doctors and counters go back to their original values."
+        description="Billing defaults, expiry windows, doctors, counters and role access go back to their original values. Your shop's name, address, GSTIN and licence are kept."
         confirmLabel="Reset settings"
         onConfirm={() => {
           setConfirm(false);

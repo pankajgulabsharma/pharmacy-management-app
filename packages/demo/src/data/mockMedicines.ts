@@ -17,7 +17,7 @@ const SCHEDULES: Record<string, Medicine["schedule"]> = {
   m42: "H1", // Alprax 0.25 (alprazolam)
   m43: "H1", // Levoflox 500 (levofloxacin)
   m44: "H1", // Zolfresh 10 (zolpidem)
-  m45: "H1", // Ultracet (tramadol + paracetamol)
+  m45: "NDPS", // Ultracet (tramadol — psychotropic) — narcotic register
   m46: "H1", // R-Cinex (rifampicin + isoniazid)
   m12: "H", // Telma
   m16: "H", // Asthalin

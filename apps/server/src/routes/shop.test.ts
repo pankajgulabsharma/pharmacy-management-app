@@ -334,6 +334,32 @@ describe("billing on the server", () => {
     expect(saved.lines[0].schedule).toBe("H1");
   });
 
+  it("NDPS works like H1, and the patient's address goes into the register", async () => {
+    const { input } = await cartFor();
+    // Ultracet (tramadol) is the demo NDPS medicine
+    const cart = [{ ...input.cart[0], medicineId: "m45" }];
+    const walkIn = await call("POST", "/api/sales", {
+      ...input,
+      cart,
+      doctor: "Dr. A",
+    });
+    expect(walkIn.json().error).toMatch(/NDPS — enter the patient/);
+    const { sale } = await ok(
+      call("POST", "/api/sales", {
+        ...input,
+        cart,
+        customerName: "Ravi Kumar",
+        doctor: "Dr. A",
+        patientAddress: "12, Gokhale Road, Thane",
+      }),
+    );
+    expect(sale.lines[0].schedule).toBe("NDPS");
+    const saved = (await ok(call("GET", "/api/sales"))).sales.find(
+      (x: Sale) => x.id === sale.id,
+    );
+    expect(saved.patientAddress).toBe("12, Gokhale Road, Thane");
+  });
+
   it("short stock → nothing saved (no bill, no stock change)", async () => {
     const { input } = await cartFor();
     input.cart[0].qtyStrip = 100_000;

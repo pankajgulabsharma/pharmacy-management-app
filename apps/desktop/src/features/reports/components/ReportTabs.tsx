@@ -27,7 +27,13 @@ import {
   type StockReport,
 } from "@medicare/domain/reports/reports";
 import { plural } from "@medicare/domain/lib/format";
-import type { RegisterRow } from "@medicare/domain/medicines/schedule";
+import {
+  REGISTER_SCHEDULES,
+  registerCsv,
+  type RegisterRow,
+} from "@medicare/domain/medicines/schedule";
+import { downloadText } from "@/lib/csv";
+import { useState } from "react";
 import { ReportCard, ReportTable, ShareBar } from "./ReportTable";
 import { DailyChart } from "./DailyChart";
 import { SalesInsightsCard } from "./SalesInsightsCard";
@@ -869,14 +875,62 @@ export function RegisterTab({
   rows: readonly RegisterRow[];
   periodLabel: string;
 }) {
+  // One register per kind, like the shop's paper registers
+  const [kind, setKind] = useState<"all" | (typeof REGISTER_SCHEDULES)[number]>(
+    "all",
+  );
+  const shown = kind === "all" ? rows : rows.filter((r) => r.schedule === kind);
+  const count = (k: string) => rows.filter((r) => r.schedule === k).length;
+  const title =
+    kind === "all"
+      ? "Schedule H1 / X / NDPS register"
+      : kind === "NDPS"
+        ? "NDPS (narcotic / psychotropic) register"
+        : `Schedule ${kind} register`;
   return (
     <ReportTable
-      title="Schedule H1 / X register"
+      title={title}
       subtitle={`${periodLabel} · keep for 3 years · Export → print or save`}
-      rows={rows}
+      rows={shown}
       getKey={(r) => `${r.billNo}|${r.medicine}`}
-      empty="No Schedule H1 / X medicines sold in this period"
+      empty="No register medicines sold in this period"
       maxHeightClass="max-h-[70vh]"
+      action={
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(["all", ...REGISTER_SCHEDULES] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={kind === k}
+              onClick={() => setKind(k)}
+              className={cn(
+                "h-7 rounded-md border px-2.5 text-[11px] font-medium",
+                kind === k
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {k === "all" ? "All" : k}{" "}
+              <span className="tabular-nums opacity-70">
+                {k === "all" ? rows.length : count(k)}
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={shown.length === 0}
+            onClick={() =>
+              downloadText(
+                `register-${kind}_${periodLabel}.csv`,
+                registerCsv(shown),
+              )
+            }
+            className="h-7 rounded-md border border-primary/30 bg-primary/5 px-2.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+          >
+            Export
+          </button>
+        </div>
+      }
       columns={[
         {
           key: "date",
@@ -897,7 +951,20 @@ export function RegisterTab({
           width: "w-[90px]",
           render: (r) => <CodeChip>{r.billNo}</CodeChip>,
         },
-        { key: "patient", label: "Patient", render: (r) => r.patient },
+        {
+          key: "patient",
+          label: "Patient",
+          render: (r) => (
+            <>
+              {r.patient}
+              {r.patientAddress ? (
+                <span className="block text-[10px] text-muted-foreground">
+                  {r.patientAddress}
+                </span>
+              ) : null}
+            </>
+          ),
+        },
         { key: "doctor", label: "Doctor", render: (r) => r.doctor },
         {
           key: "medicine",

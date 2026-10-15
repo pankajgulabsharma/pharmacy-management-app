@@ -159,6 +159,8 @@ export type Sale = {
   returnedPaise: Paise;
   /** Customer account (khata) — always set for udhaar bills */
   customerId?: string | null;
+  /** Patient's address — asked for register drugs (H1 / X / NDPS) */
+  patientAddress?: string;
   /** B2B bill: the buyer's GSTIN (clinic, hospital, another shop) */
   customerGstin?: string;
   /** Buyer in another state → IGST instead of CGST + SGST */
@@ -181,6 +183,8 @@ export type SaleInput = {
   payment: PaymentDraft;
   /** Optional: buyer's GSTIN for a B2B tax invoice */
   customerGstin?: string;
+  /** Optional: patient's address (for the H1 / X / NDPS register) */
+  patientAddress?: string;
 };
 
 /* ------------------------------------------------------------------ */

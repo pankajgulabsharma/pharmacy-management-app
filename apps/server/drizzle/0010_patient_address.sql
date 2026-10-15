@@ -1,0 +1,1 @@
+ALTER TABLE `sales` ADD `patient_address` text DEFAULT '' NOT NULL;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS } from "./defaults";
+import { DEFAULT_SETTINGS, DEMO_SETTINGS } from "./defaults";
 import {
   applySettingsChange,
   cleanList,
@@ -10,8 +10,15 @@ import { checkGstin } from "../lib/gstin";
 
 describe("settings", () => {
   it("default shop profile is valid (incl. GSTIN check digit)", () => {
-    expect(validateShop(DEFAULT_SETTINGS.shop)).toEqual({});
-    expect(checkGstin(DEFAULT_SETTINGS.shop.gstin).ok).toBe(true);
+    expect(validateShop(DEMO_SETTINGS.shop)).toEqual({});
+    expect(checkGstin(DEMO_SETTINGS.shop.gstin).ok).toBe(true);
+    // a new shop starts blank — nothing made up prints on its bills
+    expect(DEFAULT_SETTINGS.shop).toMatchObject({
+      gstin: "",
+      address: "",
+      drugLicense: "",
+    });
+    expect(DEFAULT_SETTINGS.doctors).toEqual([]);
   });
 
   it("repairs tampered / corrupted storage instead of crashing", () => {
@@ -41,7 +48,7 @@ describe("settings", () => {
 
   it("accepts an empty GSTIN (shops below the GST threshold)", () => {
     expect(
-      validateShop({ ...DEFAULT_SETTINGS.shop, gstin: "" }).gstin,
+      validateShop({ ...DEMO_SETTINGS.shop, gstin: "" }).gstin,
     ).toBeUndefined();
   });
 });
@@ -49,8 +56,8 @@ describe("settings", () => {
 describe("saving a settings change (server)", () => {
   it("refuses invalid shop details instead of silently replacing them", () => {
     expect(() =>
-      applySettingsChange(DEFAULT_SETTINGS, {
-        shop: { ...DEFAULT_SETTINGS.shop, phone: "123" },
+      applySettingsChange(DEMO_SETTINGS, {
+        shop: { ...DEMO_SETTINGS.shop, phone: "123" },
       }),
     ).toThrow(/10-digit/);
     expect(() =>

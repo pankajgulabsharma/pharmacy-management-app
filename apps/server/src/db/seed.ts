@@ -3,7 +3,7 @@
  * @medicare/demo with the real rules, so every number is consistent.
  * One transaction: all of it goes in, or nothing does.
  */
-import { DEFAULT_SETTINGS } from "@medicare/domain/settings/defaults";
+import { DEMO_SETTINGS } from "@medicare/domain/settings/defaults";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
 import {
@@ -85,7 +85,7 @@ export async function seedDemoData({
     insertRows(
       raw,
       t.settings,
-      Object.entries(DEFAULT_SETTINGS).map(([key, value]) => ({
+      Object.entries(DEMO_SETTINGS).map(([key, value]) => ({
         key,
         valueJson: JSON.stringify(value),
         updatedAt: now,

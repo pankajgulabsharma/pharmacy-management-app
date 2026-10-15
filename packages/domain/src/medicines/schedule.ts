@@ -5,25 +5,37 @@
  *   H1  — prescription + entry in the Schedule H1 register (patient, doctor,
  *         medicine, quantity), kept for 3 years
  *   X   — like H1, strictest (separate register; keep prescription copy)
+ *   NDPS — narcotic / psychotropic under the NDPS Act (e.g. codeine,
+ *          tramadol, alprazolam preparations): prescription + patient +
+ *          its own register — the way Marg / GoFrugal keep a
+ *          "narcotic register" next to the H1 one
+ *
+ * Schedule G (a caution on the pack, sold without prescription) needs
+ * nothing at the counter, so it is not a separate choice here.
  */
 import type { Sale } from "../billing/types";
 import { toCsv } from "../lib/csv";
 import { inRange, type DateRange } from "../reports/period";
 
-export const DRUG_SCHEDULES = ["", "H", "H1", "X"] as const;
+export const DRUG_SCHEDULES = ["", "H", "H1", "X", "NDPS"] as const;
 export type DrugSchedule = (typeof DRUG_SCHEDULES)[number];
 
 export const SCHEDULE_LABELS: Record<DrugSchedule, string> = {
   "": "None (OTC)",
   H: "Schedule H (Rx)",
   H1: "Schedule H1 (register)",
-  X: "Schedule X (register)",
+  X: "Schedule X (register, keep Rx copy)",
+  NDPS: "NDPS — narcotic / psychotropic (register)",
 };
 
 export const isSchedule = (v: unknown): v is DrugSchedule =>
   (DRUG_SCHEDULES as readonly unknown[]).includes(v);
 export const needsPrescription = (s?: DrugSchedule) => !!s;
-export const needsRegister = (s?: DrugSchedule) => s === "H1" || s === "X";
+export const needsRegister = (s?: DrugSchedule) =>
+  s === "H1" || s === "X" || s === "NDPS";
+
+/** Registers kept by the shop (one per kind) */
+export const REGISTER_SCHEDULES = ["H1", "X", "NDPS"] as const;
 
 const WALK_IN = /^walk-?in( customer)?$/i;
 
@@ -39,7 +51,7 @@ export function scheduleRule(
 ): string | null {
   const reg = lines.find((l) => needsRegister(l.schedule));
   if (reg && (!customerName.trim() || WALK_IN.test(customerName.trim())))
-    return `${reg.medicineName} is Schedule ${reg.schedule} — enter the patient's name (needed for the register)`;
+    return `${reg.medicineName} is ${reg.schedule === "NDPS" ? "NDPS" : `Schedule ${reg.schedule}`} — enter the patient's name (needed for the register)`;
   const rx = lines.find((l) => needsPrescription(l.schedule));
   if (rx && !doctor.trim())
     return `${rx.medicineName} is Schedule ${rx.schedule} — choose the prescribing doctor`;
@@ -50,6 +62,7 @@ export type RegisterRow = {
   date: string;
   billNo: string;
   patient: string;
+  patientAddress: string;
   doctor: string;
   medicine: string;
   schedule: DrugSchedule;
@@ -71,6 +84,7 @@ export function scheduleRegister(
         date: s.createdAt,
         billNo: s.billNo,
         patient: s.customerName,
+        patientAddress: s.patientAddress ?? "",
         doctor: s.doctor,
         medicine: l.medicineName,
         schedule: l.schedule!,
@@ -95,6 +109,7 @@ export const registerCsv = (rows: readonly RegisterRow[]) =>
     { header: "Date", value: (r) => new Date(r.date).toLocaleString("en-IN") },
     { header: "Bill no", value: (r) => r.billNo },
     { header: "Patient", value: (r) => r.patient },
+    { header: "Patient address", value: (r) => r.patientAddress },
     { header: "Prescribing doctor", value: (r) => r.doctor },
     { header: "Medicine", value: (r) => r.medicine },
     { header: "Schedule", value: (r) => r.schedule },

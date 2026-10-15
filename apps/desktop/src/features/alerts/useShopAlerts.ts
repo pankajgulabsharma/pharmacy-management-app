@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
   BadgeCheck,
+  Store,
   CalendarClock,
   CalendarX,
   HandCoins,
@@ -24,6 +25,7 @@ import { useInventoryStore } from "@/features/inventory/store/useInventoryStore"
 import { useMedicinesWithStock } from "@/features/medicines/hooks/useMedicinesWithStock";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { missingShopDetails } from "@medicare/domain/settings/defaults";
 import { tr } from "@/lib/i18n";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
 
@@ -49,6 +51,7 @@ const plural = (n: number, one: string, many: string) =>
 export function useShopAlerts(): ShopAlert[] {
   const role = useAuthStore((s) => s.session?.user.role);
   const access = useSettingsStore((s) => s.roles);
+  const shop = useSettingsStore((s) => s.shop);
   const batches = useInventoryStore((s) => s.batches);
   const medicines = useMedicinesWithStock();
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
@@ -74,6 +77,18 @@ export function useShopAlerts(): ShopAlert[] {
           ? "/settings?section=license"
           : "/dashboard",
       });
+    // A new shop: its own details print on every bill — fill them first
+    const missing = missingShopDetails(shop);
+    if (missing.length && can(role, "admin", access))
+      list.push({
+        key: "shop-details",
+        title: tr("Add your shop details"),
+        desc: `${tr("Missing")}: ${missing.map((m) => tr(m)).join(", ")} — ${tr("they print on every bill.")}`,
+        icon: Store,
+        level: "amber",
+        to: "/settings?section=shop",
+      });
+
     const stock = stockReport(batches, medicines, expiringDays);
 
     if (stock.expired.length)
@@ -193,6 +208,7 @@ export function useShopAlerts(): ShopAlert[] {
   }, [
     role,
     access,
+    shop,
     batches,
     medicines,
     expiringDays,

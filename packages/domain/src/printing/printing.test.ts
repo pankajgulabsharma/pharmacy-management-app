@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Sale } from "../billing/types";
-import { DEFAULT_SETTINGS } from "../settings/defaults";
+import { DEMO_SETTINGS } from "../settings/defaults";
 import { gstSummary, receiptHtml } from "./receipt";
 import { numberInWords, rupeesInWords } from "./words";
 import { isValidEan13, labelsHtml, newInStoreBarcode } from "./labels";
@@ -79,7 +79,7 @@ const sale = {
   },
 } as unknown as Sale;
 
-const shop = DEFAULT_SETTINGS.shop;
+const shop = DEMO_SETTINGS.shop;
 
 describe("printed bill", () => {
   it("every paper size is a full page with the whole bill (not just the title)", () => {

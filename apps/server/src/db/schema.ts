@@ -345,6 +345,8 @@ export const sales = sqliteTable(
     imported: bool("imported"),
     /** B2B bill: buyer's GSTIN ("" = normal retail bill) */
     customerGstin: text("customer_gstin").notNull().default(""),
+    /** For the H1 / X / NDPS register */
+    patientAddress: text("patient_address").notNull().default(""),
     /** Buyer in another state → IGST */
     interstate: bool("interstate"),
     // totals
