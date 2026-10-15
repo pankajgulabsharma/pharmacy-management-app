@@ -10,6 +10,8 @@ import {
   MonitorSmartphone,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/common/Kbd";
+import { KEYS } from "@/app/shortcuts/registry";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 
@@ -141,6 +143,7 @@ export function BillingContextBar({
           >
             <UserPlus className="h-3 w-3" />
             {tr("Save as customer (optional)")}
+            <Kbd keys={KEYS.saveCustomer} className="ml-1" />
           </button>
         ) : null}
         {/* Saved customer: mobile + address from their account — a change

@@ -144,6 +144,12 @@ export function sanitizeSettings(raw: unknown): Settings {
         d.billing.receiptFooter,
       ),
       billPrefix: cleanPrefix(billing.billPrefix, d.billing.billPrefix),
+      defaultUdhaarLimitPaise: int(
+        billing.defaultUdhaarLimitPaise,
+        0,
+        L.maxUdhaarLimitPaise,
+        d.billing.defaultUdhaarLimitPaise,
+      ),
     },
     inventory: {
       expiringSoonDays: int(

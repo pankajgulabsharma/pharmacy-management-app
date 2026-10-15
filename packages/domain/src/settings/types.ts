@@ -19,6 +19,8 @@ export type BillingPrefs = {
   receiptFooter: string;
   /** Start of every bill number: INV → INV/26-27/0001 (1–5 letters/digits) */
   billPrefix: string;
+  /** Udhaar limit filled in for every NEW customer (0 = no limit) */
+  defaultUdhaarLimitPaise: number;
 };
 
 export type InventoryPrefs = {
@@ -50,4 +52,6 @@ export const SETTINGS_LIMITS = {
   maxCounters: 10,
   expiringDays: { min: 15, max: 365 },
   shortExpiryMonths: { min: 1, max: 24 },
+  /** ₹10 lakh — same cap as a customer's own limit */
+  maxUdhaarLimitPaise: 10_00_000_00,
 } as const;

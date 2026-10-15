@@ -675,6 +675,16 @@ export default function BillingPage() {
 
       // Bill actions (F-keys work everywhere on this screen)
       { keys: KEYS.customer, handler: () => customerRef.current?.select() },
+      {
+        keys: KEYS.saveCustomer,
+        enabled: !saveCustomerOpen,
+        handler: () =>
+          billCustomer.linked
+            ? toast.info(tr("Already a saved customer"), {
+                description: billCustomer.linked.name,
+              })
+            : setSaveCustomerOpen(true),
+      },
       { keys: KEYS.nextPayment, handler: nextPaymentMethod },
       {
         keys: KEYS.payAmount,

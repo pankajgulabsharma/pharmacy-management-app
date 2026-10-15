@@ -994,4 +994,13 @@ export const HI_UI: Record<string, string> = {
   "Up to 160 letters — printed in the H1 / NDPS register":
     "अधिकतम 160 अक्षर — H1 / NDPS रजिस्टर में छपता है",
   "Up to 200 letters": "अधिकतम 200 अक्षर",
+  "Already a saved customer": "यह पहले से सेव ग्राहक है",
+  "Udhaar due now": "अभी बाकी उधार",
+  "Advance with the shop": "दुकान के पास एडवांस",
+  "old udhaar + udhaar bills − payments received":
+    "पुराना उधार + उधार बिल − मिला भुगतान",
+  "Default udhaar limit for new customers (₹)":
+    "नए ग्राहकों की डिफ़ॉल्ट उधार सीमा (₹)",
+  "Filled in for every new customer — change it per customer anytime. Empty or 0 = no limit":
+    "हर नए ग्राहक में भरी जाएगी — किसी भी ग्राहक के लिए कभी भी बदलें। खाली या 0 = कोई सीमा नहीं",
 };

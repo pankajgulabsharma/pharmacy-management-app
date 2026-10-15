@@ -75,3 +75,24 @@ describe("saving a settings change (server)", () => {
     expect(next.shop).toEqual(DEFAULT_SETTINGS.shop);
   });
 });
+
+describe("default udhaar limit for new customers", () => {
+  it("starts at ₹5,000 and old saved settings get it too", () => {
+    expect(DEFAULT_SETTINGS.billing.defaultUdhaarLimitPaise).toBe(5_000_00);
+    const old = { billing: { billPrefix: "INV" } }; // saved before this setting
+    expect(sanitizeSettings(old).billing.defaultUdhaarLimitPaise).toBe(
+      5_000_00,
+    );
+  });
+
+  it("keeps 0 (no limit) and rejects bad values", () => {
+    const at = (v: unknown) =>
+      sanitizeSettings({ billing: { defaultUdhaarLimitPaise: v } }).billing
+        .defaultUdhaarLimitPaise;
+    expect(at(0)).toBe(0);
+    expect(at(10_000_00)).toBe(10_000_00);
+    expect(at(-5)).toBe(5_000_00);
+    expect(at(1.5)).toBe(5_000_00);
+    expect(at(99_00_00_000_00)).toBe(5_000_00);
+  });
+});

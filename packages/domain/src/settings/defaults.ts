@@ -29,6 +29,8 @@ export const DEFAULT_SETTINGS: Settings = {
     receiptFooter:
       "Thank you! Get well soon. Medicines are returnable only with this bill.",
     billPrefix: DEFAULT_BILL_PREFIX,
+    // A sensible start; the owner changes it in Settings → Billing
+    defaultUdhaarLimitPaise: 5_000_00,
   },
   inventory: {
     expiringSoonDays: 90,

@@ -127,6 +127,8 @@ export const KEYS = {
   // Billing
   billSearch: ["F2", "/"],
   customer: ["F3", "Alt+C"],
+  /** Save the typed walk-in as a customer account (optional) */
+  saveCustomer: ["Shift+F3", "Alt+U"],
   nextPayment: ["F4", "Alt+P"],
   /** Jump to the amount box of the chosen payment method */
   payAmount: "Alt+A",
@@ -193,6 +195,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: KEYS.nextDiscount, label: "Change discount on the line" },
       { keys: KEYS.remove, label: "Remove the line" },
       { keys: KEYS.customer, label: "Customer name" },
+      { keys: KEYS.saveCustomer, label: "Save as customer (optional)" },
       {
         keys: KEYS.payAmount,
         label: "Type the amount (cash received / split)",

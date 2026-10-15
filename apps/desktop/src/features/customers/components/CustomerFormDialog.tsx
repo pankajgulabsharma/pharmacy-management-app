@@ -14,6 +14,9 @@ import {
   type Customer,
 } from "@medicare/domain/customers/types";
 import { useCustomerStore } from "../store/useCustomerStore";
+import { useCustomerSummaries } from "../hooks/useCustomerSummaries";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { formatPaise } from "@medicare/domain/lib/money";
 import {
   digits,
   toCustomerInput,
@@ -75,6 +78,13 @@ function FormBody({
   const customers = useCustomerStore((s) => s.customers);
   const addCustomer = useCustomerStore((s) => s.addCustomer);
   const updateCustomer = useCustomerStore((s) => s.updateCustomer);
+  // New customers start with the shop's default udhaar limit (Settings → Billing)
+  const defaultLimit = useSettingsStore(
+    (s) => s.billing.defaultUdhaarLimitPaise,
+  );
+  // Editing: what they owe right now (bills on udhaar + old udhaar − payments)
+  const summaries = useCustomerSummaries();
+  const dueNow = customer ? (summaries.get(customer.id)?.balancePaise ?? 0) : 0;
   const [f, setF] = useState<CustomerForm>(() =>
     customer
       ? {
@@ -90,7 +100,11 @@ function FormBody({
           notes: customer.notes,
           status: customer.status,
         }
-      : { ...empty(initialName), ...initial },
+      : {
+          ...empty(initialName),
+          creditLimit: defaultLimit > 0 ? paiseToInput(defaultLimit) : "",
+          ...initial,
+        },
   );
   const [submitted, setSubmitted] = useState(false);
   const otherPhones = customers
@@ -206,6 +220,28 @@ function FormBody({
             hint="Already owed before MediCare (old software / khata book)"
             className="sm:col-span-2"
           >
+            {customer ? (
+              <p
+                className={cn(
+                  "mb-1.5 rounded-md border px-2.5 py-1.5 text-[11px]",
+                  dueNow > 0
+                    ? "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-300"
+                    : "border-border bg-muted/40 text-muted-foreground",
+                )}
+              >
+                {dueNow < 0
+                  ? tr("Advance with the shop")
+                  : tr("Udhaar due now")}
+                :{" "}
+                <span className="font-semibold tabular-nums">
+                  ₹{formatPaise(Math.abs(dueNow))}
+                </span>
+                <span className="text-[10px] opacity-80">
+                  {" "}
+                  · {tr("old udhaar + udhaar bills − payments received")}
+                </span>
+              </p>
+            ) : null}
             <Input
               id={`${id}-o`}
               inputMode="decimal"

@@ -174,6 +174,7 @@ type BillingDraft = {
   defaultPaymentMethod: PaymentMethod;
   receiptFooter: string;
   billPrefix: string;
+  defaultUdhaarLimitPaise: number;
 };
 const validateBilling = (d: BillingDraft) =>
   DOC_PREFIX_RE.test(d.billPrefix)
@@ -268,6 +269,34 @@ export function BillingSection() {
               "w-32 font-mono",
               f.errors.billPrefix && invalidFieldClass,
             )}
+          />
+        </FormField>
+        <FormField
+          label="Default udhaar limit for new customers (₹)"
+          htmlFor={`${id}-udhaar`}
+          hint="Filled in for every new customer — change it per customer anytime. Empty or 0 = no limit"
+          className="sm:col-span-2"
+        >
+          <Input
+            id={`${id}-udhaar`}
+            inputMode="numeric"
+            value={
+              f.draft.defaultUdhaarLimitPaise
+                ? String(Math.round(f.draft.defaultUdhaarLimitPaise / 100))
+                : ""
+            }
+            placeholder="No limit"
+            maxLength={7}
+            onChange={(e) =>
+              f.set(
+                "defaultUdhaarLimitPaise",
+                Math.min(
+                  L.maxUdhaarLimitPaise,
+                  (Number(e.target.value.replace(/\D/g, "")) || 0) * 100,
+                ),
+              )
+            }
+            className={cn(fieldClass, "w-40 tabular-nums")}
           />
         </FormField>
         <FormField
