@@ -89,7 +89,7 @@ function Receipt({
       labelledBy={titleId}
       className={cn(
         "max-h-[92vh] flex flex-col overflow-hidden",
-        thermal ? "max-w-md" : "max-w-3xl",
+        thermal ? "max-w-xl" : "max-w-3xl",
       )}
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 shrink-0">
@@ -117,8 +117,8 @@ function Receipt({
             // Preview only: no scripts, nothing can run inside
             sandbox=""
             className={cn(
-              "mx-auto block bg-white rounded-md border border-border shadow-sm",
-              thermal ? "w-[320px] h-[60vh]" : "w-full h-[65vh]",
+              "mx-auto block rounded-md border border-border shadow-sm bg-[#eef0f3]",
+              thermal ? "w-[380px] h-[62vh]" : "w-full h-[68vh]",
             )}
           />
         )}
@@ -152,11 +152,14 @@ function Receipt({
           </Button>
           <Button
             type="button"
-            variant="ghost"
-            className="h-8 rounded-lg text-[11px] gap-1"
+            className="h-8 rounded-full text-[11px] font-semibold gap-1.5 px-3 bg-[#25D366] text-white hover:bg-[#1ebe5b] shadow-sm"
             onClick={() => setWhatsApp((v) => !v)}
+            title={tr("Send this bill on WhatsApp")}
           >
-            <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+            <MessageCircle
+              className="h-4 w-4 fill-white/25"
+              strokeWidth={2.2}
+            />
             WhatsApp
           </Button>
         </div>

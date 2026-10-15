@@ -63,17 +63,20 @@ function Details({
   const purchases = usePurchaseStore((st) => st.purchases);
   const returns = usePurchaseStore((st) => st.returns);
 
-  const { recentInvoices, recentReturns, hasHistory } = useMemo(() => {
-    const mine = purchases.filter((p) => p.supplierId === s.id);
-    const myReturns = returns.filter((r) => r.supplierId === s.id);
-    return {
-      recentInvoices: [...mine]
-        .sort((a, b) => b.invoiceDate.localeCompare(a.invoiceDate))
-        .slice(0, RECENT),
-      recentReturns: myReturns.slice(0, 5),
-      hasHistory: mine.length > 0 || myReturns.length > 0,
-    };
-  }, [purchases, returns, s.id]);
+  const { recentInvoices, recentReturns, hasHistory, allInvoices, allReturns } =
+    useMemo(() => {
+      const mine = purchases.filter((p) => p.supplierId === s.id);
+      const myReturns = returns.filter((r) => r.supplierId === s.id);
+      return {
+        recentInvoices: [...mine]
+          .sort((a, b) => b.invoiceDate.localeCompare(a.invoiceDate))
+          .slice(0, RECENT),
+        recentReturns: myReturns.slice(0, 5),
+        hasHistory: mine.length > 0 || myReturns.length > 0,
+        allInvoices: mine.length,
+        allReturns: myReturns.length,
+      };
+    }, [purchases, returns, s.id]);
 
   const gst = checkGstin(s.gstin);
 
@@ -295,12 +298,38 @@ function Details({
               </table>
             </div>
           )}
+          {allInvoices > recentInvoices.length ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate(`/purchases?q=${encodeURIComponent(s.name)}`);
+              }}
+              className="mt-1.5 text-[11px] font-medium text-primary hover:underline"
+            >
+              {`Showing latest ${recentInvoices.length} of ${allInvoices} — see all in Purchases →`}
+            </button>
+          ) : null}
         </section>
 
         {recentReturns.length > 0 ? (
           <section>
             <h3 className="text-[11px] font-semibold text-foreground mb-1.5">
               Returns ({s.returnCount})
+              {allReturns > recentReturns.length ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    navigate(
+                      `/purchases?tab=returns&q=${encodeURIComponent(s.name)}`,
+                    );
+                  }}
+                  className="ml-2 font-medium text-primary hover:underline"
+                >
+                  {`see all ${allReturns} →`}
+                </button>
+              ) : null}
             </h3>
             <ul className="space-y-1">
               {recentReturns.map((r) => (

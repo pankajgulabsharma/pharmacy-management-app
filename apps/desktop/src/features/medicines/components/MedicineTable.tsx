@@ -1,5 +1,5 @@
 import { ScheduleBadge } from "@/components/common/ScheduleBadge";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import {
   Barcode,
   Pencil as PencilIcon,
@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { stockLevel } from "@medicare/domain/medicines/stockLevel";
-import { scrollRowIntoView } from "@/lib/dom";
+import { useVirtualRows } from "@/hooks/useVirtualRows";
+import { SpacerRow } from "@/components/common/TableShell";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -34,6 +35,8 @@ type Props = {
   onSelect?: (m: MedicineWithStock) => void;
 };
 
+const getKey = (m: MedicineWithStock) => m.id;
+
 export function MedicineTable({
   items,
   onEdit,
@@ -42,17 +45,24 @@ export function MedicineTable({
   selectedId = null,
   onSelect,
 }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // Thousands of medicines: only the rows on screen are drawn
+  const {
+    scrollRef,
+    virtualRows,
+    paddingTop,
+    paddingBottom,
+    measureElement,
+    scrollToIndex,
+  } = useVirtualRows({ items, getKey, estimateSize: 50 });
 
   // Keep the keyboard-selected row on screen
   useEffect(() => {
     if (!selectedId) return;
-    scrollRowIntoView(
-      scrollRef.current?.querySelector<HTMLElement>(
-        `[data-row-id="${CSS.escape(selectedId)}"]`,
-      ) ?? null,
-    );
-  }, [selectedId]);
+    const i = items.findIndex((m) => m.id === selectedId);
+    if (i >= 0) scrollToIndex(i);
+    // scrollToIndex is a new function each render; items/selection decide
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, items]);
 
   if (items.length === 0) {
     return (
@@ -96,7 +106,9 @@ export function MedicineTable({
             </tr>
           </thead>
           <tbody>
-            {items.map((m) => {
+            <SpacerRow height={paddingTop} colSpan={11} />
+            {virtualRows.map((vr) => {
+              const m = items[vr.index];
               const level = stockLevel(m);
               const out = level === "out";
               const low = level === "low";
@@ -111,7 +123,9 @@ export function MedicineTable({
 
               return (
                 <tr
-                  key={m.id}
+                  key={vr.key}
+                  ref={measureElement}
+                  data-index={vr.index}
                   data-row-id={m.id}
                   aria-selected={m.id === selectedId}
                   onClick={() => onSelect?.(m)}
@@ -232,6 +246,7 @@ export function MedicineTable({
                 </tr>
               );
             })}
+            <SpacerRow height={paddingBottom} colSpan={11} />
           </tbody>
         </table>
       </div>

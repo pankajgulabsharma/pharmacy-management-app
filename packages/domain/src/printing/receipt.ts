@@ -151,6 +151,8 @@ function thermal({ sale, shop, footer, format }: ReceiptInput) {
 @page { margin: 0; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 2mm ${narrow ? 1.5 : 3}mm; width: ${w + (narrow ? 3 : 6)}mm; font-family: "Courier New", Consolas, monospace; font-size: ${narrow ? 9 : 10.5}px; line-height: 1.3; color: #000; background: #fff; }
+/* On screen (preview): the slip on a grey desk, with room around it */
+@media screen { html { background: #eef0f3; padding: 14px 0; } body { margin: 0 auto; padding: 4mm ${narrow ? 3 : 4}mm; width: ${w + (narrow ? 6 : 8)}mm; box-shadow: 0 1px 4px rgba(0,0,0,.18); } }
 .c { text-align: center; } .b { font-weight: 700; }
 .shop { font-size: ${narrow ? 12 : 14}px; font-weight: 700; }
 .rule { border-top: 1px dashed #000; margin: 4px 0; }
@@ -237,6 +239,8 @@ function sheet({ sale, shop, footer, format }: ReceiptInput) {
 @page { size: ${a5 ? "A5" : "A4"}; margin: ${a5 ? 8 : 12}mm; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: ${a5 ? 9 : 10.5}px; color: #000; background: #fff; }
+/* On screen (preview): the page with the same margins it prints with */
+@media screen { html { background: #eef0f3; padding: 14px; } body { max-width: ${a5 ? 148 : 210}mm; margin: 0 auto; padding: ${a5 ? 8 : 12}mm; box-shadow: 0 1px 4px rgba(0,0,0,.18); } }
 .head { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid #000; padding-bottom: 6px; }
 .shop { font-size: ${a5 ? 15 : 19}px; font-weight: 700; }
 .title { font-size: ${a5 ? 12 : 14}px; font-weight: 700; text-align: right; letter-spacing: 1px; }

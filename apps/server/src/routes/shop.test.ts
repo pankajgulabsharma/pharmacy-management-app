@@ -285,6 +285,23 @@ describe("billing on the server", () => {
     expect(count("sales")).toBeGreaterThan(0);
   });
 
+  it("a cash bill can be linked to a saved customer (only a real one)", async () => {
+    const { input } = await cartFor();
+    const { sale } = await ok(
+      call("POST", "/api/sales", {
+        ...input,
+        customerName: "Amit Verma",
+        customerId: "c_amit",
+      }),
+    );
+    expect(sale.customerId).toBe("c_amit");
+    const again = await cartFor();
+    const { sale: fake } = await ok(
+      call("POST", "/api/sales", { ...again.input, customerId: "c_nobody" }),
+    );
+    expect(fake.customerId).toBeNull();
+  });
+
   it("Schedule H1: needs patient + doctor; the bill line keeps its schedule", async () => {
     const { input } = await cartFor();
     // Taxim 1g Injection is the demo H1 medicine (active, in stock)

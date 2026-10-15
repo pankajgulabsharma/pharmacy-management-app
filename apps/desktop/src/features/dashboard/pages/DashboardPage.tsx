@@ -1,3 +1,5 @@
+import { Store } from "lucide-react";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useTranslation } from "react-i18next";
 import { StatsCards } from "../components/StatsCards";
 import { SalesOverview } from "../components/SalesOverview";
@@ -15,6 +17,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const name = getGreetingName(useCurrentUser()?.name);
   const d = useDashboardData();
+  const shop = useSettingsStore((s) => s.shop);
 
   return (
     <div className="h-full w-full p-3 overflow-y-auto xl:overflow-hidden box-border">
@@ -25,12 +28,21 @@ export default function DashboardPage() {
             <h1 className="text-base font-bold text-foreground leading-tight">
               👋 {t(getTimeBasedGreetingKey())}, {name}
             </h1>
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {t("shop.open")}
+            <div className="flex items-center gap-2 text-[11px] min-w-0">
+              <span className="min-w-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-card text-muted-foreground">
+                <Store className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <b className="font-semibold text-foreground truncate">
+                  {shop.name}
+                </b>
+                {shop.address ? (
+                  <span
+                    className="hidden lg:inline truncate max-w-[340px]"
+                    title={shop.address}
+                  >
+                    · {shop.address}
+                  </span>
+                ) : null}
               </span>
-              <span className="text-muted-foreground">8:00 AM - 10:00 PM</span>
             </div>
           </div>
 

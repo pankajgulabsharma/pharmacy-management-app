@@ -1,3 +1,5 @@
+import type { Customer } from "@medicare/domain/customers/types";
+import { CustomerNameInput } from "./CustomerNameInput";
 import { useTranslation } from "react-i18next";
 import { toGstinInput } from "@medicare/domain/lib/gstin";
 import { UserRound, Stethoscope, MonitorSmartphone } from "lucide-react";
@@ -11,6 +13,9 @@ type Props = {
   /** F3 focuses this */
   customerRef?: React.Ref<HTMLInputElement>;
   onClearCustomer: () => void;
+  /** Saved customer the bill is linked to (null = typed name only) */
+  customerId: string | null;
+  onPickCustomer: (c: Customer) => void;
   prescribedBy: string;
   onPrescribedByChange: (v: string) => void;
   counter: string;
@@ -40,6 +45,8 @@ export function BillingContextBar({
   onCustomerChange,
   customerRef,
   onClearCustomer,
+  customerId,
+  onPickCustomer,
   prescribedBy,
   onPrescribedByChange,
   counter,
@@ -75,13 +82,13 @@ export function BillingContextBar({
           ) : null}
         </div>
         <div className="relative">
-          <Input
-            ref={customerRef}
+          <CustomerNameInput
+            inputRef={customerRef}
             value={customerName}
-            placeholder={tr("Walk-in customer (F3)")}
-            onChange={(e) => onCustomerChange(e.target.value)}
+            customerId={customerId}
+            onChange={onCustomerChange}
+            onPick={onPickCustomer}
             className={cn(fieldStyle, "pl-3 pr-8")}
-            autoComplete="off"
           />
           {customerName ? (
             <button

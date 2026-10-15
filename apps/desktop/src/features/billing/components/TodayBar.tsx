@@ -326,7 +326,7 @@ function RecentBillsPopover({
         <div>
           <p className="text-[12px] font-semibold">{tr("Recent bills")}</p>
           <p className="text-[10px] text-muted-foreground">
-            Latest {bills.length} · Esc to close
+            Latest {bills.length} · older: Ctrl+K search · Esc to close
           </p>
         </div>
         <Link

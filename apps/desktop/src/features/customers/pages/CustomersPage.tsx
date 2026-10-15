@@ -1,4 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualRows } from "@/hooks/useVirtualRows";
+import { SpacerRow } from "@/components/common/TableShell";
 import {
   AlertTriangle,
   BookUser,
@@ -141,6 +143,8 @@ function ActionButton({
   );
 }
 
+const rowKey = (r: { id: string }) => r.id;
+
 export default function CustomersPage() {
   const customers = useCustomerStore((s) => s.customers);
   const payments = useCustomerStore((s) => s.payments);
@@ -219,13 +223,19 @@ export default function CustomersPage() {
     getKey: (r: Row) => r.id,
     onOpen: (r) => setViewId(r.id),
   });
+  // Many customers: only the rows on screen are drawn
+  const virt = useVirtualRows({
+    items: filtered,
+    getKey: rowKey,
+    estimateSize: 52,
+    headerHeight: 40,
+  });
   useEffect(() => {
     if (!nav.selectedKey) return;
-    document
-      .querySelector<HTMLElement>(
-        `[data-row-id="${CSS.escape(nav.selectedKey)}"]`,
-      )
-      ?.scrollIntoView({ block: "nearest" });
+    const i = filtered.findIndex((r) => r.id === nav.selectedKey);
+    if (i >= 0) virt.scrollToIndex(i);
+    // scrollToIndex is a new function each render; the selection decides
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nav.selectedKey]);
   useHotkeys([
     { keys: KEYS.focusSearch, handler: () => searchRef.current?.select() },
@@ -339,7 +349,10 @@ export default function CustomersPage() {
           description="Try another name or mobile, or add a new customer."
         />
       ) : (
-        <div className="flex-1 min-h-0 rounded-xl border border-border bg-card overflow-auto">
+        <div
+          ref={virt.scrollRef}
+          className="flex-1 min-h-0 rounded-xl border border-border bg-card overflow-auto"
+        >
           <table className="w-full min-w-[1060px] table-fixed text-[12px] border-collapse">
             {/* Fixed widths; only "Customer" takes the spare room */}
             <colgroup>
@@ -364,91 +377,98 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
-                <tr
-                  key={r.id}
-                  data-row-id={r.id}
-                  aria-selected={nav.selectedKey === r.id}
-                  onClick={() => nav.select(r)}
-                  onDoubleClick={() => setViewId(r.id)}
-                  className={cn(
-                    "border-b border-border/60 last:border-0 [&>td]:align-middle hover:bg-muted/30 cursor-pointer",
-                    // Inactive: fade the data, not the buttons (Edit re-activates the account)
-                    r.status === "inactive" &&
-                      "[&>td:not(:last-child)]:opacity-60",
-                    nav.selectedKey === r.id && SELECTED_ROW,
-                  )}
-                >
-                  <td className="px-4 py-2.5">
-                    <p className="font-medium truncate" title={r.name}>
-                      {r.name}
-                    </p>
-                    <p className="text-[10.5px] text-muted-foreground tabular-nums truncate">
-                      {r.phone || tr("No mobile")}
-                      {r.creditLimitPaise
-                        ? ` · ${tr("limit")} ${inrRounded(r.creditLimitPaise)}`
-                        : ""}
-                    </p>
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {r.sum.udhaarBills}
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    {formatPaise(r.sum.billedPaise)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
-                    {formatPaise(r.sum.receivedPaise + r.sum.adjustedPaise)}
-                  </td>
-                  <td
+              <SpacerRow height={virt.paddingTop} colSpan={COLUMNS.length} />
+              {virt.virtualRows.map((vr) => {
+                const r = filtered[vr.index];
+                return (
+                  <tr
+                    key={vr.key}
+                    ref={virt.measureElement}
+                    data-index={vr.index}
+                    data-row-id={r.id}
+                    aria-selected={nav.selectedKey === r.id}
+                    onClick={() => nav.select(r)}
+                    onDoubleClick={() => setViewId(r.id)}
                     className={cn(
-                      "px-4 py-2.5 text-right tabular-nums font-semibold",
-                      r.sum.balancePaise > 0
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-muted-foreground",
+                      "border-b border-border/60 last:border-0 [&>td]:align-middle hover:bg-muted/30 cursor-pointer",
+                      // Inactive: fade the data, not the buttons (Edit re-activates the account)
+                      r.status === "inactive" &&
+                        "[&>td:not(:last-child)]:opacity-60",
+                      nav.selectedKey === r.id && SELECTED_ROW,
                     )}
                   >
-                    {formatPaise(r.sum.balancePaise)}
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
-                    {r.sum.lastActivity
-                      ? dateShort.format(new Date(r.sum.lastActivity))
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <StatusBadge
-                      tone={CUSTOMER_STATUS_TONE[statusOf(r)]}
-                      size="xs"
+                    <td className="px-4 py-2.5">
+                      <p className="font-medium truncate" title={r.name}>
+                        {r.name}
+                      </p>
+                      <p className="text-[10.5px] text-muted-foreground tabular-nums truncate">
+                        {r.phone || tr("No mobile")}
+                        {r.creditLimitPaise
+                          ? ` · ${tr("limit")} ${inrRounded(r.creditLimitPaise)}`
+                          : ""}
+                      </p>
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      {r.sum.udhaarBills}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      {formatPaise(r.sum.billedPaise)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                      {formatPaise(r.sum.receivedPaise + r.sum.adjustedPaise)}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-4 py-2.5 text-right tabular-nums font-semibold",
+                        r.sum.balancePaise > 0
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-muted-foreground",
+                      )}
                     >
-                      {CUSTOMER_STATUS_LABEL[statusOf(r)]}
-                    </StatusBadge>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {/* Three separate actions — each does one job */}
-                    <div className="flex justify-end gap-1.5">
-                      <ActionButton
-                        icon={FileText}
-                        label="Statement"
-                        tone="neutral"
-                        onClick={() => setViewId(r.id)}
-                      />
-                      <ActionButton
-                        icon={HandCoins}
-                        label="Receive"
-                        tone="money"
-                        disabled={r.sum.balancePaise <= 0}
-                        disabledHint="Nothing owed"
-                        onClick={() => setPayId(r.id)}
-                      />
-                      <ActionButton
-                        icon={Pencil}
-                        label="Edit"
-                        tone="edit"
-                        onClick={() => setForm({ open: true, customer: r })}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      {formatPaise(r.sum.balancePaise)}
+                    </td>
+                    <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                      {r.sum.lastActivity
+                        ? dateShort.format(new Date(r.sum.lastActivity))
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <StatusBadge
+                        tone={CUSTOMER_STATUS_TONE[statusOf(r)]}
+                        size="xs"
+                      >
+                        {CUSTOMER_STATUS_LABEL[statusOf(r)]}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {/* Three separate actions — each does one job */}
+                      <div className="flex justify-end gap-1.5">
+                        <ActionButton
+                          icon={FileText}
+                          label="Statement"
+                          tone="neutral"
+                          onClick={() => setViewId(r.id)}
+                        />
+                        <ActionButton
+                          icon={HandCoins}
+                          label="Receive"
+                          tone="money"
+                          disabled={r.sum.balancePaise <= 0}
+                          disabledHint="Nothing owed"
+                          onClick={() => setPayId(r.id)}
+                        />
+                        <ActionButton
+                          icon={Pencil}
+                          label="Edit"
+                          tone="edit"
+                          onClick={() => setForm({ open: true, customer: r })}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              <SpacerRow height={virt.paddingBottom} colSpan={COLUMNS.length} />
             </tbody>
           </table>
         </div>

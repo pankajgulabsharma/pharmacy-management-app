@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Keyboard } from "lucide-react";
+import { Keyboard, MapPin, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
@@ -8,6 +8,14 @@ import { KEYS, navItemsFor, type NavItem } from "@/app/shortcuts/registry";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useTr } from "@/hooks/useTr";
 import { tr } from "@/lib/i18n";
+
+/** "Shop 4, Station Road, Thane (W) 400601" → "Thane (W) 400601" */
+const shortPlace = (address: string) =>
+  address
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .at(-1) ?? "";
 
 const keyText = (keys: string | readonly string[]) =>
   formatCombo(preferredCombo(keys)).join(" ");
@@ -18,7 +26,8 @@ const keyText = (keys: string | readonly string[]) =>
  */
 export function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen);
-  const shopName = useSettingsStore((s) => s.shop.name);
+  const shop = useSettingsStore((s) => s.shop);
+  const shopName = shop.name;
   const role = useAuthStore((s) => s.session?.user.role);
   const access = useSettingsStore((s) => s.roles);
 
@@ -53,8 +62,11 @@ export function Sidebar() {
             >
               {shopName}
             </p>
-            <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-              Pharmacy POS
+            <p
+              className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate"
+              title={shop.address}
+            >
+              {shortPlace(shop.address) || "Pharmacy POS"}
             </p>
           </div>
         ) : null}
@@ -66,6 +78,30 @@ export function Sidebar() {
           <NavItemLink key={item.to} item={item} open={open} />
         ))}
       </nav>
+
+      {/* The shop — same details as printed on every bill */}
+      {open && shop.address ? (
+        <div className="shrink-0 mx-3 mb-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[10.5px] leading-snug text-slate-400">
+          <p className="flex gap-2" title={shop.address}>
+            <MapPin className="h-3.5 w-3.5 shrink-0 mt-px text-indigo-300" />
+            <span className="line-clamp-2">{shop.address}</span>
+          </p>
+          {shop.phone ? (
+            <p className="flex gap-2 mt-1.5">
+              <Phone className="h-3.5 w-3.5 shrink-0 text-indigo-300" />
+              <span className="tabular-nums">{shop.phone}</span>
+            </p>
+          ) : null}
+          {shop.gstin || shop.drugLicense ? (
+            <p
+              className="mt-1.5 font-mono text-[9.5px] text-slate-500 truncate"
+              title={`GSTIN ${shop.gstin} · DL ${shop.drugLicense}`}
+            >
+              {shop.gstin ? `GSTIN ${shop.gstin}` : `DL ${shop.drugLicense}`}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Help */}
       <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">

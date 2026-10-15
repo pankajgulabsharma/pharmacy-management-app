@@ -27,9 +27,17 @@ export function WhatsAppBill({
 }) {
   const shopName = useSettingsStore((s) => s.shop.name);
   const footer = useSettingsStore((s) => s.billing.receiptFooter);
-  const known = useCustomerStore(
-    (s) => s.customers.find((c) => c.id === sale.customerId)?.phone ?? "",
-  );
+  // The linked customer's saved mobile; else a saved customer with
+  // exactly this name (only if there is just one)
+  const known = useCustomerStore((s) => {
+    const byId = s.customers.find((c) => c.id === sale.customerId);
+    if (byId) return byId.phone;
+    const name = sale.customerName.trim().toLowerCase();
+    const same = s.customers.filter(
+      (c) => c.phone && c.name.trim().toLowerCase() === name,
+    );
+    return same.length === 1 ? same[0].phone : "";
+  });
   const [phone, setPhone] = useState(known);
 
   const send = () => {
@@ -43,8 +51,10 @@ export function WhatsAppBill({
   };
 
   return (
-    <div className="flex items-center gap-2 border-t border-border bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-2 shrink-0">
-      <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+    <div className="flex items-center gap-2 border-t border-border bg-[#25D366]/10 px-4 py-2 shrink-0">
+      <span className="h-7 w-7 shrink-0 rounded-full bg-[#25D366] text-white flex items-center justify-center">
+        <MessageCircle className="h-4 w-4 fill-white/25" strokeWidth={2.2} />
+      </span>
       <input
         autoFocus
         inputMode="tel"
@@ -63,7 +73,7 @@ export function WhatsAppBill({
       />
       <Button
         type="button"
-        className="h-8 rounded-lg text-[11px] gap-1 bg-emerald-600 hover:bg-emerald-700"
+        className="h-8 rounded-full px-4 text-[11px] font-semibold gap-1 bg-[#25D366] text-white hover:bg-[#1ebe5b]"
         onClick={send}
       >
         {tr("Send")}

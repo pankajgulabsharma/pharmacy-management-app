@@ -1,5 +1,12 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Download, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Download,
+  Search,
+} from "lucide-react";
 import type { Sale, SaleReturn } from "@medicare/domain/billing/types";
 import { formatPaise, inrFromPaise } from "@medicare/domain/lib/money";
 import { plural } from "@medicare/domain/lib/format";
@@ -58,7 +65,8 @@ export function ItemsByDayCard({
   const [view, setView] = useState<View>("days");
   const [query, setQuery] = useState("");
   const q = useDeferredValue(query).trim().toLowerCase();
-  const [folded, setFolded] = useState<Set<string>>(() => new Set());
+  // Days start closed — open the ones you want (or all at once)
+  const [opened, setOpened] = useState<Set<string>>(() => new Set());
 
   const days = useMemo(
     () =>
@@ -82,6 +90,7 @@ export function ItemsByDayCard({
   }, [days, view, q]);
 
   const docWord = kind === "sold" ? "bill" : "return";
+  const allOpen = groups.length > 0 && groups.every((d) => opened.has(d.date));
   const total = groups.reduce((s, d) => s + d.amountPaise, 0);
   // Bills are rounded to the rupee — shown so the total meets "Billed"
   const all = !q && groups.length ? groups : null;
@@ -112,7 +121,7 @@ export function ItemsByDayCard({
     );
 
   const toggle = (date: string) =>
-    setFolded((f) => {
+    setOpened((f) => {
       const n = new Set(f);
       if (n.has(date)) n.delete(date);
       else n.add(date);
@@ -156,6 +165,24 @@ export function ItemsByDayCard({
               ["total", "Whole period"],
             ]}
           />
+          {view === "days" && groups.length > 1 && !q ? (
+            <button
+              type="button"
+              onClick={() =>
+                setOpened(
+                  allOpen ? new Set() : new Set(groups.map((d) => d.date)),
+                )
+              }
+              className="h-8 rounded-lg border border-border px-2.5 text-[11px] font-medium text-foreground inline-flex items-center gap-1.5 hover:bg-muted"
+            >
+              {allOpen ? (
+                <ChevronsDownUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronsUpDown className="h-3.5 w-3.5" />
+              )}
+              {tr(allOpen ? "Collapse all" : "Expand all")}
+            </button>
+          ) : null}
           <label className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
@@ -207,7 +234,8 @@ export function ItemsByDayCard({
               </tr>
             </thead>
             {groups.map((d) => {
-              const open = !folded.has(d.date);
+              // whole period has one group; a search shows what it found
+              const open = view === "total" || !!q || opened.has(d.date);
               return (
                 <tbody key={d.date || "all"}>
                   {view === "days" ? (

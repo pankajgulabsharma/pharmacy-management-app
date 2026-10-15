@@ -155,48 +155,71 @@ export function SalesTab({
 
         <ReportTable
           title="Top selling medicines"
-          subtitle="By amount · top 10"
+          subtitle={`By amount · top 10 · ${pct(topTotal, r.netPaise)} of sales`}
           rows={r.topMedicines}
           getKey={(m) => m.medicineId}
           empty="No sales in this period"
-          maxHeightClass="max-h-[300px]"
-          footer={["", "Top 10 total", "", "", formatPaise(topTotal)]}
+          maxHeightClass="max-h-[340px]"
+          footer={[
+            "",
+            "Top 10 total",
+            "",
+            <span key="t" className="text-primary text-[12px] font-bold">
+              {inrFromPaise(topTotal)}
+            </span>,
+          ]}
           columns={[
             {
               key: "rank",
               label: "#",
-              width: "w-[40px]",
-              render: (m) => (
-                <span className="text-muted-foreground">
-                  {r.topMedicines.indexOf(m) + 1}
-                </span>
-              ),
+              width: "w-[48px]",
+              render: (m) => {
+                const i = r.topMedicines.indexOf(m);
+                return (
+                  <span
+                    className={cn(
+                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold tabular-nums",
+                      i === 0
+                        ? "bg-amber-400/25 text-amber-700 dark:text-amber-300"
+                        : i === 1
+                          ? "bg-slate-400/25 text-slate-700 dark:text-slate-300"
+                          : i === 2
+                            ? "bg-orange-500/20 text-orange-700 dark:text-orange-300"
+                            : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                );
+              },
             },
             {
               key: "name",
               label: "Medicine",
-              render: (m) => <span className="font-medium">{m.name}</span>,
-            },
-            {
-              key: "qty",
-              label: "Quantity",
-              width: "w-[130px]",
-              render: (m) =>
-                [
-                  m.qtyStrip ? `${m.qtyStrip} ${m.unit}` : "",
-                  m.qtyLoose ? `${m.qtyLoose} LSE` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" + "),
+              render: (m) => (
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground truncate">
+                    {m.name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums">
+                    {[
+                      m.qtyStrip ? `${m.qtyStrip} ${m.unit}` : "",
+                      m.qtyLoose ? `${m.qtyLoose} LSE` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" + ")}
+                  </p>
+                </div>
+              ),
             },
             {
               key: "share",
-              label: "Share",
-              width: "w-[150px]",
+              label: "Share of sales",
+              width: "w-[170px]",
               render: (m) => (
                 <div className="flex items-center gap-2">
                   <ShareBar value={m.amountPaise} max={topMax} />
-                  <span className="w-10 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
+                  <span className="w-11 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
                     {pct(m.amountPaise, r.netPaise)}
                   </span>
                 </div>
@@ -206,8 +229,12 @@ export function SalesTab({
               key: "amount",
               label: "Amount (₹)",
               align: "right",
-              width: "w-[110px]",
-              render: (m) => formatPaise(m.amountPaise),
+              width: "w-[120px]",
+              render: (m) => (
+                <span className="font-semibold text-foreground">
+                  {formatPaise(m.amountPaise)}
+                </span>
+              ),
             },
           ]}
         />

@@ -958,4 +958,10 @@ export const HI_UI: Record<string, string> = {
     "इनमें से कोई साल्ट आपके स्टॉक में नहीं — सप्लायर से मँगवाएँ।",
   "Show {{n}} in stock": "स्टॉक में {{n}} देखें",
   "+ round-off on bills {{r}} = {{b}}": "+ बिलों का राउंड-ऑफ़ {{r}} = {{b}}",
+  "Expand all": "सब खोलें",
+  "Collapse all": "सब बंद करें",
+  "Saved customer": "सेव ग्राहक",
+  "Saved customers — pick to link the bill (mobile for WhatsApp)":
+    "सेव ग्राहक — चुनें तो बिल उनसे जुड़ेगा (WhatsApp के लिए मोबाइल)",
+  "Send this bill on WhatsApp": "यह बिल WhatsApp पर भेजें",
 };

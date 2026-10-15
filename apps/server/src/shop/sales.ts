@@ -51,10 +51,12 @@ export function completeSale(
   return writeTx(raw, () => {
     // Udhaar goes on an active customer account, within its credit limit
     let customerName = input.customerName;
-    const customer =
-      input.payment.method === "udhaar"
-        ? customerById(raw, input.customerId ?? "")
-        : null;
+    // A bill can be linked to a saved customer (mobile for WhatsApp,
+    // their history); only a real account is kept
+    const linked = input.customerId
+      ? customerById(raw, input.customerId)
+      : null;
+    const customer = input.payment.method === "udhaar" ? linked : null;
     if (input.payment.method === "udhaar") {
       if (!customer)
         throw new SaleError("Choose the customer's account for udhaar");
@@ -66,7 +68,7 @@ export function completeSale(
     const medicines = new Map(loadMedicinesSync(raw).map((m) => [m.id, m]));
     const before = loadBatches(raw);
     const built = buildSale(
-      { ...input, customerName },
+      { ...input, customerName, customerId: linked?.id ?? null },
       medicines,
       before,
       nextBillNo(

@@ -105,15 +105,14 @@ export default function BillingPage() {
   const updateDraft = useBillTabsStore((s) => s.update);
   const draft = drafts.find((d) => d.id === activeId) ?? drafts[0];
   const { cart, customerName, customerGstin, udhaarCustomerId } = draft;
+  const customerId = draft.customerId ?? null;
   /** Customer account for udhaar (required when paying by udhaar) */
   const doctor = draft.doctor ?? doctors[0] ?? "";
   const counter = draft.counter ?? defaultCounter;
   const payment = draft.payment ?? freshPayment;
 
   const setCart = useDraftField(draft.id, "cart");
-  const setCustomerName = useDraftField(draft.id, "customerName");
   const setCustomerGstin = useDraftField(draft.id, "customerGstin");
-  const setUdhaarCustomerId = useDraftField(draft.id, "udhaarCustomerId");
   const setDoctor = useDraftField(draft.id, "doctor");
   const setCounter = useDraftField(draft.id, "counter");
   const setPayment = useDraftField(draft.id, "payment");
@@ -298,6 +297,7 @@ export default function BillingPage() {
     (id: string = draft.id) =>
       updateDraft(id, {
         udhaarCustomerId: null,
+        customerId: null,
         cart: [],
         payment: null,
         customerName: "",
@@ -350,7 +350,9 @@ export default function BillingPage() {
         const sale = await completeSale({
           cart,
           customerName,
-          customerId: payment.method === "udhaar" ? udhaarCustomerId : null,
+          // Udhaar: the account chosen for it; otherwise the linked customer
+          customerId:
+            payment.method === "udhaar" ? udhaarCustomerId : customerId,
           doctor,
           counter,
           payment,
@@ -387,6 +389,7 @@ export default function BillingPage() {
       focusSearch,
       udhaarCustomerId,
       customerGstin,
+      customerId,
     ],
   );
 
@@ -707,8 +710,22 @@ export default function BillingPage() {
 
           <BillingContextBar
             customerName={customerName}
-            onCustomerChange={setCustomerName}
-            onClearCustomer={() => setCustomerName("")}
+            onCustomerChange={(name) =>
+              // A different name → no longer that saved customer
+              updateDraft(draft.id, { customerName: name, customerId: null })
+            }
+            onClearCustomer={() =>
+              updateDraft(draft.id, { customerName: "", customerId: null })
+            }
+            customerId={customerId}
+            onPickCustomer={(c) =>
+              updateDraft(draft.id, {
+                customerName: c.name,
+                customerId: c.id,
+                // ready if this bill goes on udhaar
+                udhaarCustomerId: c.id,
+              })
+            }
             prescribedBy={doctor}
             onPrescribedByChange={setDoctor}
             gstin={customerGstin}
@@ -824,10 +841,18 @@ export default function BillingPage() {
                 customerId={udhaarCustomerId}
                 netPaise={bill.totals.netPaise}
                 initialQuery={customerName}
-                onChange={(c) => {
-                  setUdhaarCustomerId(c?.id ?? null);
-                  if (c) setCustomerName(c.name);
-                }}
+                onChange={(c) =>
+                  updateDraft(
+                    draft.id,
+                    c
+                      ? {
+                          udhaarCustomerId: c.id,
+                          customerName: c.name,
+                          customerId: c.id,
+                        }
+                      : { udhaarCustomerId: null },
+                  )
+                }
               />
             }
             amountRef={setAmountRef}

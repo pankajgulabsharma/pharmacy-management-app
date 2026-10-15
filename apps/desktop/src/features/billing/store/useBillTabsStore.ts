@@ -18,6 +18,8 @@ export type BillDraft = {
   id: string;
   cart: CartLine[];
   customerName: string;
+  /** Saved customer picked for this bill (null = typed name only) */
+  customerId: string | null;
   /** B2B bill: buyer's GSTIN (null = retail bill) */
   customerGstin: string | null;
   /** null = the shop's default (first doctor / default counter) */
@@ -47,6 +49,7 @@ export const blankDraft = (init: Patch = {}): BillDraft => ({
   id: newId("bill"),
   cart: [],
   customerName: "",
+  customerId: null,
   customerGstin: null,
   doctor: null,
   counter: null,
@@ -83,6 +86,7 @@ function cleanDrafts(v: unknown): BillDraft[] {
           )
         : [],
       customerName: str(d.customerName),
+      customerId: strOrNull(d.customerId),
       customerGstin: strOrNull(d.customerGstin),
       doctor: strOrNull(d.doctor),
       counter: strOrNull(d.counter),
