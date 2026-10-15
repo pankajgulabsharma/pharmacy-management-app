@@ -4,7 +4,7 @@ import type { StockBatch } from "@medicare/domain/inventory/types";
  * Opening stock (one row per batch). Product details come from the
  * medicine master via medicineId. Expiry is "MM/YY".
  *
- * TODO(api): load from the backend.
+ * Demo data — seeded into the server database by `npm run db:seed`.
  */
 const RECEIVED = "2026-09-01T10:00:00.000Z";
 

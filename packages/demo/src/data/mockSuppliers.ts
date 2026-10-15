@@ -2,7 +2,7 @@ import type { Supplier } from "@medicare/domain/suppliers/types";
 
 /**
  * Demo suppliers. GSTINs have valid check digits.
- * TODO(api): load from the backend.
+ * Demo data — seeded into the server database by `npm run db:seed`.
  */
 const CREATED = "2026-01-15T10:00:00.000Z";
 

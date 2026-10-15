@@ -5,7 +5,8 @@
  * functions the app uses at runtime — so demo data always obeys the real
  * rules (stock received for posted invoices, returns reduce stock, etc.).
  *
- * TODO(api): delete this file when data comes from the backend.
+ * Used by `npm run db:seed` (the demo shop) and by tests only — a real
+ * shop never sees this; its data lives in the server database.
  */
 import { needsRegister } from "@medicare/domain/medicines/schedule";
 import { mockMedicines } from "./data/mockMedicines";

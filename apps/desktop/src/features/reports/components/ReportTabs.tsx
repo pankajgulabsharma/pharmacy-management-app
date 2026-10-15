@@ -868,6 +868,10 @@ export function StockTab({
 }
 
 /** Schedule H1 / X register — patient, doctor, medicine, batch, quantity */
+/** One line per medicine per bill (stable — the table draws only visible rows) */
+const registerKey = (r: RegisterRow) =>
+  `${r.billNo}|${r.medicine}|${r.batches}|${r.qty}`;
+
 export function RegisterTab({
   rows,
   periodLabel,
@@ -889,10 +893,11 @@ export function RegisterTab({
         : `Schedule ${kind} register`;
   return (
     <ReportTable
+      key={kind} // another register opens at the top
       title={title}
       subtitle={`${periodLabel} · keep for 3 years · Export → print or save`}
       rows={shown}
-      getKey={(r) => `${r.billNo}|${r.medicine}`}
+      getKey={registerKey}
       empty="No register medicines sold in this period"
       fill
       action={

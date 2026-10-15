@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useTr } from "@/hooks/useTr";
+import { useVirtualRows } from "@/hooks/useVirtualRows";
+import { SpacerRow } from "@/components/common/TableShell";
+
+const NO_ROWS: readonly never[] = [];
 
 export type ReportColumn<T> = {
   key: string;
@@ -21,7 +25,10 @@ type Props<T> = {
   footer?: ReactNode[];
   empty: string;
   maxHeightClass?: string;
-  /** Fill the parent's height (scrolls inside; header always visible) */
+  /**
+   * Fill the parent's height (scrolls inside; header always visible).
+   * Only the rows on screen are drawn, so years of rows stay fast.
+   */
   fill?: boolean;
   /** Button(s) in the card header, e.g. Export */
   action?: ReactNode;
@@ -41,6 +48,16 @@ export function ReportTable<T>({
   action,
 }: Props<T>) {
   const tr = useTr();
+  // Long registers: draw only what's on screen (fill = fixed-height scroller)
+  const v = useVirtualRows<T>({
+    items: fill ? rows : (NO_ROWS as readonly T[]),
+    getKey,
+    estimateSize: 37,
+    headerHeight: 36,
+  });
+  const shown = fill
+    ? v.virtualRows.map((vr) => ({ r: rows[vr.index], i: vr.index }))
+    : rows.map((r, i) => ({ r, i }));
   return (
     <ReportCard
       title={title}
@@ -55,6 +72,7 @@ export function ReportTable<T>({
         </p>
       ) : (
         <div
+          ref={fill ? v.scrollRef : undefined}
           className={cn(
             "overflow-auto [scrollbar-gutter:stable]",
             fill ? "h-full" : maxHeightClass,
@@ -81,9 +99,14 @@ export function ReportTable<T>({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {fill ? (
+                <SpacerRow height={v.paddingTop} colSpan={columns.length} />
+              ) : null}
+              {shown.map(({ r, i }) => (
                 <tr
                   key={getKey(r)}
+                  ref={fill ? v.measureElement : undefined}
+                  data-index={i}
                   className={cn(
                     "border-b border-border/60 last:border-0 hover:bg-muted/40",
                     i % 2 === 1 && "bg-muted/20",
@@ -103,6 +126,9 @@ export function ReportTable<T>({
                   ))}
                 </tr>
               ))}
+              {fill ? (
+                <SpacerRow height={v.paddingBottom} colSpan={columns.length} />
+              ) : null}
             </tbody>
             {footer ? (
               <tfoot className="sticky bottom-0 z-10">

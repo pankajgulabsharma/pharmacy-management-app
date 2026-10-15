@@ -2,7 +2,7 @@ import type { Medicine } from "@medicare/domain/medicines/types";
 
 /**
  * Medicine master (catalogue). Stock is not stored here — it is derived
- * from inventory batches. TODO(api): load from the backend.
+ * from inventory batches. Demo data — seeded by `npm run db:seed`.
  */
 
 /** Prescription schedules of the demo medicines (others: OTC) */

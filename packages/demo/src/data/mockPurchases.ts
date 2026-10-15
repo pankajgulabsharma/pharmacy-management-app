@@ -19,7 +19,7 @@ import { mockSuppliers } from "./mockSuppliers";
  * every reload, and dated relative to today, so the Due / Overdue / Paid
  * mix always looks realistic whenever the app is opened.
  *
- * TODO(api): delete this file once purchases come from the backend.
+ * Demo data — seeded into the server database by `npm run db:seed`.
  */
 
 const INVOICE_COUNT = 60;
