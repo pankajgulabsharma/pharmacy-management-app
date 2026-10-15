@@ -37,7 +37,11 @@ describe("medicines sold / returned, day by day", () => {
       "2026-10-14",
       "2026-10-03",
     ]);
-    expect(days[0]).toMatchObject({ docs: 2, amountPaise: 30500 });
+    expect(days[0]).toMatchObject({
+      docs: 2,
+      amountPaise: 30500,
+      billedPaise: 30500,
+    });
     expect(days[0].items).toEqual([
       expect.objectContaining({ name: "Pan 40", qtyStrip: 2, docs: 1 }),
       expect.objectContaining({
@@ -71,6 +75,7 @@ describe("medicines sold / returned, day by day", () => {
         date: "2026-10-15",
         docs: 1,
         amountPaise: 3000,
+        billedPaise: 3000,
         items: [expect.objectContaining({ name: "Dolo 650", qtyStrip: 1 })],
       },
     ]);

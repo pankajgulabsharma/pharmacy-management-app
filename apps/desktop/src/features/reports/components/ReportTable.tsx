@@ -45,11 +45,16 @@ export function ReportTable<T>({
           {empty}
         </p>
       ) : (
-        <div className={cn("overflow-auto", maxHeightClass)}>
+        <div
+          className={cn(
+            "overflow-auto [scrollbar-gutter:stable]",
+            maxHeightClass,
+          )}
+        >
           <table className="w-full text-[11px] border-collapse">
             <thead className="sticky top-0 z-10">
               <tr>
-                {columns.map((c) => (
+                {columns.map((c, ci) => (
                   <th
                     key={c.key}
                     scope="col"
@@ -58,6 +63,7 @@ export function ReportTable<T>({
                       "text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap",
                       c.align === "right" ? "text-right" : "text-left",
                       c.width,
+                      ci === columns.length - 1 && "pr-5",
                     )}
                   >
                     {tr(c.label)}
@@ -74,12 +80,13 @@ export function ReportTable<T>({
                     i % 2 === 1 && "bg-muted/20",
                   )}
                 >
-                  {columns.map((c) => (
+                  {columns.map((c, ci) => (
                     <td
                       key={c.key}
                       className={cn(
                         "px-3 py-2 align-middle",
                         c.align === "right" && "text-right tabular-nums",
+                        ci === columns.length - 1 && "pr-5",
                       )}
                     >
                       {c.render(r)}
@@ -98,6 +105,7 @@ export function ReportTable<T>({
                         "px-3 py-2",
                         columns[i]?.align === "right" &&
                           "text-right tabular-nums",
+                        i === footer.length - 1 && "pr-5",
                       )}
                     >
                       {cell}

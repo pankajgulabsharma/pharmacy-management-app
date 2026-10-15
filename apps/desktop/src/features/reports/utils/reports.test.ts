@@ -15,6 +15,7 @@ import {
   salesReport,
   stockReport,
 } from "@medicare/domain/reports/reports";
+import { soldByDay, wholePeriod } from "@medicare/domain/reports/itemsByDay";
 
 const ALL = { from: new Date(2000, 0, 1), to: new Date(2100, 0, 1) };
 const { batches } = demoInventory;
@@ -131,5 +132,29 @@ describe("sales insights", () => {
     );
     expect(week.busiestWeekday).toBeNull();
     expect(week.trendPct).toBeNull();
+  });
+});
+
+describe("Medicines sold ↔ Top selling ↔ Net sales", () => {
+  it("whole period's first 10 rows ARE the top 10; rows + round-off = billed", () => {
+    for (const preset of ["7d", "30d", "month"] as const) {
+      const range = presetRange(preset);
+      const r = salesReport(sales, saleReturns, batches, range);
+      const all = wholePeriod(soldByDay(sales, range));
+      const pick = (m: {
+        name: string;
+        qtyStrip: number;
+        qtyLoose: number;
+        amountPaise: number;
+      }) => [m.name, m.qtyStrip, m.qtyLoose, m.amountPaise];
+      expect(all?.items.slice(0, 10).map(pick) ?? []).toEqual(
+        r.topMedicines.map(pick),
+      );
+      expect(all?.docs ?? 0).toBe(r.billCount);
+      expect(all?.billedPaise ?? 0).toBe(r.netPaise);
+      // the gap is only each bill's rounding to the rupee (< ₹1 a bill)
+      const gap = (all?.billedPaise ?? 0) - (all?.amountPaise ?? 0);
+      expect(Math.abs(gap)).toBeLessThan(100 * Math.max(1, r.billCount));
+    }
   });
 });

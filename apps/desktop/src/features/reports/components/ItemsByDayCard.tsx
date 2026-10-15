@@ -82,10 +82,11 @@ export function ItemsByDayCard({
   }, [days, view, q]);
 
   const docWord = kind === "sold" ? "bill" : "return";
-  const total = groups.reduce(
-    (s, d) => s + d.items.reduce((a, r) => a + r.amountPaise, 0),
-    0,
-  );
+  const total = groups.reduce((s, d) => s + d.amountPaise, 0);
+  // Bills are rounded to the rupee — shown so the total meets "Billed"
+  const all = !q && groups.length ? groups : null;
+  const billed = all ? all.reduce((s, d) => s + d.billedPaise, 0) : 0;
+  const roundOff = all ? billed - total : 0;
 
   const exportCsv = () =>
     downloadText(
@@ -118,6 +119,18 @@ export function ItemsByDayCard({
       return n;
     });
 
+  // Columns: name grows; the rest fixed. Last column keeps clear of the
+  // scrollbar (stable gutter + extra right padding).
+  const COLS = [
+    { label: "Medicine", cls: "text-left pl-4" },
+    { label: "Quantity", cls: "text-left w-[150px]" },
+    {
+      label: kind === "sold" ? "Bills" : "Returns",
+      cls: "text-right w-[90px]",
+    },
+    { label: "Amount (₹)", cls: "text-right w-[140px] pr-6" },
+  ];
+
   return (
     <ReportCard
       title={kind === "sold" ? "Medicines sold" : "Medicines returned"}
@@ -126,7 +139,7 @@ export function ItemsByDayCard({
       }`}
       flush
       action={
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Segmented
             value={kind}
             onChange={setKind}
@@ -144,30 +157,30 @@ export function ItemsByDayCard({
             ]}
           />
           <label className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value.slice(0, 60))}
               placeholder={tr("Find medicine…")}
               aria-label={tr("Find medicine")}
-              className="h-7 w-36 rounded-md border border-border bg-background pl-6 pr-2 text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="h-8 w-44 rounded-lg border border-border bg-background pl-8 pr-2 text-[11px] outline-none transition-colors focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </label>
           <button
             type="button"
             onClick={exportCsv}
             disabled={groups.length === 0}
-            className="h-7 rounded-md border border-border px-2 text-[11px] inline-flex items-center gap-1 hover:bg-muted disabled:opacity-50"
+            className="h-8 rounded-lg border border-primary/30 bg-primary/5 px-3 text-[11px] font-medium text-primary inline-flex items-center gap-1.5 transition-colors hover:bg-primary/10 disabled:opacity-50"
           >
-            <Download className="h-3 w-3" />
+            <Download className="h-3.5 w-3.5" />
             {tr("Export")}
           </button>
         </div>
       }
     >
       {groups.length === 0 ? (
-        <p className="px-3 py-8 text-center text-[11px] text-muted-foreground">
+        <p className="px-3 py-10 text-center text-[11px] text-muted-foreground">
           {q
             ? tr("No medicine matches “{{q}}”.", { q: query.trim() })
             : kind === "sold"
@@ -175,30 +188,20 @@ export function ItemsByDayCard({
               : tr("No customer returns in this period")}
         </p>
       ) : (
-        <div className="overflow-auto max-h-[460px]">
-          <table className="w-full text-[11px] border-collapse">
+        <div className="overflow-auto max-h-[480px] [scrollbar-gutter:stable]">
+          <table className="w-full text-[11.5px] border-collapse">
             <thead className="sticky top-0 z-20">
               <tr>
-                {[
-                  ["Medicine", "text-left", ""],
-                  ["Quantity", "text-left", "w-[140px]"],
-                  [
-                    kind === "sold" ? "Bills" : "Returns",
-                    "text-right",
-                    "w-[80px]",
-                  ],
-                  ["Amount (₹)", "text-right", "w-[110px]"],
-                ].map(([label, align, w]) => (
+                {COLS.map((c) => (
                   <th
-                    key={label}
+                    key={c.label}
                     scope="col"
                     className={cn(
                       "h-9 px-3 bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap",
-                      align,
-                      w,
+                      c.cls,
                     )}
                   >
-                    {tr(label)}
+                    {tr(c.label)}
                   </th>
                 ))}
               </tr>
@@ -209,46 +212,53 @@ export function ItemsByDayCard({
                 <tbody key={d.date || "all"}>
                   {view === "days" ? (
                     <tr
-                      className="cursor-pointer bg-muted/60 hover:bg-muted border-y border-border"
+                      className="cursor-pointer select-none bg-primary/[0.06] hover:bg-primary/10 border-y border-primary/15"
                       onClick={() => toggle(d.date)}
+                      aria-expanded={open}
                     >
-                      <td colSpan={4} className="px-3 py-1.5">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
-                            {open ? (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            ) : (
-                              <ChevronRight className="h-3.5 w-3.5" />
-                            )}
-                            {formatDay(d.date)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground tabular-nums">
+                      <td colSpan={3} className="pl-3 pr-3 py-2">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                          {open ? (
+                            <ChevronDown className="h-3.5 w-3.5 text-primary" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5 text-primary" />
+                          )}
+                          {formatDay(d.date)}
+                          <span className="ml-2 font-normal text-[10.5px] text-muted-foreground">
                             {plural(d.docs, docWord)} ·{" "}
-                            {plural(d.items.length, "medicine")} ·{" "}
-                            <b className="text-foreground">
-                              {inrFromPaise(d.amountPaise)}
-                            </b>
+                            {plural(d.items.length, "medicine")}
                           </span>
-                        </div>
+                        </span>
+                      </td>
+                      <td className="pl-3 pr-6 py-2 text-right tabular-nums font-semibold text-primary whitespace-nowrap">
+                        {inrFromPaise(d.amountPaise)}
                       </td>
                     </tr>
                   ) : null}
                   {open
-                    ? d.items.map((r) => (
+                    ? d.items.map((r, i) => (
                         <tr
                           key={r.medicineId}
-                          className="border-b border-border/50 hover:bg-muted/30"
+                          className={cn(
+                            "border-b border-border/40 hover:bg-muted/40",
+                            i % 2 === 1 && "bg-muted/15",
+                          )}
                         >
-                          <td className="px-3 py-1.5 pl-8 font-medium">
+                          <td
+                            className={cn(
+                              "py-2 pr-3 font-medium text-foreground",
+                              view === "days" ? "pl-9" : "pl-4",
+                            )}
+                          >
                             {r.name}
                           </td>
-                          <td className="px-3 py-1.5 tabular-nums">
+                          <td className="px-3 py-2 tabular-nums text-foreground/80 whitespace-nowrap">
                             {qtyText(r)}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                             {r.docs}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="pl-3 pr-6 py-2 text-right tabular-nums font-medium text-foreground whitespace-nowrap">
                             {formatPaise(r.amountPaise)}
                           </td>
                         </tr>
@@ -258,13 +268,23 @@ export function ItemsByDayCard({
               );
             })}
             <tfoot className="sticky bottom-0 z-20">
-              <tr className="border-t-2 border-border bg-muted font-semibold">
-                <td className="px-3 py-2" colSpan={3}>
-                  {tr("Total")}
-                  {q ? ` · “${query.trim()}”` : ""}
+              <tr className="bg-card border-t-2 border-primary/30 [&>td]:bg-primary/10">
+                <td className="pl-4 pr-3 py-2.5" colSpan={3}>
+                  <span className="text-[12px] font-semibold text-foreground">
+                    {tr("Total")}
+                    {q ? ` · “${query.trim()}”` : ""}
+                  </span>
+                  {all && roundOff !== 0 ? (
+                    <span className="ml-2 text-[10px] text-muted-foreground">
+                      {tr("+ round-off on bills {{r}} = {{b}}", {
+                        r: inrFromPaise(roundOff),
+                        b: inrFromPaise(billed),
+                      })}
+                    </span>
+                  ) : null}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {formatPaise(total)}
+                <td className="pl-3 pr-6 py-2.5 text-right tabular-nums text-[13px] font-bold text-primary whitespace-nowrap">
+                  {inrFromPaise(total)}
                 </td>
               </tr>
             </tfoot>
@@ -287,7 +307,7 @@ function Segmented<T extends string>({
   return (
     <div
       role="radiogroup"
-      className="inline-flex h-7 rounded-md border border-border p-0.5 bg-muted/40"
+      className="inline-flex h-8 rounded-lg border border-border p-0.5 bg-muted/50"
     >
       {options.map(([v, label]) => (
         <button
@@ -297,10 +317,10 @@ function Segmented<T extends string>({
           aria-checked={value === v}
           onClick={() => onChange(v)}
           className={cn(
-            "px-2 rounded text-[11px] font-medium transition-colors",
+            "px-2.5 rounded-md text-[11px] font-medium transition-colors",
             value === v
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/70",
           )}
         >
           {tr(label)}

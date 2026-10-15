@@ -952,4 +952,10 @@ export const HI_UI: Record<string, string> = {
     "MediCare से पहले का बकाया (पुराना सॉफ़्टवेयर / खाता बही)",
   "Tip: after importing, check Reports → Stock (value) and the Customers / Suppliers totals against the old software's closing figures of the same day.":
     "सलाह: इम्पोर्ट के बाद Reports → Stock (मूल्य) और ग्राहक / सप्लायर के कुल को पुराने सॉफ़्टवेयर के उसी दिन के क्लोज़िंग आँकड़ों से मिलाएँ।",
+  "Green = the same salt is in your stock (a substitute). Click it to see those medicines.":
+    "हरा = यही साल्ट आपके स्टॉक में है (सब्स्टीट्यूट)। क्लिक करें — वो दवाइयाँ दिखेंगी।",
+  "None of these salts are in your stock — order it from your supplier.":
+    "इनमें से कोई साल्ट आपके स्टॉक में नहीं — सप्लायर से मँगवाएँ।",
+  "Show {{n}} in stock": "स्टॉक में {{n}} देखें",
+  "+ round-off on bills {{r}} = {{b}}": "+ बिलों का राउंड-ऑफ़ {{r}} = {{b}}",
 };

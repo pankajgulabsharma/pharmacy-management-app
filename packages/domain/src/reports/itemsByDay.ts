@@ -24,7 +24,10 @@ export type DayItems = {
   date: string;
   /** Bills (or returns) that day */
   docs: number;
+  /** Sum of the medicine rows below */
   amountPaise: Paise;
+  /** What the bills came to (rows + each bill's round-off to the rupee) */
+  billedPaise: Paise;
   items: ItemRow[];
 };
 
@@ -44,18 +47,18 @@ type Doc = {
 function group(docs: readonly Doc[], range: DateRange): DayItems[] {
   const days = new Map<
     string,
-    { docs: number; amountPaise: number; items: Map<string, ItemRow> }
+    { docs: number; billedPaise: number; items: Map<string, ItemRow> }
   >();
   for (const d of docs) {
     if (!inRange(d.createdAt, range)) continue;
     const date = toISODate(new Date(d.createdAt));
     let day = days.get(date);
     if (!day) {
-      day = { docs: 0, amountPaise: 0, items: new Map() };
+      day = { docs: 0, billedPaise: 0, items: new Map() };
       days.set(date, day);
     }
     day.docs++;
-    day.amountPaise += d.totalPaise;
+    day.billedPaise += d.totalPaise;
     const seen = new Set<string>();
     for (const l of d.lines) {
       if (l.qtyStrip + l.qtyLoose === 0) continue;
@@ -78,14 +81,18 @@ function group(docs: readonly Doc[], range: DateRange): DayItems[] {
   }
   return [...days.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([date, d]) => ({
-      date,
-      docs: d.docs,
-      amountPaise: d.amountPaise,
-      items: [...d.items.values()].sort(
+    .map(([date, d]) => {
+      const items = [...d.items.values()].sort(
         (a, b) => b.amountPaise - a.amountPaise || a.name.localeCompare(b.name),
-      ),
-    }));
+      );
+      return {
+        date,
+        docs: d.docs,
+        amountPaise: items.reduce((s, r) => s + r.amountPaise, 0),
+        billedPaise: d.billedPaise,
+        items,
+      };
+    });
 }
 
 /** Medicines sold per day (bill amounts, after line discounts) */
@@ -132,6 +139,7 @@ export function wholePeriod(days: readonly DayItems[]): DayItems | null {
     date: "",
     docs: days.reduce((s, d) => s + d.docs, 0),
     amountPaise: days.reduce((s, d) => s + d.amountPaise, 0),
+    billedPaise: days.reduce((s, d) => s + d.billedPaise, 0),
     items: [...items.values()].sort(
       (a, b) => b.amountPaise - a.amountPaise || a.name.localeCompare(b.name),
     ),

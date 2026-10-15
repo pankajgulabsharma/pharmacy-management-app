@@ -97,6 +97,8 @@ export function LibraryList({
               className={cn(
                 "mx-1 px-2.5 py-2 rounded-md flex items-center gap-3 border-l-2",
                 pickable && "cursor-pointer",
+                // shown for information only (e.g. salt not in stock)
+                !!onPick && !pickable && "opacity-60",
                 active
                   ? "bg-primary/[0.07] border-primary"
                   : cn("border-transparent", pickable && "hover:bg-muted/60"),

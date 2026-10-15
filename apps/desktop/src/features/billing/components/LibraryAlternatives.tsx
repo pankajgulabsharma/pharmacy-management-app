@@ -40,23 +40,28 @@ export function LibraryAlternatives({
     return count;
   }, [items, medicines]);
   const countOf = (x: LibraryItem) => inStock.get(mainSalt(x.salt)) ?? 0;
+  const anyInStock = items.some((x) => countOf(x) > 0);
 
   return (
     <LibraryList
       items={items}
       title="Not in your shop — found in the Medicine Library"
-      hint="Same salt in stock? Click it to see those medicines and sell one of them."
+      hint={
+        anyInStock
+          ? "Green = the same salt is in your stock (a substitute). Click it to see those medicines."
+          : "None of these salts are in your stock — order it from your supplier."
+      }
       canPick={(x) => countOf(x) > 0}
       onPick={(x) => onSearch(x.salt.split(/[+(]/)[0].trim())}
       action={(x) => {
         const n = countOf(x);
         return n > 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
             <Search className="h-3 w-3" />
-            {tr("{{n}} same salt in stock", { n })}
+            {tr("Show {{n}} in stock", { n })}
           </span>
         ) : (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="rounded-md bg-muted px-2 py-1 text-[10px] text-muted-foreground">
             {tr("Not in stock")}
           </span>
         );
