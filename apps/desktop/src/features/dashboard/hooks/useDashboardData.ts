@@ -81,7 +81,8 @@ export function useDashboardData() {
       ),
       heldCount: held.length,
       expiringDays,
-      recentSales: sales.slice(0, 6),
+      // enough to fill the card on a tall screen; it scrolls on a short one
+      recentSales: sales.slice(0, 10),
     };
   }, [
     sales,

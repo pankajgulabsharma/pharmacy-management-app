@@ -40,65 +40,48 @@ export function RecentSales({ d }: { d: DashboardData }) {
             {tr("No bills yet — press F2 to start one")}
           </p>
         ) : (
-          <table className="w-full text-[10px]">
-            <thead>
-              <tr className="bg-muted/60 text-muted-foreground">
-                <th className="text-left font-medium px-2 py-1.5 rounded-l-md">
-                  {tr("Bill")}
-                </th>
-                <th className="text-left font-medium px-2 py-1.5">
-                  {tr("Customer")}
-                </th>
-                <th className="text-left font-medium px-2 py-1.5">
-                  {tr("Date & time")}
-                </th>
-                <th className="text-right font-medium px-2 py-1.5">
-                  {tr("Amount")}
-                </th>
-                <th className="text-left font-medium px-2 py-1.5 rounded-r-md">
-                  {tr("Status")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {d.recentSales.map((s) => {
-                const meta = STATUS[status(s)];
-                return (
-                  <tr
-                    key={s.id}
-                    tabIndex={0}
-                    onClick={() => navigate(`/reports?tab=sales&period=today`)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" &&
-                      navigate(`/reports?tab=sales&period=today`)
-                    }
-                    className="border-b border-border/60 last:border-0 hover:bg-muted/40 cursor-pointer transition-colors focus-visible:outline-none focus-visible:bg-primary/10"
-                  >
-                    <td className="px-2 py-1.5 font-medium font-mono text-foreground whitespace-nowrap">
-                      {s.billNo}
-                    </td>
-                    <td
-                      className="px-2 py-1.5 text-foreground truncate max-w-[110px]"
-                      title={s.customerName}
-                    >
-                      {s.customerName}
-                    </td>
-                    <td className="px-2 py-1.5 text-muted-foreground whitespace-nowrap">
+          // One row = two short lines, so nothing is cut at any width:
+          // bill no. + amount on top, customer · time below, status right
+          <ul className="divide-y divide-border/60">
+            {d.recentSales.map((s) => {
+              const meta = STATUS[status(s)];
+              return (
+                <li
+                  key={s.id}
+                  tabIndex={0}
+                  onClick={() => navigate(`/reports?tab=sales&period=today`)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    navigate(`/reports?tab=sales&period=today`)
+                  }
+                  className="flex items-center gap-3 px-1.5 py-2 rounded-md hover:bg-muted/40 cursor-pointer transition-colors focus-visible:outline-none focus-visible:bg-primary/10"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-mono text-[10.5px] font-semibold text-foreground truncate">
+                        {s.billNo}
+                      </span>
+                      <span className="text-[11px] font-semibold tabular-nums text-foreground whitespace-nowrap">
+                        {inrFromPaise(s.totals.netPaise)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      <span title={s.customerName}>{s.customerName}</span>
+                      {" · "}
                       {time.format(new Date(s.createdAt))}
-                    </td>
-                    <td className="px-2 py-1.5 text-right text-foreground tabular-nums">
-                      {inrFromPaise(s.totals.netPaise)}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <StatusBadge tone={meta.tone} size="xs">
-                        {meta.label}
-                      </StatusBadge>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </p>
+                  </div>
+                  <StatusBadge
+                    tone={meta.tone}
+                    size="xs"
+                    className="shrink-0 w-[62px] justify-center"
+                  >
+                    {meta.label}
+                  </StatusBadge>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </div>
