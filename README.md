@@ -233,12 +233,23 @@ usual gap runs out (overdue ones first; the bell shows the count). One
 **WhatsApp** per customer lists all their medicines; **Done** hides it until
 they buy again. No SMS, no cost.
 
-## Bill on WhatsApp
+## WhatsApp (bills, orders, refill reminders) — free
 
-On a saved bill (or any bill found with Ctrl+K) → **WhatsApp** → mobile
-number (filled in for a saved customer) → WhatsApp opens with the bill
-typed out; press Send. Free — no
-SMS gateway or API (SMS would need a paid gateway).
+The app opens WhatsApp with the message already typed (shop header,
+numbered items, bold total); the shop presses Send. No API, no SMS cost,
+**no contact needs to be saved** in the phone.
+
+- Settings → Printing → **WhatsApp (this computer)**: _WhatsApp Web_ (sign in
+  once at web.whatsapp.com with the shop phone's QR) or the _WhatsApp
+  Desktop app_ (opens the chat straight in the app).
+- **Bill**: on a saved bill → WhatsApp → the customer's mobile (filled in for
+  a saved customer). Leave it empty to choose the chat in WhatsApp.
+- **Order**: Reports → Stock → What to order → **Send on WhatsApp** → pick a
+  supplier (only the medicines last bought from them, straight to their
+  saved mobile) or the whole list to any chat / group; preview first.
+- **Refill reminder**: Customers → Refills due → WhatsApp.
+- "This number is not on WhatsApp" means exactly that — the demo shop's
+  numbers are made up; use a real mobile that has WhatsApp.
 
 ## Licences (selling to many shops)
 

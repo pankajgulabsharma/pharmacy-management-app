@@ -85,6 +85,7 @@ describe("what to order", () => {
     {
       status: "active",
       supplierName: "New Agency",
+      supplierId: "sup_new",
       invoiceDate: "2026-09-01",
       lines: [{ medicineId: "fast" }],
     },
@@ -116,6 +117,7 @@ describe("what to order", () => {
       inStockPacks: 10,
       daysLeft: 5,
       lastSupplier: "New Agency",
+      lastSupplierId: "sup_new",
       estCostPaise: 50 * 20_00,
       reason: "selling",
     });

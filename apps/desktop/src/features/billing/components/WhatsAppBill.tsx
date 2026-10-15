@@ -2,11 +2,8 @@ import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { Sale } from "@medicare/domain/billing/types";
-import {
-  billMessage,
-  whatsappLink,
-  whatsappNumber,
-} from "@medicare/domain/printing/whatsapp";
+import { billMessage } from "@medicare/domain/printing/whatsapp";
+import { useOpenWhatsApp } from "@/features/whatsapp/useWhatsApp";
 import { Button } from "@/components/ui/button";
 import { fieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
@@ -39,14 +36,14 @@ export function WhatsAppBill({
     return same.length === 1 ? same[0].phone : "";
   });
   const [phone, setPhone] = useState(known);
+  const openWhatsApp = useOpenWhatsApp();
 
+  // Empty mobile = choose the chat in WhatsApp
   const send = () => {
-    const n = whatsappNumber(phone);
-    if (!n) {
+    if (!openWhatsApp(phone, billMessage(sale, shop, footer))) {
       toast.error(tr("Enter a 10-digit mobile number"));
       return;
     }
-    window.open(whatsappLink(n, billMessage(sale, shop, footer)), "_blank");
     onDone();
   };
 
@@ -67,7 +64,7 @@ export function WhatsAppBill({
             onDone();
           }
         }}
-        placeholder={tr("Customer mobile")}
+        placeholder={tr("Customer mobile (empty = choose chat)")}
         aria-label={tr("Customer mobile")}
         className={cn(fieldClass, "h-8 flex-1")}
       />

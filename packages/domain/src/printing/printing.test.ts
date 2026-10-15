@@ -230,6 +230,13 @@ describe("bill on WhatsApp", () => {
     expect(text).toContain("💊 _Returnable only with this bill_ 🙏");
     expect(text.endsWith("📞 02225401234")).toBe(true);
     expect(text).not.toContain("\n\n\n");
+    // Desktop app / WhatsApp Web, with or without a number (pick a chat)
+    expect(whatsappLink("919876543210", "Hi", "app")).toBe(
+      "whatsapp://send?phone=919876543210&text=Hi",
+    );
+    expect(whatsappLink(null, "Hi *1*", "web")).toBe(
+      "https://web.whatsapp.com/send?text=Hi%20*1*",
+    );
     expect(whatsappLink("919876543210", text)).toMatch(
       /^https:\/\/wa\.me\/919876543210\?text=%F0%9F%8F%A5/,
     );

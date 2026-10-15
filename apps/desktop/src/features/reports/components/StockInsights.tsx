@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
-import { Copy, Download } from "lucide-react";
-import { toast } from "sonner";
+import { Copy, Download, MessageCircle } from "lucide-react";
 import {
   deadStock,
   orderList,
-  orderText,
   type OrderRow,
   type DeadStockRow,
   type VelocityWindow,
@@ -19,9 +17,7 @@ import { downloadText, toCsv } from "@/lib/csv";
 import { tr } from "@/lib/i18n";
 import { useVelocity } from "../hooks/useVelocity";
 import { ReportTable } from "./ReportTable";
-import { ModalShell } from "@/components/common/ModalShell";
-import { DialogCloseButton } from "@/components/common/DialogCloseButton";
-import { WhatsAppPreview } from "@/components/common/WhatsAppPreview";
+import { OrderSendDialog } from "./OrderSendDialog";
 
 const medicinesText = (n: number) =>
   n === 1 ? tr("1 medicine") : tr("{{n}} medicines", { n });
@@ -222,17 +218,8 @@ export function OrderListCard() {
     [medicines, batches, purchases, v.items, basis, cover],
   );
 
-  // See the message as WhatsApp will show it, then copy
-  const [preview, setPreview] = useState<string | null>(null);
-  const copy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(tr("Order copied — paste it in WhatsApp"));
-      setPreview(null);
-    } catch {
-      toast.error(tr("Could not copy — use Export instead"));
-    }
-  };
+  // Preview → send to the supplier on WhatsApp, or copy
+  const [sending, setSending] = useState(false);
   const exportCsv = () =>
     r &&
     downloadText(
@@ -296,13 +283,11 @@ export function OrderListCard() {
               ]}
             />
             <ActionButton
-              icon={Copy}
-              onClick={() =>
-                r?.rows.length && setPreview(orderText(r.rows, shop))
-              }
+              icon={MessageCircle}
+              onClick={() => setSending(true)}
               disabled={!r?.rows.length}
             >
-              Copy for WhatsApp
+              Send on WhatsApp
             </ActionButton>
             <ActionButton
               icon={Download}
@@ -375,28 +360,12 @@ export function OrderListCard() {
           },
         ]}
       />
-      {preview !== null ? (
-        <ModalShell
-          open
-          onClose={() => setPreview(null)}
-          labelledBy="order-preview-title"
-          className="max-w-md"
-        >
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 id="order-preview-title" className="text-sm font-semibold">
-              {tr("Order for WhatsApp")}
-            </h2>
-            <DialogCloseButton onClick={() => setPreview(null)} />
-          </div>
-          <div className="max-h-[60vh] overflow-y-auto p-3">
-            <WhatsAppPreview text={preview} />
-          </div>
-          <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-            <ActionButton icon={Copy} onClick={() => void copy(preview)}>
-              Copy for WhatsApp
-            </ActionButton>
-          </div>
-        </ModalShell>
+      {sending && r ? (
+        <OrderSendDialog
+          rows={r.rows}
+          shop={shop}
+          onClose={() => setSending(false)}
+        />
       ) : null}
     </>
   );

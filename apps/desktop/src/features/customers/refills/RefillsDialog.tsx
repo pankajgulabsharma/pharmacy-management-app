@@ -5,10 +5,8 @@ import {
   refillMessage,
   type RefillDue,
 } from "@medicare/domain/customers/refills";
-import {
-  whatsappLink,
-  whatsappNumber,
-} from "@medicare/domain/printing/whatsapp";
+import { whatsappNumber } from "@medicare/domain/printing/whatsapp";
+import { useOpenWhatsApp } from "@/features/whatsapp/useWhatsApp";
 import { ModalShell } from "@/components/common/ModalShell";
 import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { EmptyState } from "@/components/common/EmptyState";
@@ -42,20 +40,14 @@ export function RefillsDialog({ onClose }: { onClose: () => void }) {
     return [...by.values()];
   }, [due]);
 
+  const openWhatsApp = useOpenWhatsApp();
   const send = (items: RefillDue[]) => {
-    const n = whatsappNumber(items[0].phone);
-    if (!n) return;
-    window.open(
-      whatsappLink(
-        n,
-        refillMessage(
-          items[0].customerName,
-          items.map((r) => r.medicineName),
-          shop,
-        ),
-      ),
-      "_blank",
+    const text = refillMessage(
+      items[0].customerName,
+      items.map((r) => r.medicineName),
+      shop,
     );
+    if (!openWhatsApp(items[0].phone, text)) return;
     markDone(items);
     toast.success(tr("Reminder sent — marked done"));
   };
@@ -107,12 +99,11 @@ export function RefillsDialog({ onClose }: { onClose: () => void }) {
                   </div>
                   <button
                     type="button"
-                    disabled={!canSend}
                     onClick={() => send(items)}
                     title={
                       canSend
                         ? undefined
-                        : tr("Add a mobile number to the customer first")
+                        : tr("No mobile saved — choose the chat in WhatsApp")
                     }
                     className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#25D366] px-3 text-[11px] font-semibold text-white hover:bg-[#1fb857] disabled:opacity-40"
                   >

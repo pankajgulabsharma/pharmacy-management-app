@@ -1126,4 +1126,33 @@ export const HI_UI: Record<string, string> = {
   "No “item name” column found": "“item name” कॉलम नहीं मिला",
   "No “qty” column found": "“qty” कॉलम नहीं मिला",
   "Order for WhatsApp": "WhatsApp के लिए ऑर्डर",
+  "Customer mobile (empty = choose chat)": "ग्राहक मोबाइल (खाली = चैट चुनें)",
+  "No mobile saved — choose the chat in WhatsApp":
+    "मोबाइल सेव नहीं — WhatsApp में चैट चुनें",
+  "Send on WhatsApp": "WhatsApp पर भेजें",
+  "Send the order on WhatsApp": "ऑर्डर WhatsApp पर भेजें",
+  "Send to": "किसे भेजें",
+  items: "आइटम",
+  "Whole list ({{n}} items) — choose the chat in WhatsApp":
+    "पूरी लिस्ट ({{n}} आइटम) — WhatsApp में चैट चुनें",
+  "Opens the chat with {{name}} ({{phone}}) — just press Send.":
+    "{{name}} ({{phone}}) की चैट खुलेगी — बस Send दबाएँ।",
+  "No mobile saved for this supplier — WhatsApp asks which chat. Add it in Suppliers to skip this.":
+    "इस सप्लायर का मोबाइल सेव नहीं — WhatsApp चैट पूछेगा। Suppliers में जोड़ दें।",
+  "WhatsApp asks which chat — a distributor, a salesman or a group.":
+    "WhatsApp चैट पूछेगा — डिस्ट्रीब्यूटर, सेल्समैन या ग्रुप।",
+  "Open in WhatsApp": "WhatsApp में खोलें",
+  "WhatsApp Web (browser)": "WhatsApp Web (ब्राउज़र)",
+  "Works on every computer. Sign in once at web.whatsapp.com with the shop phone's QR code — it stays signed in.":
+    "हर कंप्यूटर पर चलता है। एक बार web.whatsapp.com पर दुकान के फ़ोन से QR स्कैन करें — लॉगिन बना रहता है।",
+  "WhatsApp Desktop app": "WhatsApp डेस्कटॉप ऐप",
+  "If WhatsApp is installed on this computer (Microsoft Store, free) — the chat opens straight in the app.":
+    "अगर इस कंप्यूटर पर WhatsApp इंस्टॉल है (Microsoft Store, मुफ़्त) — चैट सीधे ऐप में खुलेगी।",
+  "No contact needs to be saved in the phone: a bill goes straight to the customer's mobile; with no mobile, WhatsApp asks which chat. A number that isn't on WhatsApp can't receive messages.":
+    "फ़ोन में कॉन्टैक्ट सेव करने की ज़रूरत नहीं: बिल सीधे ग्राहक के मोबाइल पर जाता है; मोबाइल न हो तो WhatsApp चैट पूछता है। जो नंबर WhatsApp पर नहीं है उसे मैसेज नहीं जा सकता।",
+  "WhatsApp (this computer)": "WhatsApp (यह कंप्यूटर)",
+  "How bills, orders and refill reminders open in WhatsApp.":
+    "बिल, ऑर्डर और रिफ़िल रिमाइंडर WhatsApp में कैसे खुलें।",
+  "1 item":
+    "1 आइटम",
 };

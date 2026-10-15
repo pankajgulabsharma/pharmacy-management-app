@@ -102,6 +102,23 @@ export function billMessage(
   ]);
 }
 
-export function whatsappLink(number: string, text: string): string {
-  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+/**
+ * How this computer opens WhatsApp:
+ *  - "app":  WhatsApp Desktop (installed on Windows) — opens the chat directly
+ *  - "web":  WhatsApp Web in the browser (signed in once with the phone's QR)
+ * The number is optional: without it WhatsApp asks which chat to send to
+ * (e.g. a distributor's group). No contact needs to be saved either way.
+ */
+export type WhatsAppVia = "app" | "web";
+
+export function whatsappLink(
+  number: string | null,
+  text: string,
+  via: WhatsAppVia | "link" = "link",
+): string {
+  const t = encodeURIComponent(text);
+  const phone = number ? `phone=${number}&` : "";
+  if (via === "app") return `whatsapp://send?${phone}text=${t}`;
+  if (via === "web") return `https://web.whatsapp.com/send?${phone}text=${t}`;
+  return `https://wa.me/${number ?? ""}?text=${t}`;
 }

@@ -135,7 +135,9 @@ function createWindow() {
 
   // Links to other sites open in the normal browser, never inside the app
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/.test(url)) void shell.openExternal(url);
+    // Web pages in the browser; "Send on WhatsApp" in the WhatsApp app
+    if (/^https?:/.test(url) || /^whatsapp:\/\/send\?/.test(url))
+      void shell.openExternal(url);
     return { action: "deny" };
   });
   // The window never leaves the shop's own pages

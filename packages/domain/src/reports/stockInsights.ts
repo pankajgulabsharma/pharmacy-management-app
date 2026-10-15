@@ -155,6 +155,8 @@ export type OrderRow = {
   estCostPaise: Paise;
   /** Supplier of the last purchase, "" = never purchased */
   lastSupplier: string;
+  /** Its id ("" = never purchased) — to send the order to that supplier */
+  lastSupplierId: string;
   reason: "selling" | "below_min";
 };
 
@@ -192,13 +194,17 @@ export function orderList(
   }
 
   // Who supplied it last
-  const supplier = new Map<string, { at: string; name: string }>();
+  const supplier = new Map<string, { at: string; name: string; id: string }>();
   for (const p of purchases) {
     if (p.status !== "active") continue;
     for (const l of p.lines) {
       const prev = supplier.get(l.medicineId);
       if (!prev || p.invoiceDate > prev.at)
-        supplier.set(l.medicineId, { at: p.invoiceDate, name: p.supplierName });
+        supplier.set(l.medicineId, {
+          at: p.invoiceDate,
+          name: p.supplierName,
+          id: p.supplierId,
+        });
     }
   }
 
@@ -223,6 +229,7 @@ export function orderList(
       orderPacks,
       estCostPaise: orderPacks * (lastCost.get(m.id)?.paise ?? 0),
       lastSupplier: supplier.get(m.id)?.name ?? "",
+      lastSupplierId: supplier.get(m.id)?.id ?? "",
       reason: perDay * opts.coverDays >= m.minStock ? "selling" : "below_min",
     });
   }
