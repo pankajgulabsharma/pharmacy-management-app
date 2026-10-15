@@ -54,6 +54,7 @@ const STRENGTHS: Record<string, string> = {
   m44: "10 mg",
   m45: "37.5 mg + 325 mg",
   m46: "600 mg + 300 mg",
+  m47: "400 mg",
 };
 
 const RAW: Omit<Medicine, "schedule" | "strength">[] = [
@@ -523,6 +524,25 @@ const RAW: Omit<Medicine, "schedule" | "strength">[] = [
     salePrice: 86,
     minStock: 5,
     gstPercent: 5,
+    status: "active",
+  },
+  // Slow mover: bought months ago, never sold (shows in Dead stock)
+  {
+    id: "m47",
+    name: "Evion 400 Capsule",
+    salt: "Vitamin E",
+    brand: "Merck",
+    category: "tablet_capsule",
+    hsn: "30045039",
+    barcode: "8901030470472",
+    rack: "C5",
+    unit: "STP",
+    unitsPerStrip: 10,
+    allowLoose: true,
+    mrp: 42,
+    salePrice: 40,
+    minStock: 0,
+    gstPercent: 12,
     status: "active",
   },
   {

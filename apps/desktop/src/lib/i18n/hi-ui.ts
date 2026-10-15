@@ -1044,4 +1044,48 @@ export const HI_UI: Record<string, string> = {
   "1 supplier and the old dues removed": "1 सप्लायर और पुराना बकाया हटाया गया",
   "1 was already in the list (not duplicated)":
     "1 पहले से सूची में था (दोबारा नहीं जोड़ा)",
+  "Dead stock — not selling": "डेड स्टॉक — नहीं बिक रहा",
+  "{{what}} · {{amount}} locked · not sold in {{days}} days":
+    "{{what}} · {{amount}} अटका · {{days}} दिन से नहीं बिकी",
+  "Everything in stock sold in this time — nothing is stuck":
+    "इस समय में सब बिका — कुछ अटका नहीं",
+  "Not sold in": "नहीं बिकी",
+  "60 days": "60 दिन",
+  "90 days": "90 दिन",
+  "180 days": "180 दिन",
+  "Locked (₹)": "अटका (₹)",
+  "Last sold": "आखिरी बार बिकी",
+  "{{n}} days ago": "{{n}} दिन पहले",
+  Never: "कभी नहीं",
+  "What to order": "क्या मँगवाना है",
+  "{{what}} · about {{amount}} · enough for {{cover}} days at the speed of the last {{basis}} days":
+    "{{what}} · लगभग {{amount}} · पिछले {{basis}} दिन की बिक्री के हिसाब से {{cover}} दिन के लिए",
+  "Enough stock of everything — nothing to order":
+    "सबका स्टॉक काफ़ी है — कुछ मँगवाना नहीं",
+  "Sales of the last": "पिछली बिक्री",
+  "Enough for": "इतने दिन के लिए",
+  "For 15 days": "15 दिन के लिए",
+  "Copy for WhatsApp": "WhatsApp के लिए कॉपी",
+  "Order copied — paste it in WhatsApp":
+    "ऑर्डर कॉपी हुआ — WhatsApp में पेस्ट करें",
+  "Could not copy — use Export instead": "कॉपी नहीं हुआ — Export करें",
+  Order: "ऑर्डर",
+  "Est. cost (₹)": "अनुमानित लागत (₹)",
+  "below minimum": "न्यूनतम से कम",
+  "runs out today": "आज खत्म",
+  "~{{n}} days left": "~{{n}} दिन बाकी",
+  "{{n}} a day": "{{n}} रोज़",
+  "Profit by medicine / company": "दवा / कंपनी अनुसार मुनाफ़ा",
+  "sales − cost of the batches sold, before returns":
+    "बिक्री − बिके बैच की लागत, रिटर्न से पहले",
+  "Profit by": "मुनाफ़ा",
+  Company: "कंपनी",
+  "Most profit": "सबसे ज़्यादा मुनाफ़ा",
+  "Lowest margin": "सबसे कम मार्जिन",
+  "Sales (₹)": "बिक्री (₹)",
+  "Profit (₹)": "मुनाफ़ा (₹)",
+  Margin: "मार्जिन",
+  "No bills in this period": "इस समय में कोई बिल नहीं",
+  "1 medicine": "1 दवा",
+  "{{n}} medicines": "{{n}} दवाइयाँ",
 };

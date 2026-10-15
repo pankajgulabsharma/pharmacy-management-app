@@ -195,7 +195,10 @@ function buildDemo() {
   const medicinesById = new Map<string, Medicine>(
     mockMedicines.map((m) => [m.id, m]),
   );
-  const active = mockMedicines.filter((m) => m.status === "active");
+  // m47 is the demo's slow mover — never billed, so it shows as dead stock
+  const active = mockMedicines.filter(
+    (m) => m.status === "active" && m.id !== "m47",
+  );
   const sales: Sale[] = [];
   const nowMs = Date.now();
   const SALE_COUNT = 18;

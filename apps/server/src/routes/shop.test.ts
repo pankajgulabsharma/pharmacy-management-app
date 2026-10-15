@@ -1,3 +1,4 @@
+import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { toISODate } from "@medicare/domain/lib/date";
 import { purchaseToDraft } from "@medicare/domain/purchases/draft";
@@ -93,8 +94,13 @@ const addPurchase = async (over: Partial<PurchaseDraft> = {}) =>
 
 /** A cart of 1 strip of a medicine that has stock */
 async function cartFor(strips = 1) {
+  // An OTC medicine (no doctor needed), with stock that won't expire soon
+  const otc = new Set(
+    mockMedicines.filter((m) => !m.schedule).map((m) => m.id),
+  );
   const b = (await stock()).find(
-    (x) => x.qtyStrip >= strips && x.expiry.endsWith("/28"),
+    (x) =>
+      x.qtyStrip >= strips && x.expiry.endsWith("/28") && otc.has(x.medicineId),
   )!;
   return {
     b,

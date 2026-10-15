@@ -317,4 +317,16 @@ export const mockStockBatches: StockBatch[] = [
     purchasePrice: 55,
     receivedAt: RECEIVED,
   },
+  // Never sold since it came in (Reports → Stock → Dead stock)
+  {
+    id: "inv47",
+    medicineId: "m47",
+    batchNo: "EV2203",
+    expiry: "09/27",
+    qtyStrip: 30,
+    qtyLoose: 0,
+    mrp: 42,
+    purchasePrice: 28,
+    receivedAt: "2026-03-10T10:00:00.000Z",
+  },
 ];

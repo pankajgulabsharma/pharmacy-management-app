@@ -15,6 +15,11 @@ import * as purchases from "../shop/purchases";
 import * as sales from "../shop/sales";
 import * as s from "../shop/schemas";
 import { importStock, listImports, undoImport } from "../shop/importStock";
+import { salesVelocity } from "../shop/velocity";
+import {
+  VELOCITY_WINDOWS,
+  type VelocityWindow,
+} from "@medicare/domain/reports/stockInsights";
 import * as migrate from "../shop/migrate";
 
 type Params = { Params: { id: string } };
@@ -147,6 +152,18 @@ export function shopRoutes(
       .send(
         write(() => importStock(raw, s.parse(s.importInput, req.body).rows)),
       ),
+  );
+
+  // How fast each medicine sells (dead stock, what to order)
+  app.get<{ Querystring: { days?: string } }>(
+    "/api/reports/velocity",
+    async (req) => {
+      const days = Number(req.query.days);
+      return salesVelocity(
+        raw,
+        VELOCITY_WINDOWS.includes(days as VelocityWindow) ? days : 60,
+      );
+    },
   );
 
   // A wrong file can be taken back out while nothing from it is used yet

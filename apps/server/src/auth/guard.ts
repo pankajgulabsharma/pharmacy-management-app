@@ -48,8 +48,12 @@ export function requiredPermission(
   path: string,
 ): Permission | null {
   if (path.startsWith("/api/auth/")) return null;
-  if (method === "GET")
-    return /^\/api\/(users|backups)(\/|$)/.test(path) ? "admin" : null;
+  if (method === "GET") {
+    if (/^\/api\/(users|backups)(\/|$)/.test(path)) return "admin";
+    // Sales speed, profit… — what the Reports screen shows
+    if (/^\/api\/reports(\/|$)/.test(path)) return "reports";
+    return null;
+  }
   return WRITE_RULES.find(([re]) => re.test(path))?.[1] ?? "admin";
 }
 

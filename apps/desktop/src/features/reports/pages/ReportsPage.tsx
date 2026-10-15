@@ -39,6 +39,8 @@ import {
 } from "@medicare/domain/reports/exports";
 import { toISODate } from "@medicare/domain/lib/date";
 import { PeriodFilter } from "../components/PeriodFilter";
+import { ProfitCard } from "../components/ProfitCard";
+import { DeadStockCard, OrderListCard } from "../components/StockInsights";
 import {
   GstTab,
   PurchasesTab,
@@ -257,13 +259,16 @@ export default function ReportsPage() {
         }
       >
         {sr ? (
-          <SalesTab
-            r={sr}
-            periodLabel={periodLabel}
-            sales={sales}
-            saleReturns={saleReturns}
-            range={range}
-          />
+          <div className="space-y-3">
+            <SalesTab
+              r={sr}
+              periodLabel={periodLabel}
+              sales={sales}
+              saleReturns={saleReturns}
+              range={range}
+            />
+            <ProfitCard sales={sales} range={range} periodLabel={periodLabel} />
+          </div>
         ) : null}
         {pr ? <PurchasesTab r={pr} periodLabel={periodLabel} /> : null}
         {gr ? (
@@ -281,6 +286,8 @@ export default function ReportsPage() {
         {st ? (
           <div className="space-y-3">
             <StockTab r={st} expiringDays={expiringDays} />
+            <OrderListCard />
+            <DeadStockCard />
             <YearCloseCard medicines={medicines} />
           </div>
         ) : null}

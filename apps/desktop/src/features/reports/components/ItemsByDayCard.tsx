@@ -22,6 +22,7 @@ import { downloadText, toCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 import { ReportCard } from "./ReportTable";
+import { Segmented } from "@/components/common/Segmented";
 
 type Kind = "sold" | "returned";
 type View = "days" | "total";
@@ -320,40 +321,5 @@ export function ItemsByDayCard({
         </div>
       )}
     </ReportCard>
-  );
-}
-
-function Segmented<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: [T, string][];
-}) {
-  return (
-    <div
-      role="radiogroup"
-      className="inline-flex h-8 rounded-lg border border-border p-0.5 bg-muted/50"
-    >
-      {options.map(([v, label]) => (
-        <button
-          key={v}
-          type="button"
-          role="radio"
-          aria-checked={value === v}
-          onClick={() => onChange(v)}
-          className={cn(
-            "px-2.5 rounded-md text-[11px] font-medium transition-colors",
-            value === v
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/70",
-          )}
-        >
-          {tr(label)}
-        </button>
-      ))}
-    </div>
   );
 }
