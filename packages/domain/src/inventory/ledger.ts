@@ -14,6 +14,7 @@ import type {
   StockChange,
   StockIssue,
   StockMovement,
+  StockMovementType,
   StockReceipt,
   StockReceiptLine,
 } from "./types";
@@ -341,6 +342,10 @@ export function applyReversal(
   refId: string,
   note: string,
   at: Date,
+  type: Extract<
+    StockMovementType,
+    "purchase_reversal" | "opening_reversal"
+  > = "purchase_reversal",
 ): {
   batches: StockBatch[];
   movements: StockMovement[];
@@ -376,7 +381,7 @@ export function applyReversal(
     }
     out.push({
       id: newId("mv"),
-      type: "purchase_reversal",
+      type,
       batchId: b.id,
       medicineId: b.medicineId,
       qtyStripDelta: -n.strip,

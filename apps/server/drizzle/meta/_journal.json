@@ -85,6 +85,13 @@
       "when": 1792095607723,
       "tag": "0011_medicine_strength",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1792096057669,
+      "tag": "0012_medicine_imports",
+      "breakpoints": true
     }
   ]
 }

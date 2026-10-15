@@ -26,6 +26,7 @@ export const COUNTER_MOVEMENT_TYPES = [
   "opening",
   "purchase",
   "purchase_reversal",
+  "opening_reversal",
 ] as const satisfies readonly StockMovement["type"][];
 
 export const keptOnCounter = (m: StockMovement): boolean =>

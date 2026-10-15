@@ -184,7 +184,7 @@ describe("import from a file (Excel / Marg / Tally)", () => {
     // Opening stock is explained in the stock history
     const mv = database.raw
       .prepare(
-        "SELECT count(*) n FROM stock_movements WHERE type = 'opening' AND ref_id LIKE 'import_%'",
+        "SELECT count(*) n FROM stock_movements WHERE type = 'opening' AND ref_id LIKE 'imp_%'",
       )
       .get() as { n: number };
     expect(mv.n).toBe(2);
@@ -251,5 +251,116 @@ describe("barcodes", () => {
       ],
     });
     expect(imp.json()).toMatchObject({ created: 1 });
+  });
+});
+
+describe("undo an import (a wrong file)", () => {
+  const opening = (batchNo: string, qty: number) => ({
+    batchNo,
+    expiry: "12/28",
+    qty,
+    mrp: valid.mrp,
+    purchasePrice: 20,
+  });
+  const qty = (batchNo: string) =>
+    (
+      database.raw
+        .prepare(
+          "SELECT coalesce(sum(qty_strip), 0) n FROM batches WHERE batch_no = ?",
+        )
+        .get(batchNo) as { n: number }
+    ).n;
+  const dolo = mockMedicines.find((m) => m.name === "Dolo 650 Tablet")!;
+
+  it("takes out the new medicines and the stock it added — then can't run twice", async () => {
+    const before = count();
+    const imp = (
+      await send("POST", "/api/medicines/import", {
+        rows: [
+          {
+            medicine: { ...valid, name: "Wrong File A" },
+            opening: opening("WF1", 10),
+          },
+          { medicine: { ...valid, name: "Wrong File B" } },
+          // stock for a medicine the shop already had
+          {
+            medicine: { ...dolo, name: dolo.name },
+            opening: opening("WF-DOLO", 7),
+          },
+        ].map((r) => ({
+          ...r,
+          medicine: (({ id: _id, ...m }) => m)(r.medicine as typeof dolo),
+        })),
+      })
+    ).json();
+    expect(imp).toMatchObject({ created: 2, existing: 1, batches: 2 });
+    expect(count()).toBe(before + 2);
+    expect(qty("WF-DOLO")).toBe(7);
+
+    const list = (await get("/api/medicines/imports")).json().imports;
+    expect(list[0]).toMatchObject({
+      id: imp.importId,
+      created: 2,
+      undoneAt: "",
+    });
+
+    const undo = await send(
+      "POST",
+      `/api/medicines/imports/${imp.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(200);
+    expect(undo.json()).toMatchObject({ removed: 2 });
+    expect(count()).toBe(before);
+    expect(qty("WF1")).toBe(0);
+    // Dolo stays; the stock the file added is taken out, with a reason
+    expect(qty("WF-DOLO")).toBe(0);
+    const why = database.raw
+      .prepare(
+        "SELECT count(*) n FROM stock_movements WHERE type = 'opening_reversal' AND ref_id = ?",
+      )
+      .get(imp.importId) as { n: number };
+    expect(why.n).toBe(1);
+
+    const again = await send(
+      "POST",
+      `/api/medicines/imports/${imp.importId}/undo`,
+    );
+    expect(again.statusCode).toBe(400);
+    expect(again.json().error).toMatch(/already undone/);
+  });
+
+  it("refuses once something from it was used — and changes nothing", async () => {
+    const imp = (
+      await send("POST", "/api/medicines/import", {
+        rows: [
+          {
+            medicine: { ...valid, name: "Used Soon" },
+            opening: opening("US1", 10),
+          },
+        ],
+      })
+    ).json();
+    const batch = database.raw
+      .prepare("SELECT id FROM batches WHERE batch_no = 'US1'")
+      .get() as { id: string };
+    expect(
+      (
+        await send("POST", "/api/stock/adjust", {
+          batchId: batch.id,
+          qtyStrip: 8,
+          qtyLoose: 0,
+          reason: "Damaged",
+        })
+      ).statusCode,
+    ).toBe(200);
+    const before = count();
+    const undo = await send(
+      "POST",
+      `/api/medicines/imports/${imp.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(400);
+    expect(undo.json().error).toMatch(/Used Soon already used/);
+    expect(count()).toBe(before);
+    expect(qty("US1")).toBe(8);
   });
 });

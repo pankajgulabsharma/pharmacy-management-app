@@ -27,6 +27,10 @@ const TYPE: Record<StockMovementType, { label: string; tone: string }> = {
     label: "Purchase cancelled / edited",
     tone: "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400",
   },
+  opening_reversal: {
+    label: "Import undone",
+    tone: "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400",
+  },
   purchase_return: {
     label: "Returned to supplier",
     tone: "bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400",

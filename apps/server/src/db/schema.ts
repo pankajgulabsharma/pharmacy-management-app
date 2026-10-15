@@ -68,6 +68,23 @@ export const medicines = sqliteTable(
   ],
 );
 
+/**
+ * Each medicine import (Excel / Marg / Tally file) — so a wrong file can
+ * be undone in one click while nothing from it has been used yet.
+ * The stock it added is found by ref_id = id in stock_movements.
+ */
+export const medicineImports = sqliteTable("medicine_imports", {
+  id: id(),
+  at: text("at").notNull(),
+  rows: integer("rows").notNull(),
+  /** JSON array — medicines this import created (not ones it reused) */
+  createdIdsJson: text("created_ids_json").notNull().default("[]"),
+  existingCount: integer("existing_count").notNull().default(0),
+  batchLines: integer("batch_lines").notNull().default(0),
+  /** "" = in force; else when it was undone */
+  undoneAt: text("undone_at").notNull().default(""),
+});
+
 /** One batch of a medicine on the shelf (stock lives here) */
 export const batches = sqliteTable(
   "batches",

@@ -1011,4 +1011,17 @@ export const HI_UI: Record<string, string> = {
   "1 substitute in stock": "1 विकल्प स्टॉक में",
   "Same salt, strength and form — click to see":
     "वही साल्ट, स्ट्रेंथ और फ़ॉर्म — देखने के लिए क्लिक करें",
+  "Import undone": "इम्पोर्ट वापस लिया गया",
+  "{{n}} new medicines and their stock removed":
+    "{{n}} नई दवाइयाँ और उनका स्टॉक हटाया गया",
+  "Could not undo the import": "इम्पोर्ट वापस नहीं हो सका",
+  "Recent imports": "हाल के इम्पोर्ट",
+  "{{rows}} rows · {{created}} new · {{batches}} batches":
+    "{{rows}} पंक्तियाँ · {{created}} नई · {{batches}} बैच",
+  Undone: "वापस लिया",
+  Undo: "वापस लें",
+  "Undo this import?": "यह इम्पोर्ट वापस लें?",
+  "The {{created}} new medicines it added are deleted, and the opening stock it added is taken out. Medicines that were already in your list stay. Not possible once anything from it is sold, purchased or adjusted.":
+    "इससे जुड़ी {{created}} नई दवाइयाँ हटेंगी और इसका जोड़ा ओपनिंग स्टॉक निकाला जाएगा। पहले से मौजूद दवाइयाँ रहेंगी। इसमें से कुछ भी बिका, खरीदा या एडजस्ट हुआ हो तो यह नहीं होगा।",
+  "Undo import": "इम्पोर्ट वापस लें",
 };

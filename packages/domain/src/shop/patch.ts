@@ -10,6 +10,8 @@ import type { Purchase, PurchaseReturn } from "../purchases/types";
 
 export type ShopPatch = {
   batches?: StockBatch[];
+  /** Batches deleted outright (an undone import's new medicines) */
+  batchesRemoved?: string[];
   movements?: StockMovement[];
   purchases?: Purchase[];
   purchaseReturns?: PurchaseReturn[];
@@ -25,7 +27,10 @@ export type ShopPatch = {
  * Insert-or-replace by id. New records go first (lists are newest first).
  * Merging the same patch twice changes nothing — safe if it arrives twice.
  */
-export function upsertById<T extends { id: string }>(list: readonly T[], items: readonly T[] | undefined): T[] {
+export function upsertById<T extends { id: string }>(
+  list: readonly T[],
+  items: readonly T[] | undefined,
+): T[] {
   if (!items?.length) return list as T[];
   const incoming = new Map(items.map((x) => [x.id, x]));
   const kept = list.map((x) => incoming.get(x.id) ?? x);

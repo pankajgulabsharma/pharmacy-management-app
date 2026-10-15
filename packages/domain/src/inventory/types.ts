@@ -35,6 +35,8 @@ export type StockMovementType =
   | "purchase"
   /** Purchase cancelled or edited — its earlier receipt is undone */
   | "purchase_reversal"
+  /** A medicine import was undone — the opening stock it added is taken out */
+  | "opening_reversal"
   /** Goods sent back to the supplier (debit note) */
   | "purchase_return"
   /** Sold to a customer (billing) */

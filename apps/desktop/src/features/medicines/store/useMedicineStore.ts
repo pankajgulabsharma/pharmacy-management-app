@@ -10,6 +10,8 @@ import { applyShopPatch } from "@/stores/applyShopPatch";
 
 /** What a file import did */
 export type ImportResult = {
+  /** Undo this import later (Import window → Recent imports) */
+  importId: string;
   created: number;
   existing: number;
   batches: number;
@@ -34,6 +36,8 @@ type MedicineState = {
   removeMedicine: (id: string) => Promise<void>;
   /** File import (Excel / Marg / Tally): medicines + opening stock */
   importMedicines: (rows: readonly ImportRow[]) => Promise<ImportResult>;
+  /** Takes a whole import back out (refused once anything from it is used) */
+  undoImport: (importId: string) => Promise<{ removed: number }>;
 };
 
 export const useMedicineStore = create<MedicineState>()((set, get) => ({
@@ -95,6 +99,19 @@ export const useMedicineStore = create<MedicineState>()((set, get) => ({
     );
     applyShopPatch(r.patch); // new batches
     await get().loadFromServer(); // new medicines
+    return r;
+  },
+
+  undoImport: async (importId) => {
+    requireServer(get().source);
+    const r = await apiRequest<{ removed: number; patch: ShopPatch }>(
+      "POST",
+      `/api/medicines/imports/${encodeURIComponent(importId)}/undo`,
+      undefined,
+      120_000,
+    );
+    applyShopPatch(r.patch); // stock taken out, new batches gone
+    await get().loadFromServer(); // new medicines gone
     return r;
   },
 }));

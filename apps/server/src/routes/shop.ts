@@ -14,7 +14,7 @@ import * as inventory from "../shop/inventory";
 import * as purchases from "../shop/purchases";
 import * as sales from "../shop/sales";
 import * as s from "../shop/schemas";
-import { importStock } from "../shop/importStock";
+import { importStock, listImports, undoImport } from "../shop/importStock";
 import * as migrate from "../shop/migrate";
 
 type Params = { Params: { id: string } };
@@ -147,6 +147,14 @@ export function shopRoutes(
       .send(
         write(() => importStock(raw, s.parse(s.importInput, req.body).rows)),
       ),
+  );
+
+  // A wrong file can be taken back out while nothing from it is used yet
+  app.get("/api/medicines/imports", async () => ({
+    imports: listImports(raw),
+  }));
+  app.post<Params>("/api/medicines/imports/:id/undo", async (req) =>
+    write(() => undoImport(raw, req.params.id)),
   );
 
   app.post("/api/stock/adjust", async (req) =>

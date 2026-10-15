@@ -11,10 +11,14 @@ import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
  * Safe to apply twice.
  */
 export function applyShopPatch(p: ShopPatch) {
-  if (p.batches || p.movements) {
+  if (p.batches || p.movements || p.batchesRemoved?.length) {
+    const gone = new Set(p.batchesRemoved ?? []);
     useInventoryStore.setState((s) => ({
-      batches: upsertById(s.batches, p.batches),
-      movements: upsertById(s.movements, p.movements?.filter(keptOnCounter)),
+      batches: upsertById(s.batches, p.batches).filter((b) => !gone.has(b.id)),
+      movements: upsertById(
+        s.movements,
+        p.movements?.filter(keptOnCounter),
+      ).filter((m) => !gone.has(m.batchId)),
     }));
   }
   if (p.purchases || p.purchaseReturns) {
