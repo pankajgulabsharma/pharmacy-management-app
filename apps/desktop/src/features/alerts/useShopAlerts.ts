@@ -7,6 +7,7 @@ import {
   HandCoins,
   PackageX,
   PauseCircle,
+  Repeat,
   TriangleAlert,
   Wallet,
   type LucideIcon,
@@ -28,6 +29,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { missingShopDetails } from "@medicare/domain/settings/defaults";
 import { tr } from "@/lib/i18n";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
+import { useRefills } from "@/features/customers/refills/useRefills";
 
 export type ShopAlert = {
   key: string;
@@ -58,6 +60,7 @@ export function useShopAlerts(): ShopAlert[] {
   const purchases = usePurchaseStore((s) => s.purchases);
   const sales = useSalesStore((s) => s.sales);
   const saleReturns = useSalesStore((s) => s.saleReturns);
+  const refillCount = useRefills().due.length;
   const held = useSalesStore((s) => s.held);
   const customers = useCustomerStore((s) => s.customers);
   const payments = useCustomerStore((s) => s.payments);
@@ -194,6 +197,17 @@ export function useShopAlerts(): ShopAlert[] {
           level: "amber",
           to: "/customers?filter=due",
         });
+      if (refillCount)
+        list.push({
+          key: "refills",
+          title: plural(refillCount, "refill due", "refills due"),
+          desc: tr(
+            "Regular customers whose medicine runs out soon — remind them on WhatsApp.",
+          ),
+          icon: Repeat,
+          level: "amber",
+          to: "/customers?refills=1",
+        });
       if (held.length)
         list.push({
           key: "held",
@@ -219,6 +233,7 @@ export function useShopAlerts(): ShopAlert[] {
     customers,
     payments,
     licence,
+    refillCount,
   ]);
 }
 

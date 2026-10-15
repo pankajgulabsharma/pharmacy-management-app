@@ -9,6 +9,7 @@ import {
   IndianRupee,
   Pencil,
   Plus,
+  Repeat,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ import {
 } from "@medicare/domain/customers/ledger";
 import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerFormDialog } from "../components/CustomerFormDialog";
+import { RefillsDialog } from "../refills/RefillsDialog";
+import { useRefills } from "../refills/useRefills";
 import { ReceivePaymentDialog } from "../components/ReceivePaymentDialog";
 import { CustomerStatementDialog } from "../components/CustomerStatementDialog";
 import { customerSearch } from "@medicare/domain/customers/search";
@@ -150,6 +153,9 @@ export default function CustomersPage() {
   const payments = useCustomerStore((s) => s.payments);
   const sums = useCustomerSummaries();
   const intent = useUrlIntent();
+  // Regular buyers whose medicine is running out (bell → ?refills=1)
+  const refills = useRefills();
+  const [refillsOpen, setRefillsOpen] = useState(intent.refills === "1");
   const [query, setQuery] = useState(intent.q?.slice(0, 60) ?? "");
   const dq = useDeferredValue(query);
   const [filter, setFilter] = useState<Filter>(
@@ -266,17 +272,36 @@ export default function CustomersPage() {
         title="Customers & Udhaar"
         subtitle="Customer accounts · udhaar bills · payments received"
         actions={
-          <Button
-            type="button"
-            onClick={() => setForm({ open: true, customer: null })}
-            className="h-9 rounded-lg text-[12px] gap-1.5"
-          >
-            <Plus className="h-4 w-4" />
-            {tr("New customer")}
-            <Kbd keys={KEYS.create} tone="light" />
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRefillsOpen(true)}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <Repeat className="h-4 w-4" />
+              {tr("Refills due")}
+              {refills.due.length ? (
+                <span className="rounded-full bg-orange-500 px-1.5 text-[10px] font-semibold text-white tabular-nums">
+                  {refills.due.length}
+                </span>
+              ) : null}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setForm({ open: true, customer: null })}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              {tr("New customer")}
+              <Kbd keys={KEYS.create} tone="light" />
+            </Button>
+          </>
         }
       />
+      {refillsOpen ? (
+        <RefillsDialog onClose={() => setRefillsOpen(false)} />
+      ) : null}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 shrink-0">
         <StatCard

@@ -1088,4 +1088,23 @@ export const HI_UI: Record<string, string> = {
   "No bills in this period": "इस समय में कोई बिल नहीं",
   "1 medicine": "1 दवा",
   "{{n}} medicines": "{{n}} दवाइयाँ",
+  "refill due": "रिफ़िल बाकी",
+  "refills due": "रिफ़िल बाकी",
+  "Regular customers whose medicine runs out soon — remind them on WhatsApp.":
+    "नियमित ग्राहक जिनकी दवा जल्दी खत्म होगी — WhatsApp पर याद दिलाएँ।",
+  "Refills due": "रिफ़िल बाकी",
+  "Customers who buy the same medicine regularly — remind them before it runs out (free WhatsApp, no SMS)":
+    "जो ग्राहक वही दवा नियमित लेते हैं — खत्म होने से पहले याद दिलाएँ (मुफ़्त WhatsApp, SMS नहीं)",
+  "No refills due": "कोई रिफ़िल बाकी नहीं",
+  "Customers who bought the same medicine on 2 or more bills show here a few days before it runs out.":
+    "जिन ग्राहकों ने वही दवा 2 या ज़्यादा बिल में ली, वो खत्म होने से कुछ दिन पहले यहाँ दिखेंगे।",
+  "No mobile saved": "मोबाइल सेव नहीं",
+  "Add a mobile number to the customer first":
+    "पहले ग्राहक का मोबाइल नंबर जोड़ें",
+  Done: "हो गया",
+  "every ~{{n}} days · last {{date}}": "हर ~{{n}} दिन · आखिरी {{date}}",
+  "{{n}} days late": "{{n}} दिन देर",
+  "due today": "आज बाकी",
+  "in {{n}} days": "{{n}} दिन में",
+  "Reminder sent — marked done": "याद दिलाया — हो गया मार्क किया",
 };

@@ -90,6 +90,40 @@ export const DEMO_CUSTOMER_LIST: Customer[] = [
 }));
 const customerIdByName = new Map(DEMO_CUSTOMER_LIST.map((c) => [c.name, c.id]));
 
+/**
+ * Regular buyers in the demo history: the same medicine about every month,
+ * last bought `lastAgo` days ago → they show under Customers → Refills due.
+ */
+const REGULARS = [
+  // Asthma respules every 30 days — due in about 3 days
+  {
+    customerId: "c_ramesh",
+    name: "Ramesh Sharma",
+    medicineId: "m17",
+    strips: 1,
+    every: 30,
+    lastAgo: 27,
+  },
+  // Calcium every 28 days — due in about 4 days
+  {
+    customerId: "c_kavita",
+    name: "Kavita Joshi",
+    medicineId: "m11",
+    strips: 1,
+    every: 28,
+    lastAgo: 24,
+  },
+  // Insulin every 30 days — 6 days late
+  {
+    customerId: "c_amit",
+    name: "Amit Verma",
+    medicineId: "m9",
+    strips: 1,
+    every: 30,
+    lastAgo: 36,
+  },
+] as const;
+
 const CUSTOMERS = [
   "Ramesh Sharma",
   "Sneha Patel",
@@ -313,6 +347,42 @@ function buildDemo() {
             changePaise: received - built.sale.totals.netPaise,
           };
         }
+        built.sale.imported = true;
+        sales.push(built.sale);
+      }
+
+      // Regular customers: the same medicine every month (Refills due)
+      for (const r of REGULARS) {
+        const k = ago - r.lastAgo;
+        if (k < 0 || k % r.every !== 0) continue;
+        const at = new Date(day.getTime() + 11 * 60 * 60_000);
+        const built = buildSale(
+          {
+            cart: [
+              {
+                lineId: `regular_${r.customerId}_${ago}`,
+                medicineId: r.medicineId,
+                qtyStrip: r.strips,
+                qtyLoose: 0,
+                discountPercent: 0,
+              },
+            ],
+            customerName: r.name,
+            customerId: r.customerId,
+            doctor: DOCTORS[0],
+            counter: COUNTERS[0],
+            payment: {
+              method: "upi",
+              received: "",
+              reference: "",
+              split: { cash: "", upi: "", card: "" },
+            },
+          },
+          medicinesById,
+          unlimited,
+          nextBillNo(sales, undefined, at),
+          at,
+        );
         built.sale.imported = true;
         sales.push(built.sale);
       }
