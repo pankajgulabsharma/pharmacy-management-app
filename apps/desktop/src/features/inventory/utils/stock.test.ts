@@ -39,6 +39,15 @@ describe("batchStatus — exactly one status per batch", () => {
     expect(batchStatus(b({}), new Map([["m", 50]]), NOW, 90)).toBe("ok");
   });
 
+  it("an inactive medicine is never 'low' (it isn't reordered)", () => {
+    const totals = new Map([["m", 3]]);
+    expect(batchStatus(b({ inactive: true }), totals, NOW, 90)).toBe("ok");
+    // an empty batch is still empty
+    expect(
+      batchStatus(b({ inactive: true, qtyStrip: 0 }), totals, NOW, 90),
+    ).toBe("out");
+  });
+
   it("low is about the MEDICINE's total, not one small batch", () => {
     const batches = [
       b({ id: "a", qtyStrip: 5 }),

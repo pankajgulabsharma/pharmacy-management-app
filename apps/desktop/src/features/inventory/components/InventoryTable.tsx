@@ -52,7 +52,7 @@ const STATUS: Record<
     tone: "danger",
     row: "bg-red-50/40 dark:bg-red-950/20",
   },
-  out: { label: "Out of stock", tone: "danger", row: "" },
+  out: { label: "Empty batch", tone: "danger", row: "" },
   low: { label: "Low stock", tone: "warning", row: "" },
   expiring: { label: "Expiring", tone: "caution", row: "" },
   ok: { label: "In stock", tone: "success", row: "" },

@@ -155,6 +155,8 @@ export type InventoryBatch = {
   purchasePrice: number;
   salePrice: number;
   minStock: number;
+  /** Medicine switched off (Medicines → Inactive): never "low", not reordered */
+  inactive?: boolean;
 };
 
 export type InventoryStatusFilter =

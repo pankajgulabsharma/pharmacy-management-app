@@ -58,8 +58,18 @@ import { BarcodeLabelDialog } from "../components/BarcodeLabelDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
 import { medicineSearch } from "@medicare/domain/medicines/search";
 
-/** Chips — exclusive, they add up to All (active medicines by stockLevel) */
-type StatusFilter = "all" | "in_stock" | "low_only" | "out" | "inactive";
+/**
+ * Chips — In stock / Low / Out / Inactive are exclusive and add up to All.
+ * "Reorder" = Low + Out together (what the Dashboard card counts).
+ */
+type StatusFilter =
+  "all" | "in_stock" | "low_only" | "out" | "reorder" | "inactive";
+
+const matchesStatus = (f: StatusFilter, m: MedicineWithStock) => {
+  if (f === "all") return true;
+  const b = bucket(m);
+  return f === "reorder" ? b === "low_only" || b === "out" : b === f;
+};
 
 /** Which exclusive bucket a medicine is in */
 function bucket(
@@ -97,7 +107,7 @@ export default function MedicinesPage() {
     oneOf(
       // Old links used "low" for Low / Out — they now open "Low"
       intent.status === "low" ? "low_only" : intent.status,
-      ["all", "in_stock", "low_only", "out", "inactive"] as const,
+      ["all", "in_stock", "low_only", "out", "reorder", "inactive"] as const,
       "all",
     ),
   );
@@ -135,7 +145,7 @@ export default function MedicinesPage() {
 
   const filtered = useMemo(() => {
     const keep = (m: MedicineWithStock) =>
-      (statusFilter === "all" || bucket(m) === statusFilter) &&
+      matchesStatus(statusFilter, m) &&
       (categoryFilter === "all" || m.category === categoryFilter);
     const hits = medicineSearch.filter(items, deferredQuery, { keep });
     // A batch number typed ("DL24118") finds its medicine too
@@ -158,6 +168,11 @@ export default function MedicinesPage() {
       { id: "in_stock", label: "In stock", count: stats.in_stock },
       { id: "low_only", label: "Low", count: stats.low_only },
       { id: "out", label: "Out", count: stats.out },
+      {
+        id: "reorder",
+        label: "Low + Out",
+        count: stats.low_only + stats.out,
+      },
       { id: "inactive", label: "Inactive", count: stats.inactive },
     ],
     [stats],

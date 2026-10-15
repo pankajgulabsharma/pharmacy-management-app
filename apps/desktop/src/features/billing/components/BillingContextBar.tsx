@@ -21,6 +21,12 @@ type Props = {
   /** Saved customer the bill is linked to (null = typed name only) */
   customerId: string | null;
   onPickCustomer: (c: Customer) => void;
+  /** Linked to a saved customer → their mobile + address are shown here */
+  linked: boolean;
+  customerPhone: string;
+  onCustomerPhoneChange: (v: string) => void;
+  /** Mobile / address can't be saved to the customer (e.g. 9 digits) */
+  customerError: string | null;
   prescribedBy: string;
   onPrescribedByChange: (v: string) => void;
   counter: string;
@@ -55,6 +61,10 @@ export function BillingContextBar({
   needsPatientAddress,
   patientAddress,
   onPatientAddressChange,
+  linked,
+  customerPhone,
+  onCustomerPhoneChange,
+  customerError,
   prescribedBy,
   onPrescribedByChange,
   counter,
@@ -110,20 +120,63 @@ export function BillingContextBar({
             </button>
           ) : null}
         </div>
-        {needsPatientAddress ? (
-          <Input
-            value={patientAddress}
-            onChange={(e) =>
-              onPatientAddressChange(e.target.value.slice(0, 160))
-            }
-            placeholder={tr("Patient's address (for the H1 / NDPS register)")}
-            aria-label={tr("Patient's address")}
+        {/* Saved customer: mobile + address from their account — a change
+            here is saved to the account with the bill */}
+        {linked || needsPatientAddress ? (
+          <div className={cn(linked && "grid grid-cols-[120px_1fr] gap-2")}>
+            {linked ? (
+              <Input
+                value={customerPhone}
+                onChange={(e) =>
+                  onCustomerPhoneChange(
+                    e.target.value.replace(/[^\d+ ]/g, "").slice(0, 15),
+                  )
+                }
+                inputMode="tel"
+                placeholder={tr("Mobile")}
+                aria-label={tr("Customer's mobile")}
+                aria-invalid={!!customerError}
+                className={cn(
+                  fieldStyle,
+                  "pl-3 tabular-nums",
+                  customerError && "border-red-500/60",
+                )}
+                autoComplete="off"
+              />
+            ) : null}
+            <Input
+              value={patientAddress}
+              onChange={(e) =>
+                onPatientAddressChange(e.target.value.slice(0, 160))
+              }
+              placeholder={
+                needsPatientAddress
+                  ? tr("Patient's address (for the H1 / NDPS register)")
+                  : tr("Address")
+              }
+              aria-label={tr("Patient's address")}
+              className={cn(
+                fieldStyle,
+                "pl-3",
+                needsPatientAddress &&
+                  !patientAddress.trim() &&
+                  "border-red-500/30 bg-red-500/[0.03]",
+              )}
+              autoComplete="off"
+            />
+          </div>
+        ) : null}
+        {linked ? (
+          <p
             className={cn(
-              fieldStyle,
-              "pl-3 border-red-500/30 bg-red-500/[0.03]",
+              "-mt-1 text-[10px]",
+              customerError ? "text-red-600" : "text-muted-foreground",
             )}
-            autoComplete="off"
-          />
+          >
+            {customerError
+              ? tr(customerError)
+              : tr("Changes here are saved to the customer's account")}
+          </p>
         ) : null}
         {showGstin ? (
           <Input

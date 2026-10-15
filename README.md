@@ -136,7 +136,7 @@ variable `UPDATE_REPO` = `you/medicare-releases` and a secret
 
 Set the schedule on each medicine (Medicines → edit). Billing then asks
 for the prescribing doctor (H, H1, X) and the patient's name (H1, X); the
-printed bill marks them `[Sch. H1]`. **Reports → H1 register** lists every
+printed bill marks them `[Sch. H1]`. **Reports → Schedule register** (H1 · X · NDPS) lists every
 H1 / X supply (date, bill, patient, doctor, medicine, batch, qty) — export
 to keep with the shop's records (3 years).
 

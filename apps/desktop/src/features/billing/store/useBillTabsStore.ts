@@ -20,8 +20,13 @@ export type BillDraft = {
   customerName: string;
   /** Saved customer picked for this bill (null = typed name only) */
   customerId: string | null;
-  /** Patient's address — asked when a register drug (H1 / X / NDPS) is on the bill */
+  /**
+   * Patient's address (asked when a register drug — H1 / X / NDPS — is on
+   * the bill). For a saved customer, undefined = their saved address.
+   */
   patientAddress?: string;
+  /** Mobile typed for a saved customer (undefined = their saved mobile) */
+  customerPhone?: string;
   /** B2B bill: buyer's GSTIN (null = retail bill) */
   customerGstin: string | null;
   /** null = the shop's default (first doctor / default counter) */
@@ -66,6 +71,8 @@ export const isEmptyDraft = (d: BillDraft) =>
 
 const str = (v: unknown, max = 200) =>
   typeof v === "string" ? v.slice(0, max) : "";
+const optStr = (v: unknown, max = 200) =>
+  typeof v === "string" ? v.slice(0, max) : undefined;
 const strOrNull = (v: unknown) =>
   typeof v === "string" ? v.slice(0, 200) : null;
 
@@ -89,7 +96,8 @@ function cleanDrafts(v: unknown): BillDraft[] {
         : [],
       customerName: str(d.customerName),
       customerId: strOrNull(d.customerId),
-      patientAddress: str(d.patientAddress),
+      patientAddress: optStr(d.patientAddress),
+      customerPhone: optStr(d.customerPhone, 15),
       customerGstin: strOrNull(d.customerGstin),
       doctor: strOrNull(d.doctor),
       counter: strOrNull(d.counter),

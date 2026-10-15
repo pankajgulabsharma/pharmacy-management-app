@@ -68,7 +68,7 @@ export function StatsCards({ d }: { d: DashboardData }) {
       subTone: d.health.out > 0 ? "bad" : "muted",
       icon: AlertTriangle,
       iconBg: "bg-orange-500/10 text-orange-600",
-      to: "/medicines?status=low_only", // opens the Low chip
+      to: "/medicines?status=reorder", // Low + Out, same as this count
     },
     {
       key: "expiring",

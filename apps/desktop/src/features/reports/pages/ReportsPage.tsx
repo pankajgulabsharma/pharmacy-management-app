@@ -66,7 +66,7 @@ const TABS: SegmentedTab<Tab>[] = [
   { id: "purchases", label: "Purchases", icon: Truck },
   { id: "gst", label: "GST", icon: Landmark },
   { id: "stock", label: "Stock", icon: Package },
-  { id: "register", label: "H1 register", icon: ClipboardList },
+  { id: "register", label: "Schedule register", icon: ClipboardList },
 ];
 
 export default function ReportsPage() {
@@ -248,7 +248,14 @@ export default function ReportsPage() {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
+      {/* The register scrolls inside its own card (header + chips stay put) */}
+      <div
+        className={
+          tab === "register"
+            ? "flex-1 min-h-0 overflow-hidden"
+            : "flex-1 min-h-0 overflow-y-auto pr-0.5"
+        }
+      >
         {sr ? (
           <SalesTab
             r={sr}

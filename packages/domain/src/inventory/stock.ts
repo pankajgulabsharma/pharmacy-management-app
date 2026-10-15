@@ -60,6 +60,7 @@ export function sellableTotals(
  *   expired   has stock but can't be sold
  *   expiring  sell first / return in time (Settings → expiry window)
  *   low       the medicine's total sellable stock is below its minimum
+ *             (active medicines only — an inactive one isn't reordered)
  *   ok        in stock, nothing to do
  */
 export function batchStatus(
@@ -71,7 +72,7 @@ export function batchStatus(
   if (isOutOfStock(b)) return "out";
   if (isExpired(b.expiry, now)) return "expired";
   if (isExpiringSoon(b.expiry, expiringDays, now)) return "expiring";
-  if ((totals.get(b.medicineId) ?? 0) < b.minStock) return "low";
+  if (!b.inactive && (totals.get(b.medicineId) ?? 0) < b.minStock) return "low";
   return "ok";
 }
 

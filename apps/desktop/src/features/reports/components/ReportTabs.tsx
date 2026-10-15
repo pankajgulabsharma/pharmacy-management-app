@@ -894,7 +894,7 @@ export function RegisterTab({
       rows={shown}
       getKey={(r) => `${r.billNo}|${r.medicine}`}
       empty="No register medicines sold in this period"
-      maxHeightClass="max-h-[70vh]"
+      fill
       action={
         <div className="flex flex-wrap items-center gap-1.5">
           {(["all", ...REGISTER_SCHEDULES] as const).map((k) => (

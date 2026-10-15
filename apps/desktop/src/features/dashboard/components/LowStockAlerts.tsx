@@ -16,7 +16,7 @@ export function LowStockAlerts({ d }: { d: DashboardData }) {
             ({d.lowStockList.length})
           </span>
         </h3>
-        <ViewAll to="/medicines?status=low_only" />
+        <ViewAll to="/medicines?status=reorder" />
       </div>
       {d.lowStockList.length === 0 ? (
         <p className="text-[10px] text-muted-foreground">
@@ -52,7 +52,7 @@ export function LowStockAlerts({ d }: { d: DashboardData }) {
           }}
           renderMore={(n) => (
             <Link
-              to="/medicines?status=low_only"
+              to="/medicines?status=reorder"
               className="inline-flex whitespace-nowrap items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-muted"
             >
               +{n} more

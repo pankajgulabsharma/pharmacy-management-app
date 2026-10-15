@@ -96,11 +96,6 @@ export function CustomerNameInput({
           aria-label={tr("Saved customer")}
         />
       ) : null}
-      {linked?.phone ? (
-        <span className="pointer-events-none absolute right-7 top-1/2 -translate-y-1/2 text-[10px] tabular-nums text-muted-foreground">
-          {linked.phone}
-        </span>
-      ) : null}
       {open ? (
         <ul
           id={listId}

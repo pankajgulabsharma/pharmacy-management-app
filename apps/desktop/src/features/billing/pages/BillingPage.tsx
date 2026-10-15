@@ -35,6 +35,7 @@ import { SalesReturnPanel } from "../components/SalesReturnPanel";
 import { ReceiptDialog } from "../components/ReceiptDialog";
 import { HeldBillsDialog } from "../components/HeldBillsDialog";
 import { BillTabs } from "../components/BillTabs";
+import { useBillCustomer } from "../hooks/useBillCustomer";
 import {
   MAX_BILL_TABS,
   useBillTabsStore,
@@ -109,6 +110,8 @@ export default function BillingPage() {
   const draft = drafts.find((d) => d.id === activeId) ?? drafts[0];
   const { cart, customerName, customerGstin, udhaarCustomerId } = draft;
   const customerId = draft.customerId ?? null;
+  // Saved customer's mobile / address (edits here update their account)
+  const billCustomer = useBillCustomer(draft);
   /** Customer account for udhaar (required when paying by udhaar) */
   const doctor = draft.doctor ?? doctors[0] ?? "";
   const counter = draft.counter ?? defaultCounter;
@@ -196,6 +199,7 @@ export default function BillingPage() {
       } catch (e) {
         return (e as Error).message;
       }
+    if (billCustomer.error) return billCustomer.error;
     return validatePayment(
       payment,
       bill.totals.netPaise,
@@ -211,6 +215,7 @@ export default function BillingPage() {
     udhaarCustomerId,
     customerGstin,
     shopGstin,
+    billCustomer.error,
   ]);
 
   /* ---------------- cart ---------------- */
@@ -306,7 +311,8 @@ export default function BillingPage() {
       updateDraft(id, {
         udhaarCustomerId: null,
         customerId: null,
-        patientAddress: "",
+        patientAddress: undefined,
+        customerPhone: undefined,
         cart: [],
         payment: null,
         customerName: "",
@@ -366,10 +372,16 @@ export default function BillingPage() {
           counter,
           payment,
           ...(customerGstin ? { customerGstin } : {}),
-          ...(needsAddress && draft.patientAddress?.trim()
-            ? { patientAddress: draft.patientAddress }
+          ...(needsAddress && billCustomer.address.trim()
+            ? { patientAddress: billCustomer.address }
             : {}),
         });
+        // Mobile / address changed on the bill → the customer's account too
+        const notUpdated = await billCustomer.saveBack();
+        if (notUpdated)
+          toast.warning(tr("Bill saved, but the customer was not updated"), {
+            description: notUpdated,
+          });
         // Saved → its tab closes (the last tab is emptied for the next customer)
         closeTab(id);
         setSelectedLineId(null);
@@ -403,7 +415,7 @@ export default function BillingPage() {
       customerGstin,
       customerId,
       needsAddress,
-      draft.patientAddress,
+      billCustomer,
     ],
   );
 
@@ -726,21 +738,41 @@ export default function BillingPage() {
             customerName={customerName}
             onCustomerChange={(name) =>
               // A different name → no longer that saved customer
-              updateDraft(draft.id, { customerName: name, customerId: null })
+              updateDraft(draft.id, {
+                customerName: name,
+                customerId: null,
+                customerPhone: undefined,
+                // keep an address typed for a walk-in, not the old account's
+                ...(billCustomer.linked ? { patientAddress: undefined } : {}),
+              })
             }
             onClearCustomer={() =>
-              updateDraft(draft.id, { customerName: "", customerId: null })
+              updateDraft(draft.id, {
+                customerName: "",
+                customerId: null,
+                customerPhone: undefined,
+                patientAddress: undefined,
+              })
             }
             customerId={customerId}
             needsPatientAddress={needsAddress}
-            patientAddress={draft.patientAddress ?? ""}
+            patientAddress={billCustomer.address}
             onPatientAddressChange={(v) =>
               updateDraft(draft.id, { patientAddress: v })
             }
+            linked={!!billCustomer.linked}
+            customerPhone={billCustomer.phone}
+            onCustomerPhoneChange={(v) =>
+              updateDraft(draft.id, { customerPhone: v })
+            }
+            customerError={billCustomer.error}
             onPickCustomer={(c) =>
               updateDraft(draft.id, {
                 customerName: c.name,
                 customerId: c.id,
+                // their saved mobile / address show until edited here
+                customerPhone: undefined,
+                patientAddress: undefined,
                 // ready if this bill goes on udhaar
                 udhaarCustomerId: c.id,
               })
@@ -868,6 +900,12 @@ export default function BillingPage() {
                           udhaarCustomerId: c.id,
                           customerName: c.name,
                           customerId: c.id,
+                          ...(c.id !== customerId
+                            ? {
+                                customerPhone: undefined,
+                                patientAddress: undefined,
+                              }
+                            : {}),
                         }
                       : { udhaarCustomerId: null },
                   )

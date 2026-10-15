@@ -30,6 +30,7 @@ function toRow(b: StockBatch, m: Medicine): InventoryBatch {
     // What billing will actually charge: master price, capped at this batch's MRP
     salePrice: batchRatePaise(m, b) / 100,
     minStock: m.minStock,
+    inactive: m.status !== "active",
   };
 }
 

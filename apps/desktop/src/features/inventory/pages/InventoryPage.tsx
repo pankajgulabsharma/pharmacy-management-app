@@ -133,7 +133,7 @@ export default function InventoryPage() {
       { id: "all", label: "All", count: stats.batches },
       { id: "in_stock", label: "In stock", count: stats.ok },
       { id: "low", label: "Low", count: stats.low },
-      { id: "out", label: "Out", count: stats.out },
+      { id: "out", label: "Empty", count: stats.out },
       { id: "expiring", label: "Expiring", count: stats.expiring },
       { id: "expired", label: "Expired", count: stats.expired },
     ],
@@ -186,13 +186,13 @@ export default function InventoryPage() {
         />
         <StatCard
           icon={AlertTriangle}
-          label="Low stock"
+          label="Low stock batches"
           value={String(stats.low)}
           iconClass="bg-orange-500/10 text-orange-600"
         />
         <StatCard
           icon={PackageX}
-          label="Out of stock"
+          label="Empty batches"
           value={String(stats.out)}
           iconClass="bg-red-500/10 text-red-500"
         />

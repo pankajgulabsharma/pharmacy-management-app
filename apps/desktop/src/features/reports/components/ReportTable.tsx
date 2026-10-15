@@ -21,6 +21,8 @@ type Props<T> = {
   footer?: ReactNode[];
   empty: string;
   maxHeightClass?: string;
+  /** Fill the parent's height (scrolls inside; header always visible) */
+  fill?: boolean;
   /** Button(s) in the card header, e.g. Export */
   action?: ReactNode;
 };
@@ -35,11 +37,18 @@ export function ReportTable<T>({
   footer,
   empty,
   maxHeightClass = "max-h-[340px]",
+  fill,
   action,
 }: Props<T>) {
   const tr = useTr();
   return (
-    <ReportCard title={title} subtitle={subtitle} action={action} flush>
+    <ReportCard
+      title={title}
+      subtitle={subtitle}
+      action={action}
+      flush
+      className={fill ? "h-full" : undefined}
+    >
       {rows.length === 0 ? (
         <p className="px-3 py-8 text-center text-[11px] text-muted-foreground">
           {empty}
@@ -48,7 +57,7 @@ export function ReportTable<T>({
         <div
           className={cn(
             "overflow-auto [scrollbar-gutter:stable]",
-            maxHeightClass,
+            fill ? "h-full" : maxHeightClass,
           )}
         >
           <table className="w-full text-[11px] border-collapse">
@@ -145,7 +154,7 @@ export function ReportCard({
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-2 px-3 py-2.5 border-b border-border">
+      <div className="shrink-0 flex flex-wrap items-start justify-between gap-2 px-3 py-2.5 border-b border-border">
         <div className="min-w-0">
           <h3 className="text-[12px] font-semibold text-foreground">
             {tr(title)}

@@ -748,7 +748,7 @@ export const HI_UI: Record<string, string> = {
   "Couldn't check (no internet?) — will try again later":
     "जाँच नहीं हो पाई (इंटरनेट नहीं?) — बाद में फिर कोशिश होगी",
   "Check now": "अभी जाँचें",
-  "H1 register": "H1 रजिस्टर",
+  "Schedule register": "शेड्यूल रजिस्टर",
   "Schedule H1 / X register": "शेड्यूल H1 / X रजिस्टर",
   "No Schedule H1 / X medicines sold in this period":
     "इस समय में कोई शेड्यूल H1 / X दवा नहीं बिकी",
@@ -977,4 +977,14 @@ export const HI_UI: Record<string, string> = {
     "NDPS — नशीली / मनोदैहिक दवा (रजिस्टर)",
   "Schedule X (register, keep Rx copy)":
     "शेड्यूल X (रजिस्टर, पर्ची की कॉपी रखें)",
+  "Customer's mobile": "ग्राहक का मोबाइल",
+  "Changes here are saved to the customer's account":
+    "यहाँ किया बदलाव ग्राहक के खाते में भी सेव होगा",
+  "Bill saved, but the customer was not updated":
+    "बिल सेव हुआ, पर ग्राहक की जानकारी अपडेट नहीं हुई",
+  "Low + Out": "कम + खत्म",
+  "Low stock batches": "कम स्टॉक बैच",
+  "Empty batches": "खाली बैच",
+  Empty: "खाली",
+  "Empty batch": "खाली बैच",
 };
