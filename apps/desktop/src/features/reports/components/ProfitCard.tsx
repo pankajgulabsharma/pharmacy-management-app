@@ -10,12 +10,31 @@ import { formatPaise } from "@medicare/domain/lib/money";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { Segmented } from "@/components/common/Segmented";
+import { RankBadge } from "@/components/common/RankBadge";
 import { downloadText, toCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 import { ReportTable } from "./ReportTable";
 
 const SHOWN = 100;
+
+/** Margin at a glance: red under 10 %, amber under 20 %, green above */
+function MarginPill({ pct }: { pct: number }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex min-w-[52px] justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ring-1 ring-inset",
+        pct < 10
+          ? "bg-red-500/10 text-red-700 ring-red-500/20 dark:text-red-400"
+          : pct < 20
+            ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-400"
+            : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400",
+      )}
+    >
+      {pct.toFixed(1)}%
+    </span>
+  );
+}
 
 /**
  * Which medicines and companies actually make money — and which sell a
@@ -108,6 +127,12 @@ export function ProfitCard({
       }
       columns={[
         {
+          key: "rank",
+          label: "#",
+          width: "w-[48px]",
+          render: (x) => <RankBadge rank={rows.indexOf(x) + 1} />,
+        },
+        {
           key: "name",
           label: by === "medicines" ? "Medicine" : "Company",
           render: (x) => (
@@ -162,15 +187,7 @@ export function ProfitCard({
           label: "Margin",
           align: "right",
           width: "w-[80px]",
-          render: (x) => (
-            <span
-              className={cn(
-                x.marginPct < 10 && "text-orange-600 font-semibold",
-              )}
-            >
-              {x.marginPct}%
-            </span>
-          ),
+          render: (x) => <MarginPill pct={x.marginPct} />,
         },
       ]}
     />

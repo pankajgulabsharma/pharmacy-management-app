@@ -34,6 +34,7 @@ import {
 } from "@medicare/domain/medicines/schedule";
 import { downloadText } from "@/lib/csv";
 import { useState } from "react";
+import { RankBadge } from "@/components/common/RankBadge";
 import { ReportCard, ReportTable, ShareBar } from "./ReportTable";
 import { DailyChart } from "./DailyChart";
 import { SalesInsightsCard } from "./SalesInsightsCard";
@@ -179,25 +180,7 @@ export function SalesTab({
               key: "rank",
               label: "#",
               width: "w-[48px]",
-              render: (m) => {
-                const i = r.topMedicines.indexOf(m);
-                return (
-                  <span
-                    className={cn(
-                      "inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold tabular-nums",
-                      i === 0
-                        ? "bg-amber-400/25 text-amber-700 dark:text-amber-300"
-                        : i === 1
-                          ? "bg-slate-400/25 text-slate-700 dark:text-slate-300"
-                          : i === 2
-                            ? "bg-orange-500/20 text-orange-700 dark:text-orange-300"
-                            : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {i + 1}
-                  </span>
-                );
-              },
+              render: (m) => <RankBadge rank={r.topMedicines.indexOf(m) + 1} />,
             },
             {
               key: "name",

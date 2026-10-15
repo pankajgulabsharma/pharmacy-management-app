@@ -129,15 +129,19 @@ describe("what to order", () => {
     });
   });
 
-  it("as text for WhatsApp", () => {
+  it("as a WhatsApp message for the distributor", () => {
     const t = orderText(
       [{ name: "Dolo 650 Tablet", orderPacks: 20, unit: "STP" }] as never,
-      "Shree Sai Medical",
+      { name: "Shree Sai Medical" },
       NOW,
     );
-    expect(t).toMatch(
-      /^Order — Shree Sai Medical — 15 Oct 2026\n1\. Dolo 650 Tablet — 20 STP$/,
-    );
+    expect(t.split("\n").slice(0, 3)).toEqual([
+      "🛒 *PURCHASE ORDER*",
+      "🏥 *SHREE SAI MEDICAL*",
+      "📅 15 Oct 2026",
+    ]);
+    expect(t).toContain("1️⃣ *Dolo 650 Tablet* — 20 STP");
+    expect(t).toContain("📦 *Total items: 1*");
   });
 });
 

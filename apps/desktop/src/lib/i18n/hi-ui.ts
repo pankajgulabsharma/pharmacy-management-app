@@ -1125,4 +1125,5 @@ export const HI_UI: Record<string, string> = {
     "{{n}} लाइनें जुड़ीं — बैच, एक्सपायरी और रेट जाँचें, फिर सेव करें",
   "No “item name” column found": "“item name” कॉलम नहीं मिला",
   "No “qty” column found": "“qty” कॉलम नहीं मिला",
+  "Order for WhatsApp": "WhatsApp के लिए ऑर्डर",
 };

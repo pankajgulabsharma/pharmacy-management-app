@@ -89,10 +89,13 @@ describe("refill reminders", () => {
   });
 
   it("one WhatsApp message per customer", () => {
-    expect(
-      refillMessage("Ramesh", ["Telma 40", "Glycomet 500"], "Shree Sai"),
-    ).toBe(
-      "Namaste Ramesh ji,\nAapki yeh dawai khatam hone wali hogi:\n• Telma 40\n• Glycomet 500\nShree Sai par available hai — aap aa kar le sakte hain ya reply karke mangwa sakte hain.",
-    );
+    const text = refillMessage("Ramesh", ["Telma 40", "Glycomet 500"], {
+      name: "Shree Sai",
+      phone: "02225401234",
+    });
+    expect(text).toContain("🙏 Namaste *Ramesh* ji,");
+    expect(text).toContain("   ▪️ *Telma 40*\n   ▪️ *Glycomet 500*");
+    expect(text).toContain("✅ *Shree Sai* par available hai.");
+    expect(text.endsWith("📞 02225401234")).toBe(true);
   });
 });

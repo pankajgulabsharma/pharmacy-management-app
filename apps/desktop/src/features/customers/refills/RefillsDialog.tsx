@@ -34,7 +34,7 @@ function when(r: RefillDue) {
 export function RefillsDialog({ onClose }: { onClose: () => void }) {
   const id = useId();
   const { due, markDone } = useRefills();
-  const shopName = useSettingsStore((s) => s.shop.name);
+  const shop = useSettingsStore((s) => s.shop);
   const groups = useMemo(() => {
     const by = new Map<string, RefillDue[]>();
     for (const r of due)
@@ -51,7 +51,7 @@ export function RefillsDialog({ onClose }: { onClose: () => void }) {
         refillMessage(
           items[0].customerName,
           items.map((r) => r.medicineName),
-          shopName,
+          shop,
         ),
       ),
       "_blank",

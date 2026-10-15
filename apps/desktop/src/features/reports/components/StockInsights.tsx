@@ -19,6 +19,9 @@ import { downloadText, toCsv } from "@/lib/csv";
 import { tr } from "@/lib/i18n";
 import { useVelocity } from "../hooks/useVelocity";
 import { ReportTable } from "./ReportTable";
+import { ModalShell } from "@/components/common/ModalShell";
+import { DialogCloseButton } from "@/components/common/DialogCloseButton";
+import { WhatsAppPreview } from "@/components/common/WhatsAppPreview";
 
 const medicinesText = (n: number) =>
   n === 1 ? tr("1 medicine") : tr("{{n}} medicines", { n });
@@ -206,7 +209,7 @@ export function OrderListCard() {
   const medicines = useMedicineStore((s) => s.medicines);
   const batches = useInventoryStore((s) => s.batches);
   const purchases = usePurchaseStore((s) => s.purchases);
-  const shopName = useSettingsStore((s) => s.shop.name);
+  const shop = useSettingsStore((s) => s.shop);
   const v = useVelocity(Number(basis) as VelocityWindow);
   const r = useMemo(
     () =>
@@ -219,11 +222,13 @@ export function OrderListCard() {
     [medicines, batches, purchases, v.items, basis, cover],
   );
 
-  const copy = async () => {
-    if (!r?.rows.length) return;
+  // See the message as WhatsApp will show it, then copy
+  const [preview, setPreview] = useState<string | null>(null);
+  const copy = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(orderText(r.rows, shopName));
+      await navigator.clipboard.writeText(text);
       toast.success(tr("Order copied — paste it in WhatsApp"));
+      setPreview(null);
     } catch {
       toast.error(tr("Could not copy — use Export instead"));
     }
@@ -247,125 +252,152 @@ export function OrderListCard() {
     );
 
   return (
-    <ReportTable
-      title="What to order"
-      subtitle={
-        r
-          ? tr(
-              "{{what}} · about {{amount}} · enough for {{cover}} days at the speed of the last {{basis}} days",
-              {
-                what: medicinesText(r.rows.length),
-                amount: inrFromPaise(r.estCostPaise),
-                cover,
-                basis,
-              },
-            )
-          : v.error
-            ? tr(v.error)
-            : tr("Loading…")
-      }
-      rows={r?.rows.slice(0, SHOWN) ?? []}
-      getKey={(x) => x.medicineId}
-      empty={r ? "Enough stock of everything — nothing to order" : "Loading…"}
-      action={
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Segmented
-            label="Sales of the last"
-            value={basis}
-            onChange={setBasis}
-            options={[
-              ["30", "Last 30 days"],
-              ["60", "60"],
-              ["90", "90"],
-            ]}
-          />
-          <Segmented
-            label="Enough for"
-            value={cover}
-            onChange={setCover}
-            options={[
-              ["15", "For 15 days"],
-              ["30", "30"],
-              ["45", "45"],
-            ]}
-          />
-          <ActionButton
-            icon={Copy}
-            onClick={() => void copy()}
-            disabled={!r?.rows.length}
-          >
-            Copy for WhatsApp
-          </ActionButton>
-          <ActionButton
-            icon={Download}
-            onClick={exportCsv}
-            disabled={!r?.rows.length}
-          >
-            Export
-          </ActionButton>
-        </div>
-      }
-      columns={[
-        {
-          key: "name",
-          label: "Medicine",
-          render: (x) => (
-            <>
-              {x.name}
-              <span className="block text-[10px] text-muted-foreground">
-                {x.lastSupplier || x.brand}
-              </span>
-            </>
-          ),
-        },
-        {
-          key: "order",
-          label: "Order",
-          width: "w-[90px]",
-          render: (x) => (
-            <b className="text-primary tabular-nums">
-              {x.orderPacks} {x.unit}
-            </b>
-          ),
-        },
-        {
-          key: "stock",
-          label: "In stock",
-          width: "w-[110px]",
-          render: (x) => (
-            <>
-              {qty(x.inStockPacks, x.unit)}
-              <span className="block text-[10px] text-muted-foreground">
-                {x.daysLeft === null
-                  ? tr("below minimum")
-                  : x.daysLeft === 0
-                    ? tr("runs out today")
-                    : tr("~{{n}} days left", { n: x.daysLeft })}
-              </span>
-            </>
-          ),
-        },
-        {
-          key: "sold",
-          label: "Sold",
-          width: "w-[100px]",
-          render: (x) => (
-            <>
-              {qty(x.soldPacks, x.unit)}
-              <span className="block text-[10px] text-muted-foreground">
-                {tr("{{n}} a day", { n: x.perDay })}
-              </span>
-            </>
-          ),
-        },
-        {
-          key: "cost",
-          label: "Est. cost (₹)",
-          align: "right",
-          width: "w-[100px]",
-          render: (x) => (x.estCostPaise ? formatPaise(x.estCostPaise) : "—"),
-        },
-      ]}
-    />
+    <>
+      <ReportTable
+        title="What to order"
+        subtitle={
+          r
+            ? tr(
+                "{{what}} · about {{amount}} · enough for {{cover}} days at the speed of the last {{basis}} days",
+                {
+                  what: medicinesText(r.rows.length),
+                  amount: inrFromPaise(r.estCostPaise),
+                  cover,
+                  basis,
+                },
+              )
+            : v.error
+              ? tr(v.error)
+              : tr("Loading…")
+        }
+        rows={r?.rows.slice(0, SHOWN) ?? []}
+        getKey={(x) => x.medicineId}
+        empty={r ? "Enough stock of everything — nothing to order" : "Loading…"}
+        action={
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Segmented
+              label="Sales of the last"
+              value={basis}
+              onChange={setBasis}
+              options={[
+                ["30", "Last 30 days"],
+                ["60", "60"],
+                ["90", "90"],
+              ]}
+            />
+            <Segmented
+              label="Enough for"
+              value={cover}
+              onChange={setCover}
+              options={[
+                ["15", "For 15 days"],
+                ["30", "30"],
+                ["45", "45"],
+              ]}
+            />
+            <ActionButton
+              icon={Copy}
+              onClick={() =>
+                r?.rows.length && setPreview(orderText(r.rows, shop))
+              }
+              disabled={!r?.rows.length}
+            >
+              Copy for WhatsApp
+            </ActionButton>
+            <ActionButton
+              icon={Download}
+              onClick={exportCsv}
+              disabled={!r?.rows.length}
+            >
+              Export
+            </ActionButton>
+          </div>
+        }
+        columns={[
+          {
+            key: "name",
+            label: "Medicine",
+            render: (x) => (
+              <>
+                {x.name}
+                <span className="block text-[10px] text-muted-foreground">
+                  {x.lastSupplier || x.brand}
+                </span>
+              </>
+            ),
+          },
+          {
+            key: "order",
+            label: "Order",
+            width: "w-[90px]",
+            render: (x) => (
+              <b className="text-primary tabular-nums">
+                {x.orderPacks} {x.unit}
+              </b>
+            ),
+          },
+          {
+            key: "stock",
+            label: "In stock",
+            width: "w-[110px]",
+            render: (x) => (
+              <>
+                {qty(x.inStockPacks, x.unit)}
+                <span className="block text-[10px] text-muted-foreground">
+                  {x.daysLeft === null
+                    ? tr("below minimum")
+                    : x.daysLeft === 0
+                      ? tr("runs out today")
+                      : tr("~{{n}} days left", { n: x.daysLeft })}
+                </span>
+              </>
+            ),
+          },
+          {
+            key: "sold",
+            label: "Sold",
+            width: "w-[100px]",
+            render: (x) => (
+              <>
+                {qty(x.soldPacks, x.unit)}
+                <span className="block text-[10px] text-muted-foreground">
+                  {tr("{{n}} a day", { n: x.perDay })}
+                </span>
+              </>
+            ),
+          },
+          {
+            key: "cost",
+            label: "Est. cost (₹)",
+            align: "right",
+            width: "w-[100px]",
+            render: (x) => (x.estCostPaise ? formatPaise(x.estCostPaise) : "—"),
+          },
+        ]}
+      />
+      {preview !== null ? (
+        <ModalShell
+          open
+          onClose={() => setPreview(null)}
+          labelledBy="order-preview-title"
+          className="max-w-md"
+        >
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 id="order-preview-title" className="text-sm font-semibold">
+              {tr("Order for WhatsApp")}
+            </h2>
+            <DialogCloseButton onClick={() => setPreview(null)} />
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto p-3">
+            <WhatsAppPreview text={preview} />
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
+            <ActionButton icon={Copy} onClick={() => void copy(preview)}>
+              Copy for WhatsApp
+            </ActionButton>
+          </div>
+        </ModalShell>
+      ) : null}
+    </>
   );
 }

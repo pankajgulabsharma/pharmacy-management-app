@@ -14,6 +14,14 @@ import { rupeesToPaise, type Paise } from "../lib/money";
 import type { Medicine } from "../medicines/types";
 import type { Purchase } from "../purchases/types";
 import { inRange, type DateRange } from "./period";
+import {
+  WA_LINE,
+  waJoin,
+  waNumber,
+  waShopFooter,
+  waShopHeader,
+  type WhatsAppShop,
+} from "../printing/whatsapp";
 
 /** How fast each medicine sells (from the server) */
 export type SalesVelocity = {
@@ -227,21 +235,31 @@ export function orderList(
   return { rows, estCostPaise: rows.reduce((a, r) => a + r.estCostPaise, 0) };
 }
 
-/** The order as plain text — paste into WhatsApp for the distributor */
+/** The order as a WhatsApp message for the distributor */
 export function orderText(
   rows: readonly OrderRow[],
-  shopName: string,
+  shop: WhatsAppShop | string,
   date = new Date(),
 ): string {
+  const s = typeof shop === "string" ? { name: shop } : shop;
   const d = date.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
-  return [
-    `Order — ${shopName} — ${d}`,
-    ...rows.map((r, i) => `${i + 1}. ${r.name} — ${r.orderPacks} ${r.unit}`),
-  ].join("\n");
+  return waJoin([
+    "🛒 *PURCHASE ORDER*",
+    ...waShopHeader(s),
+    `📅 ${d}`,
+    WA_LINE,
+    ...rows.map(
+      (r, i) => `${waNumber(i)} *${r.name}* — ${r.orderPacks} ${r.unit}`,
+    ),
+    WA_LINE,
+    `📦 *Total items: ${rows.length}*`,
+    "🙏 Please confirm availability, rate & delivery time.",
+    ...waShopFooter(s),
+  ]);
 }
 
 /* ------------------------------------------------------------------ */

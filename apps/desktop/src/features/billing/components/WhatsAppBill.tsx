@@ -25,7 +25,7 @@ export function WhatsAppBill({
   sale: Sale;
   onDone: () => void;
 }) {
-  const shopName = useSettingsStore((s) => s.shop.name);
+  const shop = useSettingsStore((s) => s.shop);
   const footer = useSettingsStore((s) => s.billing.receiptFooter);
   // The linked customer's saved mobile; else a saved customer with
   // exactly this name (only if there is just one)
@@ -46,7 +46,7 @@ export function WhatsAppBill({
       toast.error(tr("Enter a 10-digit mobile number"));
       return;
     }
-    window.open(whatsappLink(n, billMessage(sale, shopName, footer)), "_blank");
+    window.open(whatsappLink(n, billMessage(sale, shop, footer)), "_blank");
     onDone();
   };
 

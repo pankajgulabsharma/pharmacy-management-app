@@ -210,14 +210,28 @@ describe("bill on WhatsApp", () => {
           amountPaise: 2700,
         },
       ],
-      totals: { netPaise: 2700 },
+      totals: { netPaise: 2700, discountPaise: 0 },
     } as never;
-    const text = billMessage(sale, "Sharma Medicals", "Get well soon");
-    expect(text).toContain("*Sharma Medicals*");
-    expect(text).toContain("Dolo 650 × 1 STP — ₹27.00");
-    expect(text).toContain("*Total: ₹27.00*");
+    const text = billMessage(
+      sale,
+      {
+        name: "Sharma Medicals",
+        address: "Station Road, Thane",
+        phone: "02225401234",
+      },
+      "Returnable only with this bill",
+    );
+    // WhatsApp styling: shop on top, numbered items, bold total, footer
+    expect(text).toContain("🏥 *SHARMA MEDICALS*");
+    expect(text).toContain("📍 _Station Road, Thane_");
+    expect(text).toContain("🧾 *Bill:* INV-0042");
+    expect(text).toContain("1️⃣ *Dolo 650*\n      1 STP  →  ₹27.00");
+    expect(text).toContain("💰 *TOTAL: ₹27.00*");
+    expect(text).toContain("💊 _Returnable only with this bill_ 🙏");
+    expect(text.endsWith("📞 02225401234")).toBe(true);
+    expect(text).not.toContain("\n\n\n");
     expect(whatsappLink("919876543210", text)).toMatch(
-      /^https:\/\/wa\.me\/919876543210\?text=\*Sharma/,
+      /^https:\/\/wa\.me\/919876543210\?text=%F0%9F%8F%A5/,
     );
   });
 });

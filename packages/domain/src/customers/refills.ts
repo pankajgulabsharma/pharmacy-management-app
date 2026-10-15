@@ -8,6 +8,12 @@
  */
 import type { Sale } from "../billing/types";
 import type { Customer } from "./types";
+import {
+  WA_LINE,
+  waJoin,
+  waShopFooter,
+  type WhatsAppShop,
+} from "../printing/whatsapp";
 
 export type RefillDue = {
   /** customerId|medicineId */
@@ -113,17 +119,23 @@ export function refillsDue(
   return out.sort((a, b) => a.daysLeft - b.daysLeft);
 }
 
-/** WhatsApp text for one customer (all their medicines due together) */
+/** WhatsApp message for one customer (all their medicines due together) */
 export function refillMessage(
   customerName: string,
   medicines: readonly string[],
-  shopName: string,
+  shop: WhatsAppShop | string,
 ): string {
-  const list = medicines.map((m) => `• ${m}`).join("\n");
-  return [
-    `Namaste ${customerName} ji,`,
-    `Aapki yeh dawai khatam hone wali hogi:`,
-    list,
-    `${shopName} par available hai — aap aa kar le sakte hain ya reply karke mangwa sakte hain.`,
-  ].join("\n");
+  const s = typeof shop === "string" ? { name: shop } : shop;
+  return waJoin([
+    `🙏 Namaste *${customerName}* ji,`,
+    "",
+    "💊 Aapki regular dawai khatam hone wali hai:",
+    ...medicines.map((m) => `   ▪️ *${m}*`),
+    "",
+    `✅ *${s.name}* par available hai.`,
+    "👉 Reply karein — hum aapke liye ready rakh denge.",
+    WA_LINE,
+    "_Swasth rahein, khush rahein!_ 🌿",
+    ...waShopFooter(s),
+  ]);
 }
