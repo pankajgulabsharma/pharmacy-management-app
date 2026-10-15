@@ -9,6 +9,7 @@ import { csvRecords, toCsv } from "../lib/csv";
 import { toExpiryMMYY } from "../lib/expiry";
 import { DEFAULT_GST_RATE, isGstRate } from "../lib/gst";
 import { isSchedule } from "./schedule";
+import { splitSalt } from "./strength";
 import {
   CATEGORY_LABELS,
   defaultsForCategory,
@@ -39,6 +40,7 @@ const ALIASES = {
     "content",
     "molecule",
   ],
+  strength: ["strength", "potency", "dose", "dosage"],
   brand: [
     "brand",
     "company",
@@ -200,9 +202,12 @@ export function parseMedicineCsv(text: string): CsvRowResult[] {
       .toUpperCase()
       .replace(/^SCH(EDULE)?\s*/, "");
 
+    // "Paracetamol (650mg)" in the salt column → salt + strength
+    const composition = splitSalt(get("salt"));
     const medicine: MedicineInput = {
       name,
-      salt: get("salt"),
+      salt: composition.salt,
+      strength: get("strength") || composition.strength,
       brand: get("brand") || "—",
       category,
       hsn: hsn.length >= 4 ? hsn : "3004",
@@ -265,6 +270,7 @@ export function buildSampleCsv(): string {
     {
       name: "Sample Para 500",
       salt: "Paracetamol",
+      strength: "500 mg",
       brand: "Cipla",
       category: "tablet_capsule",
       hsn: "30049099",
@@ -284,6 +290,7 @@ export function buildSampleCsv(): string {
     {
       name: "Sample Azithro 500",
       salt: "Azithromycin",
+      strength: "500 mg",
       brand: "Alembic",
       category: "tablet_capsule",
       hsn: "30042019",
@@ -303,6 +310,7 @@ export function buildSampleCsv(): string {
     {
       name: "Sample Syrup 100ml",
       salt: "Ambroxol",
+      strength: "30 mg/5 ml",
       brand: "Dr Reddy",
       category: "syrup_suspension",
       hsn: "30049099",

@@ -13,6 +13,7 @@ export function formToInput(v: MedicineFormValues): MedicineInput {
   return {
     name: v.name,
     salt: v.salt,
+    strength: v.strength,
     brand: v.brand,
     category: v.category,
     hsn: v.hsn,

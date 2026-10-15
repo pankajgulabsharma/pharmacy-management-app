@@ -59,7 +59,9 @@ describe("Medicine Library → medicine form", () => {
     expect(f).toMatchObject({
       name: "Taxim-O 200 Tablet",
       brand: "Alkem Laboratories Ltd",
-      salt: "Cefixime (200mg)",
+      // the strength gets its own field
+      salt: "Cefixime",
+      strength: "200 mg",
       unit: "STP",
       unitsPerStrip: "10",
       hsn: "3004",

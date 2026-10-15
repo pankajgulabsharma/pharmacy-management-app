@@ -38,6 +38,12 @@ import {
   libraryToForm,
   type LibraryItem,
 } from "@medicare/domain/medicines/library";
+import {
+  STRENGTH_MAX,
+  cleanStrength,
+  guessStrength,
+  splitSalt,
+} from "@medicare/domain/medicines/strength";
 import { tr } from "@/lib/i18n";
 import { useLibrarySearch } from "../library/useLibrarySearch";
 import { LibraryList } from "../library/LibraryList";
@@ -87,6 +93,8 @@ function MedicineForm({
     medicine ? medicineToForm(medicine) : (initial ?? emptyMedicineForm()),
   );
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Saved before the Strength field: offer what the name / salt says
+  const strengthGuess = values.strength.trim() ? "" : guessStrength(values);
 
   // New medicine: suggestions from the Medicine Library while typing the name
   const [fromLibrary, setFromLibrary] = useState(Boolean(initial));
@@ -269,14 +277,49 @@ function MedicineForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <Field label="Salt / composition" className="sm:col-span-2">
             <Input
               value={values.salt}
               onChange={(e) => setField("salt")(e.target.value)}
+              // "Paracetamol (650mg)" → salt + strength
+              onBlur={() => {
+                if (!values.salt.includes("(")) return;
+                const c = splitSalt(values.salt);
+                setField("salt")(c.salt);
+                if (!values.strength.trim() && c.strength)
+                  setField("strength")(c.strength);
+              }}
+              placeholder="Paracetamol"
               className={fieldClass}
               autoComplete="off"
             />
+          </Field>
+          <Field
+            label="Strength"
+            hint={strengthGuess ? undefined : "As on the pack, e.g. 650 mg"}
+          >
+            <Input
+              value={values.strength}
+              maxLength={STRENGTH_MAX}
+              onChange={(e) => setField("strength")(e.target.value)}
+              onBlur={() =>
+                setField("strength")(cleanStrength(values.strength))
+              }
+              placeholder="650 mg"
+              className={fieldClass}
+              autoComplete="off"
+            />
+            {strengthGuess ? (
+              <button
+                type="button"
+                onClick={() => setField("strength")(strengthGuess)}
+                className="mt-1 text-[10px] font-medium text-primary hover:underline"
+                title={tr("Guessed from the name — check the pack")}
+              >
+                {tr("Use {{s}}?", { s: strengthGuess })}
+              </button>
+            ) : null}
           </Field>
           <Field label="Brand *" error={errors.brand}>
             <Input

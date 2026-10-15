@@ -24,7 +24,39 @@ const SCHEDULES: Record<string, Medicine["schedule"]> = {
   m17: "H", // Budecort
 };
 
-const RAW: Omit<Medicine, "schedule">[] = [
+/**
+ * Strength from the pack. Same salt + strength + form = substitute:
+ * m1 Paracetamol 650 and m2 Dolo 650 are; m20 (500 mg) is not.
+ * ORS and surgical spirit have none.
+ */
+const STRENGTHS: Record<string, string> = {
+  m1: "650 mg",
+  m2: "650 mg",
+  m3: "500 mg",
+  m4: "500 mg + 125 mg",
+  m5: "30 mg + 50 mg",
+  m6: "120 mg/5 ml",
+  m7: "5% w/w",
+  m8: "1% w/w",
+  m9: "40 iu/ml",
+  m10: "1 g",
+  m11: "500 mg + 250 iu",
+  m12: "40 mg",
+  m14: "0.5% w/v",
+  m15: "0.1% w/v",
+  m16: "100 mcg",
+  m17: "0.5 mg",
+  m20: "500 mg",
+  m30: "500 mg",
+  m41: "200 mg",
+  m42: "0.25 mg",
+  m43: "500 mg",
+  m44: "10 mg",
+  m45: "37.5 mg + 325 mg",
+  m46: "600 mg + 300 mg",
+};
+
+const RAW: Omit<Medicine, "schedule" | "strength">[] = [
   {
     id: "m1",
     name: "Paracetamol 650mg Tablet",
@@ -515,5 +547,6 @@ const RAW: Omit<Medicine, "schedule">[] = [
 
 export const mockMedicines: Medicine[] = RAW.map((m) => ({
   ...m,
+  strength: STRENGTHS[m.id] ?? "",
   schedule: SCHEDULES[m.id] ?? "",
 }));

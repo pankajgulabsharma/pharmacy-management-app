@@ -8,6 +8,7 @@
  */
 import { DEFAULT_GST_RATE } from "../lib/gst";
 import type { DrugSchedule } from "./schedule";
+import { splitSalt } from "./strength";
 import type { MedicineCategory, MedicineFormValues, PackUnit } from "./types";
 
 export const LIBRARY_CREDIT =
@@ -130,10 +131,13 @@ export function libraryToForm(
   base: MedicineFormValues,
 ): MedicineFormValues {
   const p = parsePack(item.pack);
+  // "Paracetamol (650mg)" → salt "Paracetamol", strength "650 mg"
+  const composition = splitSalt(item.salt);
   return {
     ...base,
     name: item.name.slice(0, 120),
-    salt: item.salt,
+    salt: composition.salt,
+    strength: composition.strength,
     brand: item.company,
     category: p.category,
     unit: p.unit,

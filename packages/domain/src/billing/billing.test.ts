@@ -14,6 +14,7 @@ const dolo: Medicine = {
   id: "m2",
   name: "Dolo 650",
   salt: "Paracetamol",
+  strength: "650 mg",
   brand: "Micro Labs",
   category: "tablet_capsule",
   hsn: "30049099",

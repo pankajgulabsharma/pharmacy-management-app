@@ -12,6 +12,12 @@ import type { SellableItem } from "../hooks/useBillingData";
 import { tr } from "@/lib/i18n";
 import { useLibrarySearch } from "@/features/medicines/library/useLibrarySearch";
 import { LibraryAlternatives } from "./LibraryAlternatives";
+import { useSubstitutes } from "@/features/medicines/hooks/useSubstitutes";
+import {
+  effectiveStrength,
+  substituteQuery,
+} from "@medicare/domain/medicines/strength";
+import type { Medicine } from "@medicare/domain/medicines/types";
 
 type Props = {
   results: SellableItem[];
@@ -40,6 +46,8 @@ export function SearchResultsTable({
     6,
   ).items;
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Out of stock → is the same medicine in stock under another brand?
+  const { countFor } = useSubstitutes();
 
   // Arrow keys move the highlight — keep that row on screen
   useEffect(() => {
@@ -120,6 +128,12 @@ export function SearchResultsTable({
                 active={focusedIndex === index}
                 onSelect={onSelect}
                 onHoverIndex={onHoverIndex}
+                substitutes={
+                  item.limits.maxStrip + item.limits.maxLoose > 0
+                    ? 0
+                    : countFor(item.medicine, item.medicine.id)
+                }
+                onSubstitutes={onSearch}
               />
             ))}
           </tbody>
@@ -143,12 +157,17 @@ const ResultRow = memo(function ResultRow({
   active,
   onSelect,
   onHoverIndex,
+  substitutes,
+  onSubstitutes,
 }: {
   item: SellableItem;
   index: number;
   active: boolean;
   onSelect: (item: SellableItem) => void;
   onHoverIndex: (index: number) => void;
+  /** Out of stock: substitutes in stock (same salt + strength + form) */
+  substitutes: number;
+  onSubstitutes: (q: string) => void;
 }) {
   const { medicine: m, nextBatch, limits } = item;
   const inStock = limits.maxStrip + limits.maxLoose > 0;
@@ -172,7 +191,7 @@ const ResultRow = memo(function ResultRow({
           {m.name} <ScheduleBadge schedule={m.schedule} />
         </p>
         <p className="text-[10px] text-muted-foreground">
-          {m.salt || "—"} · {m.brand}
+          {[m.salt, m.strength].filter(Boolean).join(" · ") || "—"} · {m.brand}
         </p>
       </td>
       <td className="px-3 py-2">
@@ -197,6 +216,21 @@ const ResultRow = memo(function ResultRow({
             {tr("Out of stock")}
           </span>
         )}
+        {substitutes > 0 ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSubstitutes(substituteQuery(m.salt, strengthOf(m)));
+            }}
+            title={tr("Same salt, strength and form — click to see")}
+            className="mt-0.5 block text-[10px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+          >
+            {substitutes === 1
+              ? tr("1 substitute in stock")
+              : tr("{{n}} substitutes in stock", { n: substitutes })}
+          </button>
+        ) : null}
         {item.expiredStrip > 0 ? (
           <p className="text-[10px] text-red-500/80">
             {item.expiredStrip} expired — not sold
@@ -212,3 +246,6 @@ const ResultRow = memo(function ResultRow({
     </tr>
   );
 });
+
+/** Saved strength, else what the name says ("Dolo 650" → 650 mg) */
+const strengthOf = (m: Medicine) => effectiveStrength(m);

@@ -3,6 +3,7 @@
  * the server, so both always store exactly the same thing.
  */
 import { isSchedule } from "./schedule";
+import { cleanStrength } from "./strength";
 import { DEFAULT_GST_RATE, isGstRate } from "../lib/gst";
 import { cleanCode, cleanText } from "../lib/sanitize";
 import {
@@ -31,6 +32,7 @@ export function cleanMedicineInput(input: MedicineInput): MedicineInput {
   return {
     name: cleanText(input.name, 120),
     salt: cleanText(input.salt, 160),
+    strength: cleanStrength(cleanText(input.strength ?? "", 60)),
     brand: cleanText(input.brand, 80),
     category: input.category,
     hsn: input.hsn.replace(/\D/g, "").slice(0, 8),

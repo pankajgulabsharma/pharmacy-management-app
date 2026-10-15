@@ -1,0 +1,1 @@
+ALTER TABLE `medicines` ADD `strength` text DEFAULT '' NOT NULL;

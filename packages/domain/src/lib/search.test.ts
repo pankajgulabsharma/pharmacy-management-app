@@ -7,6 +7,7 @@ const med = (name: string, salt: string, barcode = ""): Medicine => ({
   id: name,
   name,
   salt,
+  strength: "",
   brand: "Micro Labs",
   category: "tablet_capsule",
   hsn: "30049099",

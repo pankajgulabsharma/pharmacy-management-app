@@ -34,6 +34,8 @@ export const medicines = sqliteTable(
     id: id(),
     name: text("name").notNull(),
     salt: text("salt").notNull().default(""),
+    /** "650 mg", "500 mg + 125 mg" — salt + strength + form = substitute */
+    strength: text("strength").notNull().default(""),
     brand: text("brand").notNull().default(""),
     category: text("category").notNull(),
     hsn: text("hsn").notNull().default(""),

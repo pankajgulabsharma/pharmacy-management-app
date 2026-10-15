@@ -140,7 +140,7 @@ export function MedicineTable({
                       {m.name} <ScheduleBadge schedule={m.schedule} />
                     </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {m.salt || "—"}
+                      {[m.salt, m.strength].filter(Boolean).join(" · ") || "—"}
                     </p>
                   </td>
                   <td className="px-3 py-2.5 text-[10px] text-muted-foreground whitespace-nowrap">

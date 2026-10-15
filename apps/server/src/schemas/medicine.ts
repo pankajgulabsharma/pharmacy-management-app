@@ -21,6 +21,8 @@ export const medicineInputSchema = z
   .object({
     name: text(200),
     salt: text(300),
+    // Older apps don't send it yet
+    strength: text(60).default(""),
     brand: text(200),
     category: z.enum(MEDICINE_CATEGORIES),
     hsn: text(20),

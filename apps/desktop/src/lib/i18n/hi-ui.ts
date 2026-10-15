@@ -952,10 +952,6 @@ export const HI_UI: Record<string, string> = {
     "MediCare से पहले का बकाया (पुराना सॉफ़्टवेयर / खाता बही)",
   "Tip: after importing, check Reports → Stock (value) and the Customers / Suppliers totals against the old software's closing figures of the same day.":
     "सलाह: इम्पोर्ट के बाद Reports → Stock (मूल्य) और ग्राहक / सप्लायर के कुल को पुराने सॉफ़्टवेयर के उसी दिन के क्लोज़िंग आँकड़ों से मिलाएँ।",
-  "Green = the same salt is in your stock (a substitute). Click it to see those medicines.":
-    "हरा = यही साल्ट आपके स्टॉक में है (सब्स्टीट्यूट)। क्लिक करें — वो दवाइयाँ दिखेंगी।",
-  "None of these salts are in your stock — order it from your supplier.":
-    "इनमें से कोई साल्ट आपके स्टॉक में नहीं — सप्लायर से मँगवाएँ।",
   "Show {{n}} in stock": "स्टॉक में {{n}} देखें",
   "+ round-off on bills {{r}} = {{b}}": "+ बिलों का राउंड-ऑफ़ {{r}} = {{b}}",
   "Expand all": "सब खोलें",
@@ -1003,4 +999,16 @@ export const HI_UI: Record<string, string> = {
     "नए ग्राहकों की डिफ़ॉल्ट उधार सीमा (₹)",
   "Filled in for every new customer — change it per customer anytime. Empty or 0 = no limit":
     "हर नए ग्राहक में भरी जाएगी — किसी भी ग्राहक के लिए कभी भी बदलें। खाली या 0 = कोई सीमा नहीं",
+  "Green = a substitute is in stock (same salt, strength and form). Click it to see those medicines.":
+    "हरा = विकल्प स्टॉक में है (वही साल्ट, वही स्ट्रेंथ, वही फ़ॉर्म)। क्लिक करके वो दवाइयाँ देखें।",
+  "No substitute in stock (same salt, strength and form) — order it from your supplier.":
+    "स्टॉक में कोई विकल्प नहीं (वही साल्ट, स्ट्रेंथ और फ़ॉर्म) — सप्लायर से मँगवाएँ।",
+  Strength: "स्ट्रेंथ",
+  "As on the pack, e.g. 650 mg": "पैक पर जैसा लिखा, जैसे 650 mg",
+  "Guessed from the name — check the pack": "नाम से अंदाज़ा — पैक पर जाँचें",
+  "Use {{s}}?": "{{s}} रखें?",
+  "{{n}} substitutes in stock": "{{n}} विकल्प स्टॉक में",
+  "1 substitute in stock": "1 विकल्प स्टॉक में",
+  "Same salt, strength and form — click to see":
+    "वही साल्ट, स्ट्रेंथ और फ़ॉर्म — देखने के लिए क्लिक करें",
 };

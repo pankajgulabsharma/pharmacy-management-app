@@ -78,6 +78,13 @@
       "when": 1792073642319,
       "tag": "0010_patient_address",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1792095607723,
+      "tag": "0011_medicine_strength",
+      "breakpoints": true
     }
   ]
 }

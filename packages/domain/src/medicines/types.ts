@@ -24,6 +24,11 @@ export type Medicine = {
   id: string;
   name: string;
   salt: string;
+  /**
+   * "650 mg", "250 mg/5 ml", "500 mg + 125 mg" ("" = not filled yet).
+   * Same salt + strength + form = a substitute — see strength.ts.
+   */
+  strength: string;
   brand: string;
   category: MedicineCategory;
   hsn: string;
@@ -83,6 +88,7 @@ export type MedicineInput = Omit<Medicine, "id">;
 export type MedicineFormValues = {
   name: string;
   salt: string;
+  strength: string;
   brand: string;
   category: MedicineCategory;
   hsn: string;
@@ -192,6 +198,7 @@ export function defaultsForPackUnit(unit: PackUnit): {
 export const emptyMedicineForm = (): MedicineFormValues => ({
   name: "",
   salt: "",
+  strength: "",
   brand: "",
   category: "tablet_capsule",
   hsn: "",
@@ -212,6 +219,7 @@ export function medicineToForm(m: Medicine): MedicineFormValues {
   return {
     name: m.name,
     salt: m.salt,
+    strength: m.strength ?? "",
     brand: m.brand,
     category: m.category,
     hsn: m.hsn,

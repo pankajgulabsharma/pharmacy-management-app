@@ -58,6 +58,22 @@ describe("add a medicine", () => {
     expect((await get(`/api/medicines/${saved.id}`)).json().mrp).toBe(119.5);
   });
 
+  it("keeps the strength, written one way (older apps may leave it out)", async () => {
+    const withStrength = (
+      await send("POST", "/api/medicines", {
+        ...valid,
+        name: "Azee 500",
+        strength: "500MG",
+      })
+    ).json();
+    expect(withStrength.strength).toBe("500 mg");
+    // `valid` has no strength at all — an app from before this field
+    const old = (
+      await send("POST", "/api/medicines", { ...valid, name: "Azee 250" })
+    ).json();
+    expect(old.strength).toBe("");
+  });
+
   it("applies the shop's rules (sale price capped at MRP, text trimmed)", async () => {
     const saved = (
       await send("POST", "/api/medicines", {
