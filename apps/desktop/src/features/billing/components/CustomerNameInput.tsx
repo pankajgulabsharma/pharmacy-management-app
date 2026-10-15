@@ -1,6 +1,9 @@
 import { useDeferredValue, useId, useMemo, useState, type Ref } from "react";
 import { UserCheck } from "lucide-react";
-import type { Customer } from "@medicare/domain/customers/types";
+import {
+  CUSTOMER_LIMITS,
+  type Customer,
+} from "@medicare/domain/customers/types";
 import { searchCustomers } from "@medicare/domain/customers/search";
 import { useCustomerStore } from "@/features/customers/store/useCustomerStore";
 import { Input } from "@/components/ui/input";
@@ -61,6 +64,7 @@ export function CustomerNameInput({
       <Input
         ref={inputRef}
         value={value}
+        maxLength={CUSTOMER_LIMITS.nameMax}
         placeholder={tr("Walk-in customer (F3)")}
         onChange={(e) => {
           onChange(e.target.value);

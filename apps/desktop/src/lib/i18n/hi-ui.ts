@@ -987,4 +987,11 @@ export const HI_UI: Record<string, string> = {
   "Empty batches": "खाली बैच",
   Empty: "खाली",
   "Empty batch": "खाली बैच",
+  "Save as customer (optional)": "ग्राहक के रूप में सेव करें (ज़रूरी नहीं)",
+  "Optional — keeps their mobile, address and udhaar for next time":
+    "ज़रूरी नहीं — अगली बार के लिए मोबाइल, पता और उधार याद रहेगा",
+  "At least 2 letters, up to 60": "कम से कम 2 अक्षर, अधिकतम 60",
+  "Up to 160 letters — printed in the H1 / NDPS register":
+    "अधिकतम 160 अक्षर — H1 / NDPS रजिस्टर में छपता है",
+  "Up to 200 letters": "अधिकतम 200 अक्षर",
 };

@@ -3,7 +3,12 @@ import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerNameInput } from "./CustomerNameInput";
 import { useTranslation } from "react-i18next";
 import { toGstinInput } from "@medicare/domain/lib/gstin";
-import { UserRound, Stethoscope, MonitorSmartphone } from "lucide-react";
+import {
+  UserRound,
+  UserPlus,
+  Stethoscope,
+  MonitorSmartphone,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
@@ -27,6 +32,8 @@ type Props = {
   onCustomerPhoneChange: (v: string) => void;
   /** Mobile / address can't be saved to the customer (e.g. 9 digits) */
   customerError: string | null;
+  /** Typed name isn't a saved customer → offer to save one (optional) */
+  onSaveCustomer: () => void;
   prescribedBy: string;
   onPrescribedByChange: (v: string) => void;
   counter: string;
@@ -65,6 +72,7 @@ export function BillingContextBar({
   customerPhone,
   onCustomerPhoneChange,
   customerError,
+  onSaveCustomer,
   prescribedBy,
   onPrescribedByChange,
   counter,
@@ -78,6 +86,7 @@ export function BillingContextBar({
   const { t } = useTranslation();
   const doctorListId = useId();
   const showGstin = canB2b && gstin !== null;
+  const offerSave = !linked && customerName.trim().length >= 2;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0 p-0.5">
@@ -120,6 +129,20 @@ export function BillingContextBar({
             </button>
           ) : null}
         </div>
+        {/* A new name → saving them as a customer is optional */}
+        {offerSave ? (
+          <button
+            type="button"
+            onClick={onSaveCustomer}
+            title={tr(
+              "Optional — keeps their mobile, address and udhaar for next time",
+            )}
+            className="-mt-1 self-start inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+          >
+            <UserPlus className="h-3 w-3" />
+            {tr("Save as customer (optional)")}
+          </button>
+        ) : null}
         {/* Saved customer: mobile + address from their account — a change
             here is saved to the account with the bill */}
         {linked || needsPatientAddress ? (

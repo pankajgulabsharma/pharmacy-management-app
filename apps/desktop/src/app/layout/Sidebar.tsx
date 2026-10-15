@@ -69,7 +69,7 @@ export function Sidebar() {
 
       {/* The shop — same details as printed on every bill */}
       {open ? (
-        <div className="shrink-0 mx-3 mb-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[10.5px] leading-snug text-slate-400">
+        <div className="shrink-0 mx-3 mt-3 mb-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 text-[10.5px] leading-snug text-slate-400">
           <p
             className="flex gap-2 text-[12px] font-semibold text-white"
             title={shopName}
@@ -101,7 +101,7 @@ export function Sidebar() {
       ) : null}
 
       {/* Help */}
-      <div className="shrink-0 border-t border-white/[0.06] px-3 py-3">
+      <div className="shrink-0 border-t border-white/[0.06] px-3 py-1.5">
         <button
           type="button"
           onClick={() =>
@@ -117,7 +117,7 @@ export function Sidebar() {
           className={cn(
             "group w-full flex items-center rounded-lg text-[12.5px] text-slate-400 transition-colors",
             "hover:bg-white/[0.05] hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60",
-            open ? "h-9 gap-3 px-3" : "h-10 justify-center",
+            open ? "h-8 gap-3 px-3" : "h-9 justify-center",
           )}
         >
           <Keyboard className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />

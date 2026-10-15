@@ -36,6 +36,8 @@ import { ReceiptDialog } from "../components/ReceiptDialog";
 import { HeldBillsDialog } from "../components/HeldBillsDialog";
 import { BillTabs } from "../components/BillTabs";
 import { useBillCustomer } from "../hooks/useBillCustomer";
+import type { Customer } from "@medicare/domain/customers/types";
+import { CustomerFormDialog } from "@/features/customers/components/CustomerFormDialog";
 import {
   MAX_BILL_TABS,
   useBillTabsStore,
@@ -131,6 +133,22 @@ export default function BillingPage() {
     autoPrint: boolean;
   } | null>(null);
   const [heldOpen, setHeldOpen] = useState(false);
+  /** "Save as customer" — a walk-in's name (and address) → new account */
+  const [saveCustomerOpen, setSaveCustomerOpen] = useState(false);
+  /** A new / picked saved customer → link it to this bill */
+  const linkCustomer = useCallback(
+    (c: Customer) =>
+      updateDraft(draft.id, {
+        customerName: c.name,
+        customerId: c.id,
+        // their saved mobile / address show until edited here
+        customerPhone: undefined,
+        patientAddress: undefined,
+        // ready if this bill goes on udhaar
+        udhaarCustomerId: c.id,
+      }),
+    [updateDraft, draft.id],
+  );
   /** Line to scroll to in the bill table (just added / increased) */
   const [focus, setFocus] = useState<{ lineId: string; key: number } | null>(
     null,
@@ -766,17 +784,8 @@ export default function BillingPage() {
               updateDraft(draft.id, { customerPhone: v })
             }
             customerError={billCustomer.error}
-            onPickCustomer={(c) =>
-              updateDraft(draft.id, {
-                customerName: c.name,
-                customerId: c.id,
-                // their saved mobile / address show until edited here
-                customerPhone: undefined,
-                patientAddress: undefined,
-                // ready if this bill goes on udhaar
-                udhaarCustomerId: c.id,
-              })
-            }
+            onSaveCustomer={() => setSaveCustomerOpen(true)}
+            onPickCustomer={linkCustomer}
             prescribedBy={doctor}
             onPrescribedByChange={setDoctor}
             gstin={customerGstin}
@@ -916,6 +925,15 @@ export default function BillingPage() {
           />
         </div>
       </div>
+
+      <CustomerFormDialog
+        open={saveCustomerOpen}
+        customer={null}
+        initialName={customerName.trim()}
+        initial={{ address: (draft.patientAddress ?? "").trim() }}
+        onClose={() => setSaveCustomerOpen(false)}
+        onSaved={linkCustomer}
+      />
 
       <HeldBillsDialog
         open={heldOpen}

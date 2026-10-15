@@ -27,6 +27,8 @@ type Props = {
   customer: Customer | null;
   /** Pre-fill the name (quick add from billing) */
   initialName?: string;
+  /** Pre-fill mobile / address too (save a walk-in from the bill) */
+  initial?: Partial<Pick<CustomerForm, "phone" | "address">>;
   onClose: () => void;
   onSaved?: (c: Customer) => void;
 };
@@ -45,6 +47,7 @@ export function CustomerFormDialog({
   open,
   customer,
   initialName,
+  initial,
   onClose,
   onSaved,
 }: Props) {
@@ -54,6 +57,7 @@ export function CustomerFormDialog({
       key={customer?.id ?? "new"}
       customer={customer}
       initialName={initialName}
+      initial={initial}
       onClose={onClose}
       onSaved={onSaved}
     />
@@ -63,6 +67,7 @@ export function CustomerFormDialog({
 function FormBody({
   customer,
   initialName,
+  initial,
   onClose,
   onSaved,
 }: Omit<Props, "open">) {
@@ -85,7 +90,7 @@ function FormBody({
           notes: customer.notes,
           status: customer.status,
         }
-      : empty(initialName),
+      : { ...empty(initialName), ...initial },
   );
   const [submitted, setSubmitted] = useState(false);
   const otherPhones = customers
@@ -146,6 +151,8 @@ function FormBody({
             label="Name *"
             htmlFor={`${id}-n`}
             error={errors.name}
+            hint={`At least 2 letters, up to ${L.nameMax}`}
+            count={{ value: f.name, max: L.nameMax }}
             className="sm:col-span-2"
           >
             <Input
@@ -214,6 +221,8 @@ function FormBody({
           <FormField
             label="Address"
             htmlFor={`${id}-a`}
+            hint={`Up to ${L.addressMax} letters — printed in the H1 / NDPS register`}
+            count={{ value: f.address, max: L.addressMax }}
             className="sm:col-span-2"
           >
             <Input
@@ -227,6 +236,8 @@ function FormBody({
           <FormField
             label="Notes"
             htmlFor={`${id}-x`}
+            hint={`Up to ${L.notesMax} letters`}
+            count={{ value: f.notes, max: L.notesMax }}
             className="sm:col-span-2"
           >
             <Input
