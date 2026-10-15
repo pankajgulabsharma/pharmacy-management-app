@@ -21,9 +21,12 @@ export function applyShopPatch(p: ShopPatch) {
       ).filter((m) => !gone.has(m.batchId)),
     }));
   }
-  if (p.purchases || p.purchaseReturns) {
+  if (p.purchases || p.purchaseReturns || p.purchasesRemoved?.length) {
+    const gone = new Set(p.purchasesRemoved ?? []);
     usePurchaseStore.setState((s) => ({
-      purchases: upsertById(s.purchases, p.purchases),
+      purchases: upsertById(s.purchases, p.purchases).filter(
+        (x) => !gone.has(x.id),
+      ),
       returns: upsertById(s.returns, p.purchaseReturns),
     }));
   }
@@ -35,9 +38,12 @@ export function applyShopPatch(p: ShopPatch) {
       held: upsertById(s.held, p.held).filter((h) => !gone.has(h.id)),
     }));
   }
-  if (p.customers || p.customerPayments) {
+  if (p.customers || p.customerPayments || p.customersRemoved?.length) {
+    const gone = new Set(p.customersRemoved ?? []);
     useCustomerStore.setState((s) => ({
-      customers: upsertById(s.customers, p.customers),
+      customers: upsertById(s.customers, p.customers).filter(
+        (c) => !gone.has(c.id),
+      ),
       payments: upsertById(s.payments, p.customerPayments),
     }));
   }

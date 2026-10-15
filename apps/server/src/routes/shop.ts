@@ -285,6 +285,15 @@ export function shopRoutes(
       ),
     ),
   );
+  // A wrong file can be taken back out while none of them is used yet
+  for (const kind of ["customers", "suppliers"] as const) {
+    app.get(`/api/${kind}/imports`, async () => ({
+      imports: migrate.listPartyImports(raw, kind),
+    }));
+    app.post<Params>(`/api/${kind}/imports/:id/undo`, async (req) =>
+      write(() => migrate.undoPartyImport(raw, kind, req.params.id)),
+    );
+  }
   app.post<Params>("/api/suppliers/:id/opening", async (req, reply) =>
     reply
       .code(201)

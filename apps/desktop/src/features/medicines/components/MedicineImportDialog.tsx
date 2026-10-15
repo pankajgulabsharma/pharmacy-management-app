@@ -9,7 +9,7 @@ import {
   type ImportRow,
 } from "@medicare/domain/medicines/csv";
 import { downloadText } from "@/lib/csv";
-import { RecentImports } from "./RecentImports";
+import { RecentImports } from "@/features/imports/RecentImports";
 
 type Props = {
   open: boolean;
@@ -144,7 +144,7 @@ function ImportForm({ onClose, onImport }: Omit<Props, "open">) {
         </div>
 
         {/* A wrong file can be taken back out (while nothing from it is used) */}
-        {!results ? <RecentImports /> : null}
+        {!results ? <RecentImports kind="medicines" /> : null}
 
         {fileError ? (
           <p className="text-[11px] text-red-500" role="alert">

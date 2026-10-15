@@ -53,7 +53,7 @@ import { saveError, useSaveMedicine } from "../hooks/useSaveMedicine";
 import { MedicineTable } from "../components/MedicineTable";
 import { MedicineFormDialog } from "../components/MedicineFormDialog";
 import { MedicineImportDialog } from "../components/MedicineImportDialog";
-import { useUndoImport } from "../hooks/useUndoImport";
+import { useUndoImport } from "@/features/imports/useUndoImport";
 import type { ImportRow } from "@medicare/domain/medicines/csv";
 import { BarcodeLabelDialog } from "../components/BarcodeLabelDialog";
 import { MedicineDeleteDialog } from "../components/MedicineDeleteDialog";
@@ -100,7 +100,7 @@ export default function MedicinesPage() {
   const items = useMedicinesWithStock();
   const removeMedicine = useMedicineStore((s) => s.removeMedicine);
   const importMedicines = useMedicineStore((s) => s.importMedicines);
-  const undoImport = useUndoImport();
+  const undoImport = useUndoImport("medicines");
 
   // Dashboard links like /medicines?q=dolo or /medicines?new=1
   const intent = useUrlIntent();
@@ -265,10 +265,13 @@ export default function MedicinesPage() {
             {
               ...(r.existing
                 ? {
-                    description: tr(
-                      "{{n}} were already in the list (not duplicated)",
-                      { n: r.existing },
-                    ),
+                    description:
+                      r.existing === 1
+                        ? tr("1 was already in the list (not duplicated)")
+                        : tr(
+                            "{{n}} were already in the list (not duplicated)",
+                            { n: r.existing },
+                          ),
                   }
                 : {}),
               // Wrong file? One click takes it back out

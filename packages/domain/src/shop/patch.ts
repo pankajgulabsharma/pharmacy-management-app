@@ -14,12 +14,16 @@ export type ShopPatch = {
   batchesRemoved?: string[];
   movements?: StockMovement[];
   purchases?: Purchase[];
+  /** Deleted outright (an undone supplier import's old dues) */
+  purchasesRemoved?: string[];
   purchaseReturns?: PurchaseReturn[];
   sales?: Sale[];
   saleReturns?: SaleReturn[];
   held?: HeldBill[];
   heldRemoved?: string[];
   customers?: Customer[];
+  /** Deleted outright (an undone customer import) */
+  customersRemoved?: string[];
   customerPayments?: CustomerPayment[];
 };
 

@@ -1016,12 +1016,32 @@ export const HI_UI: Record<string, string> = {
     "{{n}} नई दवाइयाँ और उनका स्टॉक हटाया गया",
   "Could not undo the import": "इम्पोर्ट वापस नहीं हो सका",
   "Recent imports": "हाल के इम्पोर्ट",
-  "{{rows}} rows · {{created}} new · {{batches}} batches":
-    "{{rows}} पंक्तियाँ · {{created}} नई · {{batches}} बैच",
   Undone: "वापस लिया",
   Undo: "वापस लें",
   "Undo this import?": "यह इम्पोर्ट वापस लें?",
   "The {{created}} new medicines it added are deleted, and the opening stock it added is taken out. Medicines that were already in your list stay. Not possible once anything from it is sold, purchased or adjusted.":
     "इससे जुड़ी {{created}} नई दवाइयाँ हटेंगी और इसका जोड़ा ओपनिंग स्टॉक निकाला जाएगा। पहले से मौजूद दवाइयाँ रहेंगी। इसमें से कुछ भी बिका, खरीदा या एडजस्ट हुआ हो तो यह नहीं होगा।",
   "Undo import": "इम्पोर्ट वापस लें",
+  "{{n}} customers and their old udhaar removed":
+    "{{n}} ग्राहक और उनका पुराना उधार हटाया गया",
+  "{{n}} suppliers and their old dues removed":
+    "{{n}} सप्लायर और उनका पुराना बकाया हटाया गया",
+  "The {{created}} customers it added are deleted, with their old udhaar. Customers who were already here stay. Not possible once one of them has a bill or a payment.":
+    "इससे जुड़े {{created}} ग्राहक अपने पुराने उधार के साथ हटेंगे। पहले से मौजूद ग्राहक रहेंगे। इनमें से किसी का बिल या भुगतान हो चुका हो तो यह नहीं होगा।",
+  "The {{created}} suppliers it added are deleted, with their old dues. Suppliers who were already here stay. Not possible once one of them has a purchase, a return or a payment.":
+    "इससे जुड़े {{created}} सप्लायर अपने पुराने बकाये के साथ हटेंगे। पहले से मौजूद सप्लायर रहेंगे। इनमें से किसी की खरीद, रिटर्न या भुगतान हो चुका हो तो यह नहीं होगा।",
+  "Nothing new": "कुछ नया नहीं",
+  "{{rows}} · {{created}} new · {{batches}} batches":
+    "{{rows}} · {{created}} नई · {{batches}} बैच",
+  "{{rows}} · {{created}} new · old udhaar ₹{{amount}}":
+    "{{rows}} · {{created}} नए · पुराना उधार ₹{{amount}}",
+  "{{rows}} · {{created}} new · old dues ₹{{amount}}":
+    "{{rows}} · {{created}} नए · पुराना बकाया ₹{{amount}}",
+  "1 row": "1 पंक्ति",
+  "{{n}} rows": "{{n}} पंक्तियाँ",
+  "1 new medicine and its stock removed": "1 नई दवा और उसका स्टॉक हटाया गया",
+  "1 customer and the old udhaar removed": "1 ग्राहक और पुराना उधार हटाया गया",
+  "1 supplier and the old dues removed": "1 सप्लायर और पुराना बकाया हटाया गया",
+  "1 was already in the list (not duplicated)":
+    "1 पहले से सूची में था (दोबारा नहीं जोड़ा)",
 };

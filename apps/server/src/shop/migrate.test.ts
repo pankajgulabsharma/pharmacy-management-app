@@ -124,3 +124,146 @@ describe("switching from other software", () => {
     expect(again.statusCode).toBe(400);
   });
 });
+
+describe("undo a customer / supplier import (a wrong file)", () => {
+  const cust = (name: string, phone: string, openingBalancePaise = 0) => ({
+    name,
+    phone,
+    address: "",
+    creditLimitPaise: 0,
+    openingBalancePaise,
+    notes: "",
+  });
+  const sup = (name: string, gstin: string, openingDuePaise = 0) => ({
+    name,
+    gstin,
+    drugLicenseNo: "",
+    contactPerson: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    creditDays: 30,
+    openingDuePaise,
+  });
+  const count = (table: string) =>
+    (
+      database.raw.prepare(`SELECT count(*) n FROM ${table}`).get() as {
+        n: number;
+      }
+    ).n;
+
+  it("customers: the new ones go (with their old udhaar); the ones already here stay", async () => {
+    const before = count("customers");
+    const r = (
+      await call("POST", "/api/customers/import", {
+        rows: [
+          cust("Wrong One", "9811100001", 500_00),
+          cust("Wrong Two", "9811100002"),
+          // already in the demo shop → skipped, never removed by undo
+          cust("Ramesh Sharma", "9820011223"),
+        ],
+      })
+    ).json();
+    expect(r.result).toMatchObject({ created: 2, existing: 1 });
+    expect(count("customers")).toBe(before + 2);
+    const list = (await call("GET", "/api/customers/imports")).json().imports;
+    expect(list[0]).toMatchObject({
+      id: r.result.importId,
+      created: 2,
+      openingPaise: 500_00,
+      undoneAt: "",
+    });
+
+    const undo = await call(
+      "POST",
+      `/api/customers/imports/${r.result.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(200);
+    expect(undo.json().patch.customersRemoved).toHaveLength(2);
+    expect(count("customers")).toBe(before);
+    expect(
+      (
+        await call("POST", `/api/customers/imports/${r.result.importId}/undo`)
+      ).json().error,
+    ).toMatch(/already undone/);
+  });
+
+  it("customers: refused once one has a payment — nothing changes", async () => {
+    const r = (
+      await call("POST", "/api/customers/import", {
+        rows: [cust("Paid Already", "9811100003", 300_00)],
+      })
+    ).json();
+    const id = r.patch.customers[0].id;
+    await call("POST", "/api/customer-payments", {
+      customerId: id,
+      amount: "100",
+      method: "cash",
+      reference: "",
+      note: "",
+    });
+    const before = count("customers");
+    const undo = await call(
+      "POST",
+      `/api/customers/imports/${r.result.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(400);
+    expect(undo.json().error).toMatch(/Paid Already already used/);
+    expect(count("customers")).toBe(before);
+  });
+
+  it("suppliers: the new ones and their old dues go", async () => {
+    const before = [count("suppliers"), count("purchases")];
+    const r = (
+      await call("POST", "/api/suppliers/import", {
+        rows: [
+          sup("Wrong Supplier A", "27AABCW1234A1ZX", 12_000_00),
+          sup("Wrong Supplier B", "27AABCP5678B1ZE"),
+        ],
+      })
+    ).json();
+    expect(r.result).toMatchObject({ created: 2, openingPaise: 12_000_00 });
+    expect(count("purchases")).toBe(before[1] + 1);
+    const undo = await call(
+      "POST",
+      `/api/suppliers/imports/${r.result.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(200);
+    expect(undo.json().patch.purchasesRemoved).toHaveLength(1);
+    expect([count("suppliers"), count("purchases")]).toEqual(before);
+  });
+
+  it("suppliers: refused once an old due is paid — nothing changes", async () => {
+    const r = (
+      await call("POST", "/api/suppliers/import", {
+        rows: [sup("Paid Supplier", "27AABCQ9012C1ZR", 9_000_00)],
+      })
+    ).json();
+    const due = r.patch.purchases[0];
+    await call("POST", `/api/purchases/${due.id}/payments`, {
+      amountPaise: 1_000_00,
+    });
+    const before = [count("suppliers"), count("purchases")];
+    const undo = await call(
+      "POST",
+      `/api/suppliers/imports/${r.result.importId}/undo`,
+    );
+    expect(undo.statusCode).toBe(400);
+    expect(undo.json().error).toMatch(/Paid Supplier already used/);
+    expect([count("suppliers"), count("purchases")]).toEqual(before);
+  });
+
+  it("a customer import can't be undone as a supplier one", async () => {
+    const r = (
+      await call("POST", "/api/customers/import", {
+        rows: [cust("Kind Check", "9811100009")],
+      })
+    ).json();
+    const wrong = await call(
+      "POST",
+      `/api/suppliers/imports/${r.result.importId}/undo`,
+    );
+    expect(wrong.statusCode).toBe(404);
+  });
+});

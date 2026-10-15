@@ -85,6 +85,25 @@ export const medicineImports = sqliteTable("medicine_imports", {
   undoneAt: text("undone_at").notNull().default(""),
 });
 
+/**
+ * Each customer / supplier import (switching from other software) — so a
+ * wrong file can be undone while none of those parties is used yet.
+ */
+export const partyImports = sqliteTable("party_imports", {
+  id: id(),
+  kind: text("kind", { enum: ["customers", "suppliers"] }).notNull(),
+  at: text("at").notNull(),
+  rows: integer("rows").notNull(),
+  /** JSON array — customers / suppliers this import created */
+  createdIdsJson: text("created_ids_json").notNull().default("[]"),
+  /** JSON array — old-dues entries (purchases) it created for suppliers */
+  openingIdsJson: text("opening_ids_json").notNull().default("[]"),
+  openingPaise: integer("opening_paise").notNull().default(0),
+  existingCount: integer("existing_count").notNull().default(0),
+  /** "" = in force; else when it was undone */
+  undoneAt: text("undone_at").notNull().default(""),
+});
+
 /** One batch of a medicine on the shelf (stock lives here) */
 export const batches = sqliteTable(
   "batches",

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
 import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { apiRequest } from "@/lib/api";
+import { RecentImports } from "@/features/imports/RecentImports";
+import { useUndoImport } from "@/features/imports/useUndoImport";
 import { downloadText } from "@/lib/csv";
 import { tr } from "@/lib/i18n";
 import { inrFromPaise } from "@medicare/domain/lib/money";
@@ -23,6 +25,7 @@ export type PartyKind = "customers" | "suppliers";
 type ServerResult = {
   patch: ShopPatch;
   result: {
+    importId: string;
     created: number;
     existing: number;
     errors: { row: number; name: string; error: string }[];
@@ -76,6 +79,7 @@ function ImportForm({
 }) {
   const id = useId();
   const t = TEXT[kind];
+  const undoImport = useUndoImport(kind);
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
@@ -122,14 +126,23 @@ function ImportForm({
       );
       applyShopPatch(r.patch); // shows at once (other counters get it live)
       setDone(r.result);
-      toast.success(
-        tr("{{n}} added", { n: r.result.created }),
-        r.result.openingPaise
+      toast.success(tr("{{n}} added", { n: r.result.created }), {
+        ...(r.result.openingPaise
           ? {
               description: `${tr(t.balance)} ${inrFromPaise(r.result.openingPaise)}`,
             }
-          : undefined,
-      );
+          : {}),
+        // Wrong file? One click takes it back out
+        ...(r.result.created > 0
+          ? {
+              duration: 15_000,
+              action: {
+                label: tr("Undo"),
+                onClick: () => void undoImport(r.result.importId),
+              },
+            }
+          : {}),
+      });
     } catch (e) {
       toast.error(e instanceof Error ? tr(e.message) : tr("Could not import"));
     } finally {
@@ -194,6 +207,9 @@ function ImportForm({
             }}
           />
         </div>
+
+        {/* A wrong file can be taken back out (while none of them is used) */}
+        {!parsed && !done ? <RecentImports kind={kind} /> : null}
 
         {error ? (
           <p className="text-red-500" role="alert">
