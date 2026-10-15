@@ -3,16 +3,34 @@ import { AppLayout } from "@/app/layout/AppLayout";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import BillingPage from "@/features/billing/pages/BillingPage";
-import MedicinesPage from "@/features/medicines/pages/MedicinesPage";
-import InventoryPage from "@/features/inventory/pages/InventoryPage";
-import PurchasesPage from "@/features/purchases/pages/PurchasesPage";
-import SuppliersPage from "@/features/suppliers/pages/SuppliersPage";
-import ReportsPage from "@/features/reports/pages/ReportsPage";
-import SettingsPage from "@/features/settings/pages/SettingsPage";
 import NotFoundPage from "@/app/pages/NotFoundPage";
-import CustomersPage from "@/features/customers/pages/CustomersPage";
 import { RequireAuth } from "@/features/auth/components/RequireAuth";
 import { Allowed } from "@/features/auth/components/Allowed";
+import { lazyPage } from "./lazyPage";
+
+// Login, Dashboard and Billing come with the app (first screens);
+// the rest load on first use — and are preloaded once signed in.
+const CustomersPage = lazyPage(
+  () => import("@/features/customers/pages/CustomersPage"),
+);
+const SettingsPage = lazyPage(
+  () => import("@/features/settings/pages/SettingsPage"),
+);
+const ReportsPage = lazyPage(
+  () => import("@/features/reports/pages/ReportsPage"),
+);
+const SuppliersPage = lazyPage(
+  () => import("@/features/suppliers/pages/SuppliersPage"),
+);
+const PurchasesPage = lazyPage(
+  () => import("@/features/purchases/pages/PurchasesPage"),
+);
+const InventoryPage = lazyPage(
+  () => import("@/features/inventory/pages/InventoryPage"),
+);
+const MedicinesPage = lazyPage(
+  () => import("@/features/medicines/pages/MedicinesPage"),
+);
 
 export const router = createBrowserRouter([
   {

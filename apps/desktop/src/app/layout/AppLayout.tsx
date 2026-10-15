@@ -9,6 +9,7 @@ import { GlobalShortcuts } from "@/app/shortcuts/GlobalShortcuts";
 import { useServerStore } from "@/stores/useServerStore";
 import { tr } from "@/lib/i18n";
 import { KeepAliveOutlet } from "./KeepAliveOutlet";
+import { preloadPages } from "@/app/router/lazyPage";
 import { LicenseBanner } from "@/features/license/LicenseBanner";
 
 export function AppLayout() {
@@ -18,6 +19,11 @@ export function AppLayout() {
     const { connect, disconnect } = useServerStore.getState();
     connect();
     return disconnect;
+  }, []);
+  // Other screens' code, fetched in the background once the app is idle
+  useEffect(() => {
+    const t = window.setTimeout(preloadPages, 1500);
+    return () => window.clearTimeout(t);
   }, []);
   // Window / taskbar title: this shop, in this software
   const shopName = useSettingsStore((s) => s.shop.name);
