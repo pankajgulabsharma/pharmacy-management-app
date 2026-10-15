@@ -32,7 +32,7 @@ describe("udhaar ledger (demo data)", () => {
   it("statement running balance ends at the summary balance", () => {
     const c = demoCustomers[0];
     const entries = customerLedger(
-      c.id,
+      c,
       demoSales,
       demoSaleReturns,
       demoCustomerPayments,
@@ -102,5 +102,32 @@ describe("customer search ranking", () => {
     expect(searchCustomers(demoCustomers, "9819087654")[0].name).toBe(
       "Neha Gupta",
     );
+  });
+});
+
+describe("old udhaar brought over (opening balance)", () => {
+  it("is the first statement line and part of what is owed", () => {
+    const c = { ...demoCustomers[0], openingBalancePaise: 1_500_00 };
+    const before = customerSummaries(
+      [demoCustomers[0]],
+      demoSales,
+      demoSaleReturns,
+      demoCustomerPayments,
+    ).get(c.id)!.balancePaise;
+    const entries = customerLedger(
+      c,
+      demoSales,
+      demoSaleReturns,
+      demoCustomerPayments,
+    );
+    expect(entries[0]).toMatchObject({ kind: "opening", debitPaise: 1_500_00 });
+    const after = customerSummaries(
+      [c],
+      demoSales,
+      demoSaleReturns,
+      demoCustomerPayments,
+    ).get(c.id)!.balancePaise;
+    expect(after - before).toBe(1_500_00);
+    expect(entries.at(-1)!.balancePaise).toBe(after);
   });
 });

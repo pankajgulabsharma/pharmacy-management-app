@@ -104,7 +104,8 @@ export default function MedicinesPage() {
   const searchRef = useRef<HTMLInputElement>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(intent.new === "1");
-  const [importOpen, setImportOpen] = useState(false);
+  // Settings → "Coming from other software" opens the import: ?import=1
+  const [importOpen, setImportOpen] = useState(intent.import === "1");
   const [editing, setEditing] = useState<MedicineWithStock | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MedicineWithStock | null>(
     null,

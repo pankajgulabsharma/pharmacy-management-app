@@ -1,3 +1,4 @@
+import type { OpeningDueInput } from "@medicare/domain/purchases/opening";
 import { create } from "zustand";
 import { checkReversal } from "@medicare/domain/inventory/ledger";
 import type { Paise } from "@medicare/domain/lib/money";
@@ -36,6 +37,8 @@ type PurchaseState = {
   cancelPurchase: (id: string, reason: string) => Promise<void>;
   createReturn: (input: PurchaseReturnInput) => Promise<PurchaseReturn>;
   recordPayment: (id: string, amountPaise: Paise) => Promise<void>;
+  /** Old dues to a supplier from before MediCare (an "Old balance") */
+  addOpeningDue: (supplierId: string, input: OpeningDueInput) => Promise<void>;
 };
 
 /** Rule context from current stock + returns (the UI shows why a button is off) */
@@ -108,5 +111,12 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
     await send("POST", `/api/purchases/${encodeURIComponent(id)}/payments`, {
       amountPaise,
     });
+  },
+  addOpeningDue: async (supplierId, input) => {
+    await send(
+      "POST",
+      `/api/suppliers/${encodeURIComponent(supplierId)}/opening`,
+      input,
+    );
   },
 }));

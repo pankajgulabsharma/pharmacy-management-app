@@ -870,4 +870,86 @@ export const HI_UI: Record<string, string> = {
     "खरीद बिल, सप्लायर को वापसी, सप्लायर भुगतान",
   "Sales, profit, GST and stock reports":
     "बिक्री, मुनाफ़ा, GST और स्टॉक रिपोर्ट",
+  "A CSV from your old software's party / outstanding list (Marg, Tally, GoFrugal… → Export → CSV) or the sample filled in Excel. Columns are found by name: name, mobile, address, credit limit, balance / old udhaar (“1,250 Dr” is fine).":
+    "पुराने सॉफ़्टवेयर की पार्टी / आउटस्टैंडिंग लिस्ट की CSV (Marg, Tally, GoFrugal… → Export → CSV), या Excel में भरी सैंपल फ़ाइल। कॉलम नाम से पहचाने जाते हैं: नाम, मोबाइल, पता, उधार सीमा, बैलेंस / पुराना उधार (“1,250 Dr” भी चलेगा)।",
+  "A CSV of your suppliers: name, GSTIN, DL no., mobile, city, credit days and balance / old dues. Each supplier's old dues become an “Old balance” you can pay off like any invoice — no stock, no GST.":
+    "सप्लायरों की CSV: नाम, GSTIN, DL नं., मोबाइल, शहर, क्रेडिट दिन और बैलेंस / पुराना बकाया। हर सप्लायर का पुराना बकाया “पुराना बैलेंस” बनता है — किसी भी बिल की तरह चुकाएँ, न स्टॉक, न GST।",
+  "Added {{n}}": "{{n}} जोड़े गए",
+  "All returned": "सब वापस",
+  "CSV file": "CSV फ़ाइल",
+  "Choose file": "फ़ाइल चुनें",
+  "Could not import": "इम्पोर्ट नहीं हो सका",
+  "Could not read this file": "यह फ़ाइल पढ़ी नहीं जा सकी",
+  "Customers & their old udhaar": "ग्राहक और उनका पुराना उधार",
+  "Don't bring old bills over: their GST is already filed from there. Pick a start day (best: 1st of a month or 1 April), stop billing in the old software that day, and keep it (or its backup) only to look up old bills. Give MediCare its own bill prefix (Settings → Billing, e.g. MC) so new bill numbers never clash with the old software's — a new series is allowed under GST.":
+    "पुराने बिल न लाएँ: उनका GST वहीं से भरा जा चुका है। एक शुरुआती दिन चुनें (अच्छा: महीने की 1 तारीख या 1 अप्रैल), उस दिन से पुराने सॉफ़्टवेयर में बिलिंग बंद करें, और उसे (या उसका बैकअप) सिर्फ़ पुराने बिल देखने के लिए रखें। MediCare को अपना बिल प्रीफ़िक्स दें (Settings → Billing, जैसे MC) ताकि नए बिल नंबर पुराने से न टकराएँ — GST में नई सीरीज़ की इजाज़त है।",
+  Export: "एक्सपोर्ट",
+  File: "फ़ाइल",
+  "File is larger than 5 MB": "फ़ाइल 5 MB से बड़ी है",
+  "Find medicine": "दवा खोजें",
+  "Find medicine…": "दवा खोजें…",
+  "Import customers": "ग्राहक इम्पोर्ट करें",
+  "Import customers & old udhaar": "ग्राहक और पुराना उधार इम्पोर्ट करें",
+  "Import suppliers": "सप्लायर इम्पोर्ट करें",
+  "Import suppliers & old dues": "सप्लायर और पुराना बकाया इम्पोर्ट करें",
+  "Last {{n}} days": "पिछले {{n}} दिन",
+  "Medicines & stock in hand": "दवाइयाँ और मौजूदा स्टॉक",
+  "No customer returns in this period": "इस अवधि में कोई ग्राहक वापसी नहीं",
+  "No returns in these days": "इन दिनों में कोई वापसी नहीं",
+  "No rows found in this file": "इस फ़ाइल में कोई पंक्ति नहीं मिली",
+  "No sales in this period": "इस अवधि में कोई बिक्री नहीं",
+  "Old balance saved": "पुराना बैलेंस सेव हुआ",
+  "Old balance — {{name}}": "पुराना बैलेंस — {{name}}",
+  "Old bills stay in the old software":
+    "पुराने बिल पुराने सॉफ़्टवेयर में ही रहें",
+  "Old software → Stock / Item list → Export → CSV (with batch, expiry, quantity, MRP and purchase rate). Each batch comes in with its expiry, so FEFO and expiry alerts work from day one.":
+    "पुराना सॉफ़्टवेयर → स्टॉक / आइटम लिस्ट → Export → CSV (बैच, एक्सपायरी, मात्रा, MRP और खरीद दर के साथ)। हर बैच अपनी एक्सपायरी के साथ आता है, तो FEFO और एक्सपायरी अलर्ट पहले दिन से चलते हैं।",
+  "Older bill? Search its bill number or the customer's name.":
+    "पुराना बिल? बिल नंबर या ग्राहक का नाम खोजें।",
+  "Open the bill": "बिल खोलें",
+  "Party / outstanding list → CSV. Each customer's balance becomes “Old udhaar” — the first line of their khata, paid off like any udhaar.":
+    "पार्टी / आउटस्टैंडिंग लिस्ट → CSV। हर ग्राहक का बैलेंस “पुराना उधार” बनता है — खाते की पहली लाइन, किसी भी उधार की तरह चुकाया जाता है।",
+  "Please choose a .csv file": "कृपया .csv फ़ाइल चुनें",
+  Row: "पंक्ति",
+  "Sample CSV": "सैंपल CSV",
+  Select: "चुनें",
+  "Show 7 more days": "7 दिन और दिखाएँ",
+  "Show more days to see older ones.": "पुराने देखने के लिए और दिन दिखाएँ।",
+  "Showing up to 50 matches — type more to narrow down.":
+    "50 तक नतीजे — और लिखकर छाँटें।",
+  "Supplier list with outstanding → CSV. Each supplier's dues become an “Old balance” you pay off from Purchases — not counted as a purchase, no stock, no GST. One supplier: Suppliers → View → Add old balance.":
+    "आउटस्टैंडिंग के साथ सप्लायर लिस्ट → CSV। हर सप्लायर का बकाया “पुराना बैलेंस” बनता है जिसे Purchases से चुकाते हैं — खरीद में नहीं गिना जाता, न स्टॉक, न GST। एक सप्लायर: Suppliers → View → Add old balance।",
+  "Suppliers & what you still owe them": "सप्लायर और उनका बकाया",
+  "Too many rows — max {{n}} per import":
+    "बहुत ज़्यादा पंक्तियाँ — एक बार में अधिकतम {{n}}",
+  "already here (skipped) {{n}}": "पहले से मौजूद (छोड़े गए) {{n}}",
+  "day by day": "दिन-ब-दिन",
+  "old dues": "पुराना बकाया",
+  "old udhaar": "पुराना उधार",
+  "whole period": "पूरी अवधि",
+  "{{n}} added": "{{n}} जोड़े गए",
+  "…and {{n}} more": "…और {{n}}",
+  "Medicines sold": "बिकी दवाइयाँ",
+  "Medicines returned": "वापस आई दवाइयाँ",
+  "Day by day": "दिन-ब-दिन",
+  "Whole period": "पूरी अवधि",
+  "Pick a bill": "बिल चुनें",
+  "Returns done": "हो चुकी वापसी",
+  "Coming from another software?": "दूसरे सॉफ़्टवेयर से आ रहे हैं?",
+  "Bring over what the shop needs to keep working — in this order. Importing twice never doubles anything.":
+    "दुकान चलाने के लिए जो चाहिए वो लाएँ — इसी क्रम में। दो बार इम्पोर्ट करने से कुछ दोगुना नहीं होता।",
+  "Coming from other software": "दूसरे सॉफ़्टवेयर से आना",
+  "Add old balance": "पुराना बैलेंस जोड़ें",
+  "Old balance": "पुराना बैलेंस",
+  "Old udhaar (₹)": "पुराना उधार (₹)",
+  "Old udhaar (opening)": "पुराना उधार (ओपनिंग)",
+  "Save old balance": "पुराना बैलेंस सेव करें",
+  "As on": "तारीख तक",
+  "Old bill no. (optional)": "पुराना बिल नं. (वैकल्पिक)",
+  "What you still owed this supplier before MediCare. You pay it off from Purchases like any invoice — no stock, no GST, not counted as a purchase.":
+    "MediCare से पहले इस सप्लायर का जो बकाया था। Purchases से किसी भी बिल की तरह चुकाएँ — न स्टॉक, न GST, खरीद में नहीं गिना जाता।",
+  "Already owed before MediCare (old software / khata book)":
+    "MediCare से पहले का बकाया (पुराना सॉफ़्टवेयर / खाता बही)",
+  "Tip: after importing, check Reports → Stock (value) and the Customers / Suppliers totals against the old software's closing figures of the same day.":
+    "सलाह: इम्पोर्ट के बाद Reports → Stock (मूल्य) और ग्राहक / सप्लायर के कुल को पुराने सॉफ़्टवेयर के उसी दिन के क्लोज़िंग आँकड़ों से मिलाएँ।",
 };

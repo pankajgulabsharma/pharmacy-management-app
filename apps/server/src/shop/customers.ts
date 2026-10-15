@@ -74,7 +74,15 @@ export function updateCustomer(
     if (!old) throw new NotFoundError("Customer not found");
     const next: Customer = {
       ...old,
-      ...cleanCustomerInput(input, loadCustomers(raw, "id <> ?", [id])),
+      ...cleanCustomerInput(
+        {
+          ...input,
+          // An older app doesn't send it → keep what is saved
+          openingBalancePaise:
+            input.openingBalancePaise ?? old.openingBalancePaise ?? 0,
+        },
+        loadCustomers(raw, "id <> ?", [id]),
+      ),
     };
     updateRow(raw, t.customers, "id", next);
     return { customer: next, patch: { customers: [next] } satisfies ShopPatch };

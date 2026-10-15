@@ -82,6 +82,7 @@ export const DEMO_CUSTOMER_LIST: Customer[] = [
   phone: phone as string,
   address: "Thane",
   creditLimitPaise: limit as number,
+  openingBalancePaise: 0,
   notes: "",
   status: (id === "c_mahesh" ? "inactive" : "active") as "active" | "inactive",
   createdAt: "2026-06-01T10:00:00.000Z",

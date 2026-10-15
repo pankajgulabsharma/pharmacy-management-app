@@ -36,6 +36,7 @@ const empty = (name = ""): CustomerForm => ({
   phone: "",
   address: "",
   creditLimit: "",
+  opening: "",
   notes: "",
   status: "active",
 });
@@ -77,6 +78,9 @@ function FormBody({
           address: customer.address,
           creditLimit: customer.creditLimitPaise
             ? paiseToInput(customer.creditLimitPaise)
+            : "",
+          opening: customer.openingBalancePaise
+            ? paiseToInput(customer.openingBalancePaise)
             : "",
           notes: customer.notes,
           status: customer.status,
@@ -186,6 +190,25 @@ function FormBody({
               }
               aria-invalid={!!errors.creditLimit}
               className={cn(cls("creditLimit"), "tabular-nums")}
+            />
+          </FormField>
+          <FormField
+            label="Old udhaar (₹)"
+            htmlFor={`${id}-o`}
+            error={errors.opening}
+            hint="Already owed before MediCare (old software / khata book)"
+            className="sm:col-span-2"
+          >
+            <Input
+              id={`${id}-o`}
+              inputMode="decimal"
+              value={f.opening}
+              placeholder="0"
+              onChange={(e) =>
+                isMoneyInput(e.target.value) && set("opening", e.target.value)
+              }
+              aria-invalid={!!errors.opening}
+              className={cn(cls("opening"), "tabular-nums")}
             />
           </FormField>
           <FormField

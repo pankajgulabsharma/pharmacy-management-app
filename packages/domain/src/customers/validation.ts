@@ -20,6 +20,8 @@ export type CustomerForm = {
   phone: string;
   address: string;
   creditLimit: string;
+  /** Old udhaar from the previous software / khata */
+  opening: string;
   notes: string;
   status: CustomerInput["status"];
 };
@@ -38,6 +40,11 @@ export function validateCustomerForm(
     if (p === null || p < 0 || p > L.maxCreditLimitPaise)
       e.creditLimit = "Enter a valid amount (0 = no limit)";
   }
+  if (f.opening.trim()) {
+    const p = parseRupees(f.opening);
+    if (p === null || p < 0 || p > L.maxCreditLimitPaise)
+      e.opening = "Enter a valid amount";
+  }
   return e;
 }
 
@@ -50,6 +57,10 @@ export function toCustomerInput(f: CustomerForm): CustomerInput {
     creditLimitPaise: Math.max(
       0,
       Math.min(L.maxCreditLimitPaise, parseRupees(f.creditLimit) ?? 0),
+    ),
+    openingBalancePaise: Math.max(
+      0,
+      Math.min(L.maxCreditLimitPaise, parseRupees(f.opening) ?? 0),
     ),
     notes: cleanText(f.notes, L.notesMax),
     status: f.status === "inactive" ? "inactive" : "active",

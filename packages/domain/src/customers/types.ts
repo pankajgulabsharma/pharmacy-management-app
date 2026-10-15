@@ -11,6 +11,11 @@ export type Customer = {
   address: string;
   /** Max udhaar allowed; 0 = no limit */
   creditLimitPaise: Paise;
+  /**
+   * Udhaar brought over from the old software / old khata when the shop
+   * started with MediCare (0 = none). First line of the statement.
+   */
+  openingBalancePaise?: Paise;
   notes: string;
   status: CustomerStatus;
   createdAt: string;

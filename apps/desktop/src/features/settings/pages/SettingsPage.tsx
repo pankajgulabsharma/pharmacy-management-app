@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ArrowRightLeft,
   BadgeCheck,
   Building2,
   Database,
@@ -31,6 +32,7 @@ import { BackupSection } from "../components/BackupSection";
 import { NetworkSection } from "../components/NetworkSection";
 import { PrintingSection } from "../components/PrintingSection";
 import { LicenseSection } from "../components/LicenseSection";
+import { SwitchSection } from "../components/SwitchSection";
 import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
 import { tr } from "@/lib/i18n";
 
@@ -45,6 +47,7 @@ type SectionId =
   | "network"
   | "license"
   | "appearance"
+  | "switch"
   | "data";
 
 const SECTIONS: {
@@ -107,6 +110,12 @@ const SECTIONS: {
     label: "Appearance",
     icon: Palette,
     Component: AppearanceSection,
+  },
+  {
+    id: "switch",
+    label: "Coming from other software",
+    icon: ArrowRightLeft,
+    Component: SwitchSection,
   },
   { id: "data", label: "Data", icon: Database, Component: DataSection },
 ];

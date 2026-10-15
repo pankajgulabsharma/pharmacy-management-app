@@ -1,3 +1,4 @@
+import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import { memo, useMemo, useEffect } from "react";
 import { Eye, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -214,11 +215,24 @@ const PurchaseRow = memo(function PurchaseRow({
       </td>
 
       <td className="px-3 py-2.5 align-middle whitespace-nowrap">
-        <p className="text-foreground">{p.totals.lineCount} items</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-          {p.totals.totalQty}
-          {p.totals.totalFreeQty > 0 ? ` + ${p.totals.totalFreeQty} free` : ""}
-        </p>
+        {isOpeningDue(p) ? (
+          <p
+            className="text-sky-700 dark:text-sky-400 font-medium"
+            title="Dues from before MediCare"
+          >
+            Old balance
+          </p>
+        ) : (
+          <>
+            <p className="text-foreground">{p.totals.lineCount} items</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+              {p.totals.totalQty}
+              {p.totals.totalFreeQty > 0
+                ? ` + ${p.totals.totalFreeQty} free`
+                : ""}
+            </p>
+          </>
+        )}
       </td>
 
       <td className="px-3 py-2.5 align-middle text-right tabular-nums text-muted-foreground">

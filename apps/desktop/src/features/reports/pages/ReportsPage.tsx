@@ -249,7 +249,15 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto pr-0.5">
-        {sr ? <SalesTab r={sr} periodLabel={periodLabel} /> : null}
+        {sr ? (
+          <SalesTab
+            r={sr}
+            periodLabel={periodLabel}
+            sales={sales}
+            saleReturns={saleReturns}
+            range={range}
+          />
+        ) : null}
         {pr ? <PurchasesTab r={pr} periodLabel={periodLabel} /> : null}
         {gr ? (
           <div className="space-y-3">

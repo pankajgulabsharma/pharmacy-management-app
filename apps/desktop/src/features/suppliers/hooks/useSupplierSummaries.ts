@@ -1,3 +1,4 @@
+import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import { useMemo } from "react";
 import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import {
@@ -44,8 +45,11 @@ export function useSupplierSummaries(today: Date): SupplierWithSummary[] {
       s.creditPaise += getCreditPaise(p);
       if (p.status === "cancelled") continue;
 
-      s.invoiceCount++;
-      s.purchasedPaise += p.totals.netPaise;
+      // An old balance is money owed, not a purchase made here
+      if (!isOpeningDue(p)) {
+        s.invoiceCount++;
+        s.purchasedPaise += p.totals.netPaise;
+      }
       const due = getDuePaise(p);
       s.outstandingPaise += due;
       if (due > 0 && getPaymentStatus(p, today) === "overdue") {

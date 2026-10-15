@@ -190,6 +190,12 @@ export const customerInput = z
       .int()
       .min(0)
       .max(CUSTOMER_LIMITS.maxCreditLimitPaise),
+    openingBalancePaise: z
+      .number()
+      .int()
+      .min(0)
+      .max(CUSTOMER_LIMITS.maxCreditLimitPaise)
+      .optional(),
     notes: str(CUSTOMER_LIMITS.notesMax * 2),
     status: z.enum(["active", "inactive"]),
   })
@@ -225,3 +231,54 @@ export const salesQuery = z.object({
 });
 export const findQuery = z.object({ q: z.string().trim().min(2).max(40) });
 export const closingQuery = z.object({ at: isoDate });
+
+/* ---- Switching from other software ---- */
+
+const rupeesPaise = z.number().int().min(0).max(1_00_00_000_00);
+
+export const openingDueInput = z
+  .object({
+    amountPaise: rupeesPaise,
+    date: z.string().max(10).optional(),
+    ref: str(40).optional(),
+  })
+  .strict();
+
+const IMPORT_MAX = 5000;
+
+export const customerImport = z
+  .object({
+    rows: z
+      .array(
+        customerInput
+          .omit({ status: true })
+          .extend({ status: z.enum(["active", "inactive"]).optional() }),
+      )
+      .min(1)
+      .max(IMPORT_MAX),
+  })
+  .strict();
+
+export const supplierImport = z
+  .object({
+    rows: z
+      .array(
+        z
+          .object({
+            name: str(160),
+            gstin: str(20),
+            drugLicenseNo: str(80),
+            contactPerson: str(120),
+            phone: str(20),
+            email: str(160),
+            address: str(400),
+            city: str(80),
+            creditDays: z.number().int().min(0).max(365),
+            openingDuePaise: rupeesPaise,
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(IMPORT_MAX),
+  })
+  .strict();

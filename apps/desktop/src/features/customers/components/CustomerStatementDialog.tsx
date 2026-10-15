@@ -23,6 +23,7 @@ const when = new Intl.DateTimeFormat("en-IN", {
   minute: "2-digit",
 });
 const KIND = {
+  opening: "Old udhaar (opening)",
   bill: "Udhaar bill",
   return: "Return adjusted",
   payment: "Payment received",
@@ -37,7 +38,7 @@ export function CustomerStatementDialog({ customer, onClose }: Props) {
   const payments = useCustomerStore((s) => s.payments);
   const entries = useMemo(
     () =>
-      customer ? customerLedger(customer.id, sales, saleReturns, payments) : [],
+      customer ? customerLedger(customer, sales, saleReturns, payments) : [],
     [customer, sales, saleReturns, payments],
   );
   if (!customer) return null;

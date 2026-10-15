@@ -1,3 +1,4 @@
+import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Ban, FileText, Lock, Pencil, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -129,7 +130,11 @@ function Details({
               Rev {p.revision}
             </StatusBadge>
           ) : null}
-          {!p.stockPosted ? (
+          {isOpeningDue(p) ? (
+            <StatusBadge tone="info" title="Dues from before MediCare">
+              Old balance
+            </StatusBadge>
+          ) : !p.stockPosted ? (
             <StatusBadge tone="neutral">
               <Lock className="h-2.5 w-2.5 mr-1" />
               Imported

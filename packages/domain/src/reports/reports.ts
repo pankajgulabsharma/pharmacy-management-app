@@ -7,6 +7,7 @@ import { CATEGORY_LABELS, type Medicine } from "../medicines/types";
 import type { Sale, SaleReturn, PaymentMethod } from "../billing/types";
 import type { Purchase, PurchaseReturn } from "../purchases/types";
 import { calcLine, getDuePaise } from "../purchases/calc";
+import { isOpeningDue } from "../purchases/opening";
 import { GST_RATES, splitInclusive } from "../lib/gst";
 import { compareExpiry, isExpiringWithin, isExpiryPast } from "../lib/expiry";
 import { toISODate } from "../lib/date";
@@ -150,8 +151,12 @@ export function purchaseReport(
   debitNotes: readonly PurchaseReturn[],
   range: DateRange,
 ): PurchaseReport {
+  // Old balances from before MediCare are dues, not purchases of this period
   const active = purchases.filter(
-    (p) => p.status !== "cancelled" && inRange(p.invoiceDate, range),
+    (p) =>
+      p.status !== "cancelled" &&
+      !isOpeningDue(p) &&
+      inRange(p.invoiceDate, range),
   );
   const bySupplier = new Map<string, PurchaseReport["bySupplier"][number]>();
   const days = new Map(

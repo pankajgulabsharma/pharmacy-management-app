@@ -1,0 +1,1 @@
+ALTER TABLE `customers` ADD `opening_balance_paise` integer DEFAULT 0 NOT NULL;

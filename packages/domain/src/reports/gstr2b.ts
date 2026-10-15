@@ -13,6 +13,7 @@
  *                 its GST credit (ITC) can't be taken until they do
  */
 import type { Purchase } from "../purchases/types";
+import { isOpeningDue } from "../purchases/opening";
 
 export type TwoBInvoice = {
   gstin: string;
@@ -131,7 +132,7 @@ export function matchGstr2b(
 ): MatchRow[] {
   const books = new Map<string, Purchase>();
   for (const p of purchases)
-    if (p.status !== "cancelled" && p.supplierGstin)
+    if (p.status !== "cancelled" && p.supplierGstin && !isOpeningDue(p))
       books.set(invoiceKey(p.supplierGstin, p.invoiceNo), p);
 
   const rows: MatchRow[] = [];

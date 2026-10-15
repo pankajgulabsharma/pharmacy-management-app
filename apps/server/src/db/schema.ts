@@ -288,6 +288,8 @@ export const customers = sqliteTable(
     phone: text("phone").notNull().default(""),
     address: text("address").notNull().default(""),
     creditLimitPaise: paise("credit_limit_paise"),
+    /** Old udhaar brought over from the previous software / khata */
+    openingBalancePaise: paise("opening_balance_paise"),
     notes: text("notes").notNull().default(""),
     status: text("status", { enum: ["active", "inactive"] })
       .notNull()

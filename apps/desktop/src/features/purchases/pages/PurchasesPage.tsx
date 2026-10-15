@@ -1,3 +1,4 @@
+import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import {
   useCallback,
   useDeferredValue,
@@ -151,7 +152,7 @@ export default function PurchasesPage() {
       const d = parseISODate(p.invoiceDate);
       if (d) {
         const age = diffInDays(today, d);
-        if (age >= 0 && age < RECENT_DAYS) {
+        if (age >= 0 && age < RECENT_DAYS && !isOpeningDue(p)) {
           recentCount++;
           recentTotal += p.totals.netPaise;
         }

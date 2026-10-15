@@ -1,4 +1,5 @@
 import type { Purchase } from "./types";
+import { isOpeningDue } from "./opening";
 
 /**
  * Business rules for changing a saved invoice — ONE place, used by both
@@ -19,11 +20,15 @@ export type RuleResult = { allowed: true } | { allowed: false; reason: string };
 const OK: RuleResult = { allowed: true };
 const no = (reason: string): RuleResult => ({ allowed: false, reason });
 
+const OPENING =
+  "Old balance from before MediCare — only payments can be recorded on it";
+
 export function canEditPurchase(
   p: Purchase,
   ctx: PurchaseRuleContext,
 ): RuleResult {
   if (p.status === "cancelled") return no("This invoice is cancelled");
+  if (isOpeningDue(p)) return no(OPENING);
   if (!p.stockPosted) {
     return no(
       "Imported history (entered before stock tracking) — it can't be edited",
@@ -45,6 +50,11 @@ export function canCancelPurchase(
   ctx: PurchaseRuleContext,
 ): RuleResult {
   if (p.status === "cancelled") return no("This invoice is already cancelled");
+  // A wrong old balance can be cancelled until something is paid on it
+  if (isOpeningDue(p))
+    return p.paidPaise > 0
+      ? no("A payment is recorded on this old balance — it can't be cancelled")
+      : OK;
   if (!p.stockPosted) {
     return no(
       "Imported history (entered before stock tracking) — it can't be cancelled",
@@ -68,6 +78,7 @@ export function canCancelPurchase(
 
 export function canReturnPurchase(p: Purchase): RuleResult {
   if (p.status === "cancelled") return no("This invoice is cancelled");
+  if (isOpeningDue(p)) return no(OPENING);
   if (!p.stockPosted) {
     return no(
       "Imported history (entered before stock tracking) — its batches aren't in stock",

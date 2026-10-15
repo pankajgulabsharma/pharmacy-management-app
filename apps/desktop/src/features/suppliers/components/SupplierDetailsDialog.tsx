@@ -1,7 +1,10 @@
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
+import { useCan } from "@/features/auth/store/useAuthStore";
+import { OpeningDueDialog } from "./OpeningDueDialog";
 import {
   Building2,
   ExternalLink,
+  History,
   Lock,
   Mail,
   Pencil,
@@ -50,6 +53,8 @@ function Details({
 }: Omit<Props, "supplier"> & { s: SupplierWithSummary }) {
   const titleId = useId();
   const navigate = useNavigate();
+  const canPurchase = useCan("purchases");
+  const [openingFor, setOpeningFor] = useState(false);
   /** The invoice opens in Purchases — with its items, payments and returns */
   const openInvoice = (id: string) => {
     onClose();
@@ -136,6 +141,18 @@ function Details({
             <Trash2 className="h-3.5 w-3.5" />
             Delete
           </Button>
+          {canPurchase ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpeningFor(true)}
+              className="h-8 rounded-lg text-[11px] gap-1.5"
+              title="Dues from before MediCare (old software / ledger)"
+            >
+              <History className="h-3.5 w-3.5" />
+              Add old balance
+            </Button>
+          ) : null}
         </div>
         {hasHistory ? (
           <p className="mt-1.5 flex items-start gap-1.5 text-[10px] text-muted-foreground">
@@ -307,6 +324,9 @@ function Details({
           </section>
         ) : null}
       </div>
+      {openingFor ? (
+        <OpeningDueDialog supplier={s} onClose={() => setOpeningFor(false)} />
+      ) : null}
     </ModalShell>
   );
 }

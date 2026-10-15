@@ -31,6 +31,9 @@ import type { RegisterRow } from "@medicare/domain/medicines/schedule";
 import { ReportCard, ReportTable, ShareBar } from "./ReportTable";
 import { DailyChart } from "./DailyChart";
 import { SalesInsightsCard } from "./SalesInsightsCard";
+import { ItemsByDayCard } from "./ItemsByDayCard";
+import type { Sale, SaleReturn } from "@medicare/domain/billing/types";
+import type { DateRange } from "@medicare/domain/reports/period";
 
 const CARDS = "grid grid-cols-2 xl:grid-cols-4 gap-2";
 const CHART_ROW =
@@ -45,9 +48,15 @@ const pct = (part: number, whole: number) =>
 export function SalesTab({
   r,
   periodLabel,
+  sales,
+  saleReturns,
+  range,
 }: {
   r: SalesReport;
   periodLabel: string;
+  sales: readonly Sale[];
+  saleReturns: readonly SaleReturn[];
+  range: DateRange;
 }) {
   const payTotal = r.byPayment.reduce((s, p) => s + p.amountPaise, 0);
   const payMax = Math.max(0, ...r.byPayment.map((p) => p.amountPaise));
@@ -95,6 +104,14 @@ export function SalesTab({
         </ReportCard>
         <SalesInsightsCard i={insights} />
       </div>
+
+      {/* Every medicine, date on top — before the summaries below */}
+      <ItemsByDayCard
+        sales={sales}
+        saleReturns={saleReturns}
+        range={range}
+        periodLabel={periodLabel}
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,1fr)_minmax(0,2fr)] gap-3">
         <ReportCard

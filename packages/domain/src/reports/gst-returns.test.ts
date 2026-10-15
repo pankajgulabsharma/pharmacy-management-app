@@ -217,6 +217,8 @@ describe("GSTR-2B match", () => {
     ({
       id: no,
       status: "active",
+      stockPosted: true,
+      lines: [{}],
       supplierName: "Om Sai Medical",
       supplierGstin: "27AAAAA0000A1Z5",
       invoiceNo: no,

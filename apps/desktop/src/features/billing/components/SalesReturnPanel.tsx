@@ -6,13 +6,15 @@ import { cn } from "@/lib/utils";
 import { SearchInput } from "@/components/common/SearchInput";
 import { KeyHints } from "@/components/common/KeyHints";
 import { useHotkeys } from "@/hooks/useHotkeys";
-import { SELECTED_ROW, useListNavigation } from "@/hooks/useListNavigation";
+import { useListNavigation } from "@/hooks/useListNavigation";
 import { KEYS } from "@/app/shortcuts/registry";
 import { scrollRowIntoView } from "@/lib/dom";
 import { EmptyState } from "@/components/common/EmptyState";
 import { CodeChip } from "@/components/common/CodeChip";
 import { QtyStepper } from "@/components/common/QtyStepper";
 import { BatchExpiry } from "./BatchExpiry";
+import { BillPickList, ReturnsDoneList } from "./ReturnLists";
+import { tr } from "@/lib/i18n";
 import { fieldClass } from "@/components/common/formStyles";
 import {
   inrFromPaise,
@@ -43,6 +45,10 @@ type Props = {
 };
 
 const MAX_LIST = 50;
+/** Days of bills shown at once (and added by "Show 7 more days") */
+const DAYS_STEP = 7;
+const newestFirst = <T extends { createdAt: string }>(a: T, b: T) =>
+  b.createdAt.localeCompare(a.createdAt);
 
 const dateTime = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -81,14 +87,65 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
     sale: Sale;
     returns: SaleReturn[];
   } | null>(null);
+  // What is shown at once: the last 7 days (most returns come within a
+  // week), date by date, newest first; "Show 7 more days" goes back
+  // further. Searching looks at every bill, also older ones on the server.
+  const [tab, setTab] = useState<"bills" | "done">("bills");
+  const [days, setDays] = useState(DAYS_STEP);
+  const since = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (days - 1));
+    return d.toISOString();
+  }, [days]);
+  const searching = deferredQuery.trim() !== "";
   const list = useMemo(
     () =>
-      saleSearch.filter([...sales, ...older.sales], deferredQuery, {
-        keep: (s) => !s.imported,
-        limit: MAX_LIST,
-      }),
-    [sales, older, deferredQuery],
+      searching
+        ? saleSearch
+            .filter([...sales, ...older.sales], deferredQuery, {
+              keep: (s) => !s.imported,
+              limit: MAX_LIST,
+            })
+            .sort(newestFirst)
+        : sales
+            .filter((s) => !s.imported && s.createdAt >= since)
+            .sort(newestFirst),
+    [sales, older, deferredQuery, searching, since],
   );
+  const hasOlder = !searching && sales.some((s) => s.createdAt < since);
+  const returnsDone = useMemo(() => {
+    const q = deferredQuery.trim().toLowerCase();
+    return saleReturns
+      .filter((r) =>
+        q
+          ? `${r.returnNo} ${r.billNo} ${r.customerName}`
+              .toLowerCase()
+              .includes(q)
+          : r.createdAt >= since,
+      )
+      .sort(newestFirst);
+  }, [saleReturns, deferredQuery, since]);
+  const olderReturns =
+    !searching && saleReturns.some((r) => r.createdAt < since);
+  const moreButton = (show: boolean) =>
+    show ? (
+      <div className="p-2 flex justify-center border-t border-border/60">
+        <button
+          type="button"
+          onClick={() => setDays((d) => d + DAYS_STEP)}
+          className="h-7 rounded-md border border-border px-3 text-[11px] font-medium hover:bg-muted"
+        >
+          {tr("Show 7 more days")}
+        </button>
+      </div>
+    ) : (
+      <p className="p-2 text-center text-[10px] text-muted-foreground border-t border-border/60">
+        {searching
+          ? tr("Showing up to 50 matches — type more to narrow down.")
+          : tr("Older bill? Search its bill number or the customer's name.")}
+      </p>
+    );
   const sale = saleId
     ? (sales.find((s) => s.id === saleId) ??
       (oldPick?.sale.id === saleId ? oldPick.sale : null))
@@ -177,7 +234,7 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
     items: list,
     getKey: (x: Sale) => x.id,
     onOpen: pickSale,
-    enabled: !sale,
+    enabled: !sale && tab === "bills",
   });
   useEffect(() => {
     if (!nav.selectedKey) return;
@@ -263,74 +320,81 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
                 ]}
               />
             </div>
-            {list.length === 0 ? (
+            <div
+              role="tablist"
+              className="flex items-center gap-1 shrink-0 border-b border-border"
+            >
+              {(
+                [
+                  ["bills", "Pick a bill", list.length],
+                  ["done", "Returns done", returnsDone.length],
+                ] as const
+              ).map(([id, label, n]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  onClick={() => setTab(id)}
+                  className={cn(
+                    "h-8 px-3 -mb-px border-b-2 text-[11px] font-medium",
+                    tab === id
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {tr(label)}
+                  <span className="ml-1.5 text-[10px] text-muted-foreground tabular-nums">
+                    {n}
+                  </span>
+                </button>
+              ))}
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                {searching
+                  ? tr("Search results")
+                  : tr("Last {{n}} days", { n: days })}
+              </span>
+            </div>
+            {tab === "done" ? (
+              returnsDone.length === 0 ? (
+                <EmptyState
+                  icon={ReceiptText}
+                  title={tr("No returns in these days")}
+                  description={
+                    olderReturns ? tr("Show more days to see older ones.") : ""
+                  }
+                />
+              ) : (
+                <ReturnsDoneList
+                  returns={returnsDone}
+                  onOpenBill={(id) => {
+                    const s = sales.find((x) => x.id === id);
+                    if (s) {
+                      setTab("bills");
+                      pickSale(s);
+                    }
+                  }}
+                  footer={moreButton(olderReturns)}
+                />
+              )
+            ) : list.length === 0 ? (
               <EmptyState
                 icon={ReceiptText}
                 title="No bills found"
-                description="Try another bill number or name."
+                description={
+                  hasOlder
+                    ? "No bills in these days — show more days, or search."
+                    : "Try another bill number or name."
+                }
               />
             ) : (
-              <div
-                ref={listRef}
-                className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-auto"
-              >
-                <table className="w-full text-[11px]">
-                  <thead className="sticky top-0 z-10">
-                    <tr>
-                      {[
-                        "Bill",
-                        "Customer",
-                        "Date & Time",
-                        "Items",
-                        "Total (₹)",
-                        "Returned (₹)",
-                        "",
-                      ].map((h) => (
-                        <th
-                          key={h || "action"}
-                          className="px-3 py-2 text-left text-[10px] font-semibold uppercase bg-primary text-primary-foreground"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.map((s) => (
-                      <tr
-                        key={s.id}
-                        data-row-id={s.id}
-                        aria-selected={nav.selectedKey === s.id}
-                        className={cn(
-                          "border-b border-border/50 hover:bg-primary/5 cursor-pointer bg-card",
-                          nav.selectedKey === s.id && SELECTED_ROW,
-                        )}
-                        onClick={() => pickSale(s)}
-                      >
-                        <td className="px-3 py-2">
-                          <CodeChip>{s.billNo}</CodeChip>
-                        </td>
-                        <td className="px-3 py-2">{s.customerName}</td>
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                          {formatDateTime(s.createdAt)}
-                        </td>
-                        <td className="px-3 py-2">{s.lines.length}</td>
-                        <td className="px-3 py-2 tabular-nums">
-                          {inrFromPaise(s.totals.netPaise)}
-                        </td>
-                        <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                          {s.returnedPaise
-                            ? inrFromPaise(s.returnedPaise)
-                            : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-primary text-[10px] font-medium">
-                          Select
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <BillPickList
+                bills={list}
+                selectedId={nav.selectedKey}
+                onPick={pickSale}
+                listRef={listRef}
+                footer={moreButton(hasOlder)}
+              />
             )}
           </>
         ) : (

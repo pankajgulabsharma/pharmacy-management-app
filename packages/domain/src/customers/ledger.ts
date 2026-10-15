@@ -11,7 +11,7 @@ import type { Customer, CustomerPayment } from "./types";
 export type LedgerEntry = {
   id: string;
   at: string;
-  kind: "bill" | "return" | "payment";
+  kind: "opening" | "bill" | "return" | "payment";
   /** Bill no. / return no. / receipt no. */
   ref: string;
   note: string;
@@ -41,13 +41,25 @@ const EMPTY: CustomerSummary = {
 
 /** Full statement for one customer, oldest first, with running balance */
 export function customerLedger(
-  customerId: string,
+  customer: Pick<Customer, "id" | "createdAt" | "openingBalancePaise">,
   sales: readonly Sale[],
   saleReturns: readonly SaleReturn[],
   payments: readonly CustomerPayment[],
 ): LedgerEntry[] {
+  const customerId = customer.id;
   const udhaarSaleIds = new Map<string, Sale>();
   const raw: Omit<LedgerEntry, "balancePaise">[] = [];
+  // Old udhaar brought over when the shop started with MediCare
+  if (customer.openingBalancePaise)
+    raw.push({
+      id: `${customerId}-opening`,
+      at: customer.createdAt,
+      kind: "opening",
+      ref: "Opening",
+      note: "Old udhaar (before MediCare)",
+      debitPaise: customer.openingBalancePaise,
+      creditPaise: 0,
+    });
   for (const s of sales) {
     if (s.customerId !== customerId || s.status !== "udhaar") continue;
     udhaarSaleIds.set(s.id, s);
@@ -86,7 +98,8 @@ export function customerLedger(
       creditPaise: p.amountPaise,
     });
   }
-  raw.sort((a, b) => a.at.localeCompare(b.at) || (a.kind === "bill" ? -1 : 1));
+  const order = { opening: 0, bill: 1, return: 2, payment: 3 } as const;
+  raw.sort((a, b) => a.at.localeCompare(b.at) || order[a.kind] - order[b.kind]);
   let balance = 0;
   return raw.map((e) => {
     balance += e.debitPaise - e.creditPaise;
@@ -102,7 +115,14 @@ export function customerSummaries(
   payments: readonly CustomerPayment[],
 ): Map<string, CustomerSummary> {
   const map = new Map<string, CustomerSummary>(
-    customers.map((c) => [c.id, { ...EMPTY }]),
+    customers.map((c) => [
+      c.id,
+      {
+        ...EMPTY,
+        balancePaise: c.openingBalancePaise ?? 0,
+        billedPaise: c.openingBalancePaise ?? 0,
+      },
+    ]),
   );
   const touch = (s: CustomerSummary, at: string) => {
     if (!s.lastActivity || at > s.lastActivity) s.lastActivity = at;

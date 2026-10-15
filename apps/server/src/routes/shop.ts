@@ -15,6 +15,7 @@ import * as purchases from "../shop/purchases";
 import * as sales from "../shop/sales";
 import * as s from "../shop/schemas";
 import { importStock } from "../shop/importStock";
+import * as migrate from "../shop/migrate";
 
 type Params = { Params: { id: string } };
 
@@ -253,6 +254,41 @@ export function shopRoutes(
         s.parse(s.customerInput, req.body),
       ),
     ),
+  );
+  // Switching from other software: customers with old udhaar, suppliers
+  // with old dues, one supplier's old balance
+  app.post("/api/customers/import", async (req) =>
+    write(() =>
+      migrate.importCustomers(
+        raw,
+        s
+          .parse(s.customerImport, req.body)
+          .rows.map((r) => ({ ...r, status: "active" as const })),
+      ),
+    ),
+  );
+  app.post("/api/suppliers/import", async (req) =>
+    write(() =>
+      migrate.importSuppliers(
+        raw,
+        s
+          .parse(s.supplierImport, req.body)
+          .rows.map((r) => ({ ...r, status: "active" as const })),
+      ),
+    ),
+  );
+  app.post<Params>("/api/suppliers/:id/opening", async (req, reply) =>
+    reply
+      .code(201)
+      .send(
+        write(() =>
+          migrate.addOpeningDue(
+            raw,
+            req.params.id,
+            s.parse(s.openingDueInput, req.body),
+          ),
+        ),
+      ),
   );
   app.post("/api/customer-payments", async (req, reply) =>
     reply
