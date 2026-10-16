@@ -62,7 +62,7 @@ export function ChangePasswordForm({
         <input
           id={`${id}-cur`}
           type="password"
-          autoComplete="current-password"
+          autoComplete="one-time-code"
           data-autofocus
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
@@ -78,7 +78,7 @@ export function ChangePasswordForm({
         <input
           id={`${id}-new`}
           type="password"
-          autoComplete="new-password"
+          autoComplete="one-time-code"
           value={next}
           onChange={(e) => setNext(e.target.value)}
           className={cn(fieldClass, show(nextError) && invalidFieldClass)}
@@ -92,7 +92,7 @@ export function ChangePasswordForm({
         <input
           id={`${id}-rep`}
           type="password"
-          autoComplete="new-password"
+          autoComplete="one-time-code"
           value={repeat}
           onChange={(e) => setRepeat(e.target.value)}
           className={cn(fieldClass, show(repeatError) && invalidFieldClass)}

@@ -210,7 +210,7 @@ export function SetupPanel({
             <input
               id="setup-pw"
               type="password"
-              autoComplete="new-password"
+              autoComplete="one-time-code"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -224,7 +224,7 @@ export function SetupPanel({
             <input
               id="setup-again"
               type="password"
-              autoComplete="new-password"
+              autoComplete="one-time-code"
               value={again}
               onChange={(e) => {
                 setAgain(e.target.value);

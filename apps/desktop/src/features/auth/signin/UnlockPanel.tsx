@@ -146,7 +146,7 @@ export function UnlockPanel({
           <div className="grid grid-cols-2 gap-2">
             <input
               type="password"
-              autoComplete="new-password"
+              autoComplete="one-time-code"
               aria-label={tr("New password (6+ characters)")}
               placeholder={tr("New password")}
               value={password}
@@ -155,7 +155,7 @@ export function UnlockPanel({
             />
             <input
               type="password"
-              autoComplete="new-password"
+              autoComplete="one-time-code"
               aria-label={tr("New password again")}
               placeholder={tr("Again")}
               value={again}

@@ -153,7 +153,7 @@ function PasswordInput({
   value,
   onChange,
   autoFocus,
-  autoComplete = "current-password",
+  autoComplete = "one-time-code",
   placeholder,
   disabled,
 }: {
@@ -340,7 +340,7 @@ export function UsernamePanel({
       </div>
       <Input
         id="signin-username"
-        autoComplete="username"
+        autoComplete="off"
         autoFocus
         placeholder={tr("Username")}
         value={username}
@@ -432,7 +432,7 @@ export function RecoverPanel({
         id="recovery-new"
         value={password}
         onChange={setPassword}
-        autoComplete="new-password"
+        autoComplete="one-time-code"
         placeholder={tr("New password (6+ characters)")}
         disabled={busy}
       />
@@ -440,7 +440,7 @@ export function RecoverPanel({
         id="recovery-again"
         value={again}
         onChange={setAgain}
-        autoComplete="new-password"
+        autoComplete="one-time-code"
         placeholder={tr("New password again")}
         disabled={busy}
       />
