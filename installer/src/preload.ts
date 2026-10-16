@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("medicareDesktop", {
   /** Setup page */
   getSetup: () => ipcRenderer.invoke("setup:get"),
   testConnection: (url: string) => ipcRenderer.invoke("setup:test", url),
+  findMain: () => ipcRenderer.invoke("setup:find"),
   saveSetup: (config: unknown) => ipcRenderer.invoke("setup:save", config),
   retry: () => ipcRenderer.invoke("app:retry"),
   /** Settings → This computer */

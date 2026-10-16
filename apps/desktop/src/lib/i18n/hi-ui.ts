@@ -1316,4 +1316,29 @@ export const HI_UI: Record<string, string> = {
     "कोड से सिर्फ़ मालिक का पासवर्ड रीसेट होता है",
   "Hide password": "पासवर्ड छुपाएँ",
   "Show password": "पासवर्ड दिखाएँ",
+  // Step 40: shop network
+  "Add a counter — the easy way": "काउंटर जोड़ें — आसान तरीका",
+  "Install MediCare Pharmacy on that computer.":
+    "उस कंप्यूटर पर MediCare Pharmacy इंस्टॉल करें।",
+  "On its first start choose “Extra counter”.":
+    "पहली बार खुलने पर “Extra counter” चुनें।",
+  "Click “Find main computer” — it finds this one by itself.":
+    "“Find main computer” दबाएँ — यह कंप्यूटर अपने-आप मिल जाएगा।",
+  "Or type this address there": "या वहाँ यह पता टाइप करें",
+  "Chrome / Edge on that computer works too.":
+    "उस कंप्यूटर पर Chrome / Edge में भी खुल जाता है।",
+  "{{n}} of {{max}} computers your licence allows":
+    "लाइसेंस में {{max}} में से {{n}} कंप्यूटर",
+  "This computer (main)": "यह कंप्यूटर (मुख्य)",
+  "since {{time}}": "{{time}} से",
+  "Connected now": "अभी जुड़े हुए",
+  "On — other billing computers in the shop use this computer's data over the Wi-Fi / cable. Keep MediCare open here while the shop is open.":
+    "चालू — दुकान के दूसरे बिलिंग कंप्यूटर Wi-Fi / केबल से इसी कंप्यूटर का डेटा इस्तेमाल करते हैं। दुकान खुली रहने तक यहाँ MediCare खुला रखें।",
+  "Off — only this computer uses MediCare. Turn on when you add a second billing counter.":
+    "बंद — सिर्फ़ यही कंप्यूटर MediCare चलाता है। दूसरा बिलिंग काउंटर जोड़ें तब चालू करें।",
+  "Computers with MediCare open right now — updates every 10 seconds.":
+    "जिन कंप्यूटरों पर अभी MediCare खुला है — हर 10 सेकंड में अपडेट।",
+  "No other counter connected yet.": "अभी कोई दूसरा काउंटर नहीं जुड़ा।",
+  "Only this computer — sharing is off.":
+    "सिर्फ़ यह कंप्यूटर — शेयरिंग बंद है।",
 };

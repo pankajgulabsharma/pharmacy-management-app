@@ -19,6 +19,8 @@
   .choice b { display:block; font-size:15px; margin-bottom:4px; } .choice span { color:var(--muted); font-size:12.5px; }
   .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:14px; }
   label.check { display:flex; gap:10px; align-items:flex-start; margin:8px 0; cursor:pointer; }
+  .found { display:grid; gap:8px; margin:8px 0; }
+  .found .choice { text-align:left; }
   label.check input { margin-top:3px; width:16px; height:16px; }
   label.check small { display:block; color:var(--muted); }
   .row { display:flex; gap:8px; margin-top:6px; }
@@ -74,8 +76,13 @@
     </div>
 
     <div class="panel" id="counter-panel" hidden>
-      <b>Main computer's address</b>
-      <p class="hint">Shown on the main computer in Settings → This computer, e.g. http://192.168.1.10:4000</p>
+      <b>Main computer</b>
+      <p class="hint">MediCare must be open on the main computer, with “Share with other counters” on.</p>
+      <div class="row">
+        <button class="btn primary" id="find">Find main computer</button>
+      </div>
+      <div id="found" class="found" role="list"></div>
+      <p class="hint">Or type its address (Settings → This computer &amp; network on the main computer), e.g. http://192.168.1.10:4000</p>
       <div class="row">
         <input type="text" id="url" placeholder="http://192.168.1.10:4000" autocomplete="off" />
         <button class="btn" id="test">Test</button>
@@ -102,7 +109,7 @@
     $("main-panel").hidden = r !== "main";
     $("counter-panel").hidden = r !== "counter";
     $("save").disabled = false;
-    if (r === "counter") $("url").focus();
+    if (r === "counter") $("find").focus();
   }
   function normalize(v) {
     v = v.trim();
@@ -122,6 +129,35 @@
     return r.ok;
   }
 
+  async function find() {
+    const box = $("found");
+    const msg = $("test-msg");
+    $("find").disabled = true;
+    box.innerHTML = "";
+    msg.className = "msg"; msg.textContent = "Searching the shop network…";
+    try {
+      const list = await api.findMain();
+      if (!list.length) {
+        msg.className = "msg bad";
+        msg.textContent = "Not found. Is MediCare open on the main computer with sharing on, and are both on the same Wi-Fi? You can also type the address.";
+        return;
+      }
+      msg.textContent = list.length === 1 ? "Found it — click to use it." : "Found these — click yours.";
+      for (const f of list) {
+        const b = document.createElement("button");
+        b.className = "choice";
+        b.setAttribute("role", "listitem");
+        const t = document.createElement("b"); t.textContent = f.shop || "MediCare main computer";
+        const u = document.createElement("span"); u.textContent = f.url;
+        b.append(t, u);
+        b.onclick = () => { $("url").value = f.url; void test(); };
+        box.append(b);
+      }
+      if (list.length === 1) { $("url").value = list[0].url; void test(); }
+    } finally { $("find").disabled = false; }
+  }
+
+  $("find").onclick = () => void find();
   $("pick-main").onclick = () => pick("main");
   $("pick-counter").onclick = () => pick("counter");
   $("test").onclick = () => void test();

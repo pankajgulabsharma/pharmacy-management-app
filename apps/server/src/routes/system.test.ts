@@ -6,6 +6,7 @@ import { buildApp } from "../app";
 import { openDatabase, type Database } from "../db/client";
 import { seedDemoData } from "../db/seed";
 import { signIn } from "../test/signIn";
+import { countersFrom } from "./system";
 
 let dir: string;
 let database: Database;
@@ -114,5 +115,75 @@ describe("security", () => {
     expect(l.take("10.0.0.5", now)).toBe(false);
     expect(l.take("10.0.0.6", now)).toBe(true);
     expect(l.take("10.0.0.5", now + 1000)).toBe(true); // refills
+  });
+});
+
+describe("who is connected", () => {
+  it("open apps grouped per computer, this one first, each person once", () => {
+    const at = (m: number) =>
+      `2026-10-16T10:${String(m).padStart(2, "0")}:00.000Z`;
+    const r = countersFrom(
+      [
+        {
+          ip: "::ffff:192.168.1.21",
+          name: "Ravi Kumar",
+          role: "cashier",
+          since: at(5),
+        },
+        { ip: "127.0.0.1", name: "Pankaj Sharma", role: "owner", since: at(1) },
+        {
+          ip: "::ffff:192.168.1.21",
+          name: "Ravi Kumar",
+          role: "cashier",
+          since: at(3),
+        },
+        {
+          ip: "192.168.1.9",
+          name: "Anita Verma",
+          role: "pharmacist",
+          since: at(2),
+        },
+        {
+          ip: "192.168.1.5",
+          name: "Pankaj Sharma",
+          role: "owner",
+          since: at(4),
+        },
+      ],
+      ["192.168.1.5"],
+    );
+    expect(r).toEqual([
+      {
+        ip: "",
+        thisComputer: true,
+        people: [{ name: "Pankaj Sharma", role: "owner" }],
+        since: at(1),
+      },
+      {
+        ip: "192.168.1.9",
+        thisComputer: false,
+        people: [{ name: "Anita Verma", role: "pharmacist" }],
+        since: at(2),
+      },
+      {
+        ip: "192.168.1.21",
+        thisComputer: false,
+        people: [{ name: "Ravi Kumar", role: "cashier" }],
+        since: at(3),
+      },
+    ]);
+  });
+
+  it("only the owner sees the list", async () => {
+    const cashier = await signIn(app, "cashier");
+    const owner = await signIn(app);
+    const get = (h: object) =>
+      app.inject({
+        method: "GET",
+        url: "/api/system/counters",
+        headers: h as never,
+      });
+    expect((await get(cashier)).statusCode).toBe(403);
+    expect((await get(owner)).json()).toEqual({ counters: [] });
   });
 });

@@ -5,18 +5,31 @@ import { startServer } from "./server";
  * HOST says otherwise (e.g. HOST=0.0.0.0 to share with the shop network).
  * APP_DIR = built app screens to serve as well (optional).
  */
-const host = process.env.HOST ?? "127.0.0.1";
+let host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 4000);
 
-try {
-  const server = await startServer({
+type Server = Awaited<ReturnType<typeof startServer>>;
+let server!: Server;
+const start = async (): Promise<Server> =>
+  (server = await startServer({
     host,
     port,
     appDir: process.env.APP_DIR,
     // Development: only the last 10 days of backups (the installed app
     // keeps them the normal way — it doesn't start from here)
     backupKeepDays: 10,
-  });
+    // Settings → This computer & network: the switch works here too
+    // (until the next start — HOST decides that)
+    setLan: async (on) => {
+      host = on ? "0.0.0.0" : "127.0.0.1";
+      await server.close();
+      await start();
+      console.log(on ? "Shared on the shop network" : "This computer only");
+    },
+  }));
+
+try {
+  await start();
   const shown = host === "127.0.0.1" || host === "0.0.0.0" ? "localhost" : host;
   console.log(`MediCare server running → http://${shown}:${port}/health`);
   console.log(`Database: ${server.dbFile}`);

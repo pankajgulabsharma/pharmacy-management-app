@@ -25,8 +25,22 @@ export function topicOf(url: string): Topic | null {
  * open app "medicines changed" — so screens update by themselves, on this
  * counter and on every other counter. No refresh needed.
  */
+/** One open app (a screen on a computer) */
+export type Connection = {
+  ip: string;
+  name: string;
+  role: string;
+  since: string;
+};
+
 export class EventBus {
   private clients = new Set<FastifyReply["raw"]>();
+  private who = new Map<FastifyReply["raw"], Connection>();
+
+  /** Who has MediCare open right now, and on which computer */
+  connections(): Connection[] {
+    return [...this.who.values()];
+  }
 
   get size() {
     return this.clients.size;
@@ -71,11 +85,18 @@ export class EventBus {
       // retry: how soon the app reconnects if the server restarts
       reply.raw.write("retry: 3000\n: connected\n\n");
       this.clients.add(reply.raw);
+      this.who.set(reply.raw, {
+        ip: req.ip,
+        name: req.user?.name ?? "",
+        role: req.user?.role ?? "",
+        since: new Date().toISOString(),
+      });
       // A comment every 25 s keeps the line open through idle periods
       const ping = setInterval(() => reply.raw.write(": ping\n\n"), 25_000);
       req.raw.on("close", () => {
         clearInterval(ping);
         this.clients.delete(reply.raw);
+        this.who.delete(reply.raw);
       });
     });
 
@@ -84,6 +105,7 @@ export class EventBus {
     app.addHook("preClose", async () => {
       for (const res of this.clients) res.end();
       this.clients.clear();
+      this.who.clear();
     });
   }
 }

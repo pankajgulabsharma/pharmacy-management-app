@@ -86,7 +86,7 @@ export function buildApp({
   licenseRoutes(app, database, license);
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir, license);
-  systemRoutes(app, system);
+  systemRoutes(app, system, () => bus.connections());
   catalogRoutes(app, database);
   libraryRoutes(app, library);
   supplierRoutes(app, database);

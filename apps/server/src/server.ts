@@ -8,6 +8,8 @@ import { DEFAULT_BACKUP_DIR, DEFAULT_DB_FILE, openDatabase } from "./db/client";
 import { ensureOwner } from "./auth/store";
 import { startAutoBackup } from "./backup/backup";
 import { catchUpOffsite, copyOffsite } from "./backup/offsite";
+import { startDiscovery } from "./network/discovery";
+import { loadSettings } from "./routes/settings";
 import { openLibrary } from "./library/library";
 import { dirname, resolve } from "node:path";
 
@@ -75,8 +77,16 @@ export async function startServer({
     appDir,
     system: { lanEnabled: () => host === "0.0.0.0", setLan },
   });
+  let stopDiscovery = () => {};
   try {
     await app.listen({ port, host });
+    // Sharing on: new counters can find this computer by themselves
+    if (host === "0.0.0.0")
+      stopDiscovery = await startDiscovery({
+        httpPort: port,
+        shopName: () => loadSettings(database.raw).shop.name,
+        log,
+      });
   } catch (err) {
     stopBackups();
     clearInterval(catchUp);
@@ -93,6 +103,7 @@ export async function startServer({
     close: async () => {
       stopBackups();
       clearInterval(catchUp);
+      stopDiscovery();
       await app.close();
       library.close();
       database.close();

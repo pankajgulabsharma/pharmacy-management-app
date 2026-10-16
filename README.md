@@ -115,6 +115,7 @@ new password. One use; the bell reminds the owner until a code is made.
 35. ✅ WhatsApp opens straight in Web / the app; order list goes to the supplier
 36. ✅ Backup & data: one-click Google Drive / pen drive, folder browser, missed copies catch up, bell warns
 37. ✅ Sign-in tiles + staff PIN, Ctrl+L switch user, owner recovery code
+38. ✅ Shop network: one switch, new counters find the main computer by themselves, who is connected now
 
 ## Windows installer
 
@@ -142,11 +143,18 @@ Uninstalling never deletes the shop's data.
 1. Main computer: Settings → **This computer & network** → _Share with
    other counters_. Windows may ask once — allow **Private networks**.
    The screen shows the address, e.g. `http://192.168.1.10:4000`.
-2. Each other counter: install the same app → _Extra counter_ → type that
-   address (or just open it in Chrome / Edge).
+2. Each other counter: install the same app → _Extra counter_ → **Find
+   main computer** (a small broadcast on the shop network, UDP port 41234,
+   answered only while sharing is on — nothing goes to the internet). Or
+   type the address / open it in Chrome / Edge.
 3. Every counter signs in with its own user; bills, stock and udhaar are
    the same everywhere and update live. Keep the app open on the main
    computer while the shop is open (closing it asks first).
+4. **Connected now** (same screen) lists every computer with MediCare open
+   and who is signed in there, refreshed every 10 seconds.
+
+Development: the switch works with `npm run dev:server` too (until the next
+start; `HOST=0.0.0.0` starts it shared).
 
 ## Printing & barcodes
 

@@ -8,6 +8,44 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { RuleError } from "@medicare/domain/lib/errors";
 import { parse } from "../shop/schemas";
+import type { Connection } from "../events";
+import { isLocal } from "../auth/store";
+
+export type CounterInfo = {
+  ip: string;
+  thisComputer: boolean;
+  /** Who is signed in there (one per open window, same person once) */
+  people: { name: string; role: string }[];
+  since: string;
+};
+
+/** Open apps grouped per computer — this computer first */
+export function countersFrom(
+  conns: Connection[],
+  ownIps: string[] = lanAddresses(),
+): CounterInfo[] {
+  const by = new Map<string, CounterInfo>();
+  for (const c of conns) {
+    const ip = c.ip.replace(/^::ffff:/, "");
+    const mine = isLocal(c.ip) || ownIps.includes(ip);
+    const key = mine ? "this" : ip;
+    const e = by.get(key) ?? {
+      ip: mine ? "" : ip,
+      thisComputer: mine,
+      people: [],
+      since: c.since,
+    };
+    if (c.name && !e.people.some((p) => p.name === c.name))
+      e.people.push({ name: c.name, role: c.role });
+    if (c.since < e.since) e.since = c.since;
+    by.set(key, e);
+  }
+  return [...by.values()].sort(
+    (a, b) =>
+      Number(b.thisComputer) - Number(a.thisComputer) ||
+      a.ip.localeCompare(b.ip, "en", { numeric: true }),
+  );
+}
 
 export type SystemHooks = {
   /** Listening on the shop network (0.0.0.0) right now? */
@@ -24,7 +62,16 @@ export function lanAddresses(): string[] {
     .map((n) => n!.address);
 }
 
-export function systemRoutes(app: FastifyInstance, hooks: SystemHooks) {
+export function systemRoutes(
+  app: FastifyInstance,
+  hooks: SystemHooks,
+  connections: () => Connection[] = () => [],
+) {
+  // Owner: which computers have MediCare open right now
+  app.get("/api/system/counters", async () => ({
+    counters: countersFrom(connections()),
+  }));
+
   app.get("/api/system", async () => {
     const addr = app.server.address();
     const port = typeof addr === "object" && addr ? addr.port : 4000;

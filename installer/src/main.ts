@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { startServer } from "../../apps/server/src/server";
+import { findMainComputers } from "../../apps/server/src/network/discovery";
 import { checkNow, startUpdates, updateState } from "./updates";
 
 type Config = {
@@ -238,6 +239,9 @@ handle("setup:test", async (_e, url: string) => {
     };
   }
 });
+
+/** Counter: find the main computer on the shop network (no IP typing) */
+handle("setup:find", () => findMainComputers());
 
 handle("setup:save", async (_e, c: Config) => {
   const clean: Config =

@@ -49,7 +49,8 @@ export function requiredPermission(
 ): Permission | null {
   if (path.startsWith("/api/auth/")) return null;
   if (method === "GET") {
-    if (/^\/api\/(users|backups)(\/|$)/.test(path)) return "admin";
+    if (/^\/api\/(users|backups|system\/counters)(\/|$)/.test(path))
+      return "admin";
     // Sales speed, profit… — what the Reports screen shows
     if (/^\/api\/reports(\/|$)/.test(path)) return "reports";
     return null;
