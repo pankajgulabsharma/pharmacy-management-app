@@ -18,6 +18,7 @@ import {
 import { can } from "@medicare/domain/auth/permissions";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { CommissionTab } from "@/features/commission/CommissionTab";
+import { commissionCsv } from "@/features/commission/commissionCsv";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -162,21 +163,22 @@ export default function ReportsPage() {
   );
 
   const exportCsv = () => {
-    if (tab === "commission") return; // its own Export button
     const stamp =
       tab === "stock"
         ? today
         : `${toISODate(range.from)}_to_${toISODate(range.to)}`;
     const csv =
-      tab === "sales"
-        ? salesCsv(sales, range)
-        : pr
-          ? purchasesCsv(pr)
-          : gr
-            ? gstCsv(gr)
-            : reg
-              ? registerCsv(reg)
-              : stockCsv(batches, medicines);
+      tab === "commission"
+        ? commissionCsv(sales, batches, range)
+        : tab === "sales"
+          ? salesCsv(sales, range)
+          : pr
+            ? purchasesCsv(pr)
+            : gr
+              ? gstCsv(gr)
+              : reg
+                ? registerCsv(reg)
+                : stockCsv(batches, medicines);
     downloadText(`${tab}-report_${stamp}.csv`, csv);
     toast.success("Report exported", {
       description: "Opens in Excel / Google Sheets",
@@ -215,18 +217,16 @@ export default function ReportsPage() {
               onChange={setTab}
               ariaLabel="Report"
             />
-            {tab !== "commission" ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={exportCsv}
-                className="h-9 rounded-lg text-[12px] gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export CSV
-                <Kbd keys={KEYS.exportReport} className="ml-1" />
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={exportCsv}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+              <Kbd keys={KEYS.exportReport} className="ml-1" />
+            </Button>
           </>
         }
       />

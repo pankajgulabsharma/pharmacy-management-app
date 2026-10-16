@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   CheckCircle2,
-  Download,
   HandCoins,
   Percent,
   Stethoscope,
@@ -29,7 +28,6 @@ import { FormField } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { ReportTable } from "@/features/reports/components/ReportTable";
-import { downloadText, toCsv } from "@/lib/csv";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useCommissionStore } from "./useCommissionStore";
@@ -44,7 +42,7 @@ function HeaderButton({
   children,
   disabled,
 }: {
-  icon: typeof Download;
+  icon: typeof Percent;
   onClick: () => void;
   children: string;
   disabled?: boolean;
@@ -102,32 +100,6 @@ export function CommissionTab({
   );
   const profitBasis = rates.basis === "profit";
 
-  const exportCsv = () =>
-    downloadText(
-      `commission_${period.from}_to_${period.to}.csv`,
-      toCsv(
-        [...r.doctors, ...r.staff],
-        [
-          {
-            header: "Type",
-            value: (x: CommissionRow) =>
-              x.kind === "doctor" ? "Doctor" : "Staff",
-          },
-          { header: "Name", value: (x) => x.name },
-          { header: "Bills", value: (x) => x.bills },
-          { header: "Sales (Rs)", value: (x) => formatPaise(x.salesPaise) },
-          { header: "Profit (Rs)", value: (x) => formatPaise(x.profitPaise) },
-          { header: "Rate %", value: (x) => x.ratePct },
-          {
-            header: "Commission (Rs)",
-            value: (x) => formatPaise(x.commissionPaise),
-          },
-          { header: "Paid (Rs)", value: (x) => formatPaise(x.paidPaise) },
-          { header: "Due (Rs)", value: (x) => formatPaise(x.duePaise) },
-        ],
-      ),
-    );
-
   const table = (kind: CommissionKind, rows: CommissionRow[]) => (
     <ReportTable
       title={kind === "doctor" ? "Doctor referrals" : "Staff commission"}
@@ -147,18 +119,9 @@ export function CommissionTab({
       }
       action={
         kind === "doctor" ? (
-          <div className="flex flex-wrap gap-1.5">
-            <HeaderButton icon={Percent} onClick={() => setRatesOpen(true)}>
-              Rates
-            </HeaderButton>
-            <HeaderButton
-              icon={Download}
-              onClick={exportCsv}
-              disabled={!r.doctors.length && !r.staff.length}
-            >
-              Export
-            </HeaderButton>
-          </div>
+          <HeaderButton icon={Percent} onClick={() => setRatesOpen(true)}>
+            Rates
+          </HeaderButton>
         ) : undefined
       }
       columns={[
