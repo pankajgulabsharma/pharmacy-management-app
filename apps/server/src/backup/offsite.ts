@@ -16,20 +16,21 @@ import {
   accessSync,
   constants,
   copyFileSync,
-  existsSync,
   mkdirSync,
   readdirSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, hostname } from "node:os";
+import { hostname } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { RuleError } from "@medicare/domain/lib/errors";
 import { loadSettings } from "../routes/settings";
 import { licenseState, type LicenseOptions } from "../license/state";
 import { KEEP_AUTO, listBackups, type BackupInfo } from "./backup";
+import { kindOf, type PlaceKind } from "./places";
 
 const KEY = "backup_offsite";
 
@@ -41,9 +42,26 @@ export type OffsiteStatus = {
   lastCopyAt: string | null;
   lastCopied: string | null;
   lastError: string | null;
+  /** cloud / pen drive / this computer's own disk ("" folder → null) */
+  kind: PlaceKind | null;
+  /** The folder is there right now (pen drive plugged in) */
+  connected: boolean;
 };
 
-type Saved = Omit<OffsiteStatus, "target">;
+type Saved = Omit<OffsiteStatus, "target" | "kind" | "connected"> & {
+  /** Remembered when chosen: a pulled-out pen drive is still a pen drive */
+  kind?: PlaceKind;
+};
+const NOT_CONNECTED =
+  "Folder not found — is the pen drive / Google Drive connected? The copy is made by itself as soon as it is back.";
+
+const isDir = (p: string) => {
+  try {
+    return statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+};
 const EMPTY: Saved = {
   folder: "",
   lastCopyAt: null,
@@ -90,7 +108,12 @@ export function offsiteStatus(
   lic: LicenseOptions,
 ): OffsiteStatus {
   const s = read(raw);
-  return { ...s, target: targetOf(raw, s.folder, lic.machine) };
+  return {
+    ...s,
+    target: targetOf(raw, s.folder, lic.machine),
+    kind: s.folder ? (s.kind ?? kindOf(s.folder)) : null,
+    connected: !!s.folder && isDir(s.folder),
+  };
 }
 
 /** Can we write there? (folder exists or can be made, and is writable) */
@@ -120,8 +143,16 @@ export function setOffsiteFolder(
       'Give the full folder path, e.g. "G:\\My Drive" or "E:\\"',
     );
   const clean = f ? resolve(f) : "";
+  // Never create the drive itself: a pulled-out pen drive must not turn
+  // into a folder on this computer's own disk
+  if (clean && !isDir(clean))
+    throw new RuleError("This folder isn't there — is the drive connected?");
   if (clean) checkWritable(targetOf(raw, clean, lic.machine));
-  save(raw, { ...EMPTY, folder: clean });
+  save(raw, {
+    ...EMPTY,
+    folder: clean,
+    ...(clean ? { kind: kindOf(clean) } : {}),
+  });
   return offsiteStatus(raw, lic);
 }
 
@@ -191,6 +222,10 @@ export function copyOffsite(
   const s = read(raw);
   if (!s.folder) return offsiteStatus(raw, lic);
   const target = targetOf(raw, s.folder, lic.machine);
+  if (!isDir(s.folder)) {
+    save(raw, { ...s, lastError: NOT_CONNECTED });
+    return offsiteStatus(raw, lic);
+  }
   try {
     mkdirSync(target, { recursive: true });
     const part = join(target, `${backup.name}.part`);
@@ -228,26 +263,19 @@ export function copyNewest(
 }
 
 /**
- * Folders on THIS computer that leave it by themselves (cloud sync), to
- * pick with one click. Only ones that exist are offered.
+ * Pen drive plugged back in / Google Drive started again → the newest
+ * backup that hasn't gone out yet is copied now (checked every few
+ * minutes; does nothing when everything is already there).
  */
-export function suggestedFolders(): { label: string; path: string }[] {
-  const home = homedir();
-  const out: { label: string; path: string }[] = [];
-  const add = (label: string, path: string | undefined) => {
-    if (path && existsSync(path) && !out.some((o) => o.path === path))
-      out.push({ label, path });
-  };
-  if (process.platform === "win32") {
-    // Google Drive for desktop: a drive letter (G: by default) with "My Drive"
-    for (const l of "GHIJKLMNOPQRSTUVWXYZDEF")
-      add("Google Drive", `${l}:\\My Drive`);
-    add("OneDrive", process.env.OneDrive);
-    add("OneDrive", process.env.OneDriveConsumer);
-  }
-  add("Google Drive", join(home, "Google Drive"));
-  add("Google Drive", join(home, "My Drive"));
-  add("OneDrive", join(home, "OneDrive"));
-  add("Dropbox", join(home, "Dropbox"));
-  return out;
+export function catchUpOffsite(
+  raw: DatabaseSync,
+  dir: string,
+  lic: LicenseOptions,
+): boolean {
+  const s = read(raw);
+  if (!s.folder || !isDir(s.folder)) return false;
+  const newest = listBackups(dir).find((b) => b.kind !== "before-restore");
+  if (!newest || newest.name === s.lastCopied) return false;
+  copyOffsite(raw, dir, lic, newest);
+  return true;
 }

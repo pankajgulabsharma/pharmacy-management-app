@@ -1153,6 +1153,91 @@ export const HI_UI: Record<string, string> = {
   "WhatsApp (this computer)": "WhatsApp (यह कंप्यूटर)",
   "How bills, orders and refill reminders open in WhatsApp.":
     "बिल, ऑर्डर और रिफ़िल रिमाइंडर WhatsApp में कैसे खुलें।",
-  "1 item":
-    "1 आइटम",
+  "1 item": "1 आइटम",
+  // Step 38: backup & data
+  "Show fewer": "कम दिखाएँ",
+  "Show all {{n}} backups": "सभी {{n}} बैकअप दिखाएँ",
+  "Year-end (kept)": "साल का अंत (हमेशा रखा)",
+  "Your data": "आपका डेटा",
+  "Kept on the main computer — every counter works on the same data. Theme and language are kept per computer.":
+    "मुख्य कंप्यूटर पर रखा है — हर काउंटर इसी डेटा पर काम करता है। थीम और भाषा हर कंप्यूटर की अपनी होती है।",
+  "Stored in": "यहाँ रखा है",
+  "Reset all settings to defaults": "सारी सेटिंग्स शुरुआती जैसी करें",
+  "Billing defaults, expiry windows, doctors, counters and role access go back to their original values. Your shop's name, address, GSTIN and licence are kept.":
+    "बिलिंग, एक्सपायरी, डॉक्टर, काउंटर और रोल की सेटिंग्स शुरुआती जैसी हो जाएँगी। दुकान का नाम, पता, GSTIN और लाइसेंस वैसे ही रहेंगे।",
+  "Settings reset to defaults": "सेटिंग्स शुरुआती जैसी कर दी गईं",
+  "Reset settings": "सेटिंग्स रीसेट करें",
+  "Choose a folder for the second copy": "दूसरी कॉपी के लिए फ़ोल्डर चुनें",
+  "Folders on the main computer — where MediCare keeps the data":
+    "मुख्य कंप्यूटर के फ़ोल्डर — जहाँ MediCare डेटा रखता है",
+  Places: "जगहें",
+  Folders: "फ़ोल्डर",
+  "Up one level": "एक लेवल ऊपर",
+  "No folders inside — you can use this one":
+    "अंदर कोई फ़ोल्डर नहीं — यही चुन सकते हैं",
+  "A “MediCare Backups” folder is made inside it":
+    "इसके अंदर “MediCare Backups” फ़ोल्डर बनेगा",
+  "Use this folder": "यह फ़ोल्डर चुनें",
+  "Every backup is also copied here by itself. If this computer is stolen or breaks, the shop comes back from this copy.":
+    "हर बैकअप अपने-आप यहाँ भी कॉपी होता है। कंप्यूटर चोरी हो या ख़राब हो, दुकान का डेटा इसी कॉपी से वापस आ जाएगा।",
+  "Not set up yet. If this computer is stolen or breaks, the data on it is gone. Pick a place once — every backup is copied there by itself.":
+    "अभी सेट नहीं है। कंप्यूटर चोरी हो या ख़राब हो तो उस पर रखा डेटा चला जाएगा। एक बार जगह चुन लें — हर बैकअप अपने-आप वहाँ कॉपी होगा।",
+  Recommended: "सबसे अच्छा",
+  "Other folder…": "दूसरा फ़ोल्डर…",
+  "Browse drives and folders": "ड्राइव और फ़ोल्डर देखें",
+  "Google Drive isn't on this computer yet. Install the free “Google Drive for desktop”, sign in with the shop's Gmail (15 GB free) — it then shows here for one click.":
+    "इस कंप्यूटर पर अभी Google Drive नहीं है। फ़्री “Google Drive for desktop” इंस्टॉल करें, दुकान के Gmail से साइन इन करें (15 GB फ़्री) — फिर यह यहाँ एक क्लिक में दिखेगा।",
+  "Change folder": "फ़ोल्डर बदलें",
+  "Turn off": "बंद करें",
+  "Not connected right now — the copy is made by itself as soon as it is back":
+    "अभी जुड़ा नहीं है — जुड़ते ही कॉपी अपने-आप हो जाएगी",
+  "Copied {{date}}": "कॉपी हुआ {{date}}",
+  "Last copied {{n}} days ago": "आख़िरी कॉपी {{n}} दिन पहले",
+  "This folder is on this computer's own disk — it won't help if the computer is stolen or breaks. Choose Google Drive or a pen drive.":
+    "यह फ़ोल्डर इसी कंप्यूटर की डिस्क पर है — कंप्यूटर चोरी हो या ख़राब हो तो काम नहीं आएगा। Google Drive या पेन ड्राइव चुनें।",
+  "Plug the pen drive in every few days — the newest backup is copied by itself within 2 minutes. Keep it away from the shop at night.":
+    "हर कुछ दिन में पेन ड्राइव लगाएँ — 2 मिनट में नया बैकअप अपने-आप कॉपी हो जाएगा। रात को पेन ड्राइव दुकान से बाहर रखें।",
+  "Something went wrong": "कुछ गड़बड़ हुई",
+  "Not yet": "अभी नहीं",
+  "Automatic every day · last {{n}} kept":
+    "हर दिन अपने-आप · आख़िरी {{n}} रखे जाते हैं",
+  "Not set up": "सेट नहीं है",
+  "Not connected": "जुड़ा नहीं है",
+  "Outside this computer": "इस कंप्यूटर के बाहर",
+  "{{size}} on this computer": "इस कंप्यूटर पर {{size}}",
+  "Backups on this computer": "इस कंप्यूटर पर बैकअप",
+  "Backup & data": "बैकअप और डेटा",
+  "A full copy of the shop's data is made by itself every day. Keep a second copy outside this computer too.":
+    "दुकान के पूरे डेटा की कॉपी हर दिन अपने-आप बनती है। एक दूसरी कॉपी इस कंप्यूटर के बाहर भी रखें।",
+  "Last backup": "आख़िरी बैकअप",
+  "Second copy": "दूसरी कॉपी",
+  "Backups kept": "रखे गए बैकअप",
+  "Backup only on this computer": "बैकअप सिर्फ़ इसी कंप्यूटर पर",
+  "Backup not copied outside": "बैकअप बाहर कॉपी नहीं हुआ",
+  "If it is stolen or breaks, the data is gone — keep a copy on Google Drive or a pen drive (1 click).":
+    "कंप्यूटर चोरी हो या ख़राब हो तो डेटा चला जाएगा — Google Drive या पेन ड्राइव पर कॉपी रखें (1 क्लिक)।",
+  "Not copied yet — is the pen drive / Google Drive connected?":
+    "अभी कॉपी नहीं हुआ — क्या पेन ड्राइव / Google Drive जुड़ा है?",
+  "Last copied {{n}} days ago — is the pen drive / Google Drive connected?":
+    "आख़िरी कॉपी {{n}} दिन पहले — क्या पेन ड्राइव / Google Drive जुड़ा है?",
+  "Cloud folder": "क्लाउड फ़ोल्डर",
+  "Pen drive / other disk": "पेन ड्राइव / दूसरी डिस्क",
+  "This computer's own disk": "इसी कंप्यूटर की डिस्क",
+  "Free · goes online by itself": "फ़्री · अपने-आप ऑनलाइन जाता है",
+  "This computer": "यह कंप्यूटर",
+  "Done — the latest backup is copied there, and every new one too":
+    "हो गया — नया बैकअप वहाँ कॉपी हो गया, आगे के भी होते रहेंगे",
+  "Backup saved — and copied outside this computer":
+    "बैकअप सेव हुआ — और कंप्यूटर के बाहर भी कॉपी हुआ",
+  "Backup saved on this computer": "बैकअप इस कंप्यूटर पर सेव हुआ",
+  "This folder isn't there any more — is the drive connected?":
+    "यह फ़ोल्डर अब नहीं मिल रहा — क्या ड्राइव जुड़ी है?",
+  "This folder isn't there — is the drive connected?":
+    "यह फ़ोल्डर नहीं मिला — क्या ड्राइव जुड़ी है?",
+  "Can't open this folder": "यह फ़ोल्डर नहीं खुल रहा",
+  "Folder not found — is the pen drive / Google Drive connected? The copy is made by itself as soon as it is back.":
+    "फ़ोल्डर नहीं मिला — क्या पेन ड्राइव / Google Drive जुड़ा है? जुड़ते ही कॉपी अपने-आप हो जाएगी।",
+  "Backup saved on this computer — the second copy is made when the drive is back":
+    "बैकअप इस कंप्यूटर पर सेव हुआ — ड्राइव जुड़ते ही दूसरी कॉपी बन जाएगी",
+  "Pen drive": "पेन ड्राइव",
 };

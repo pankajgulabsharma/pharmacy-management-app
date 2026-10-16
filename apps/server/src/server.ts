@@ -7,7 +7,7 @@ import { buildApp, defaultLicense } from "./app";
 import { DEFAULT_BACKUP_DIR, DEFAULT_DB_FILE, openDatabase } from "./db/client";
 import { ensureOwner } from "./auth/store";
 import { startAutoBackup } from "./backup/backup";
-import { copyOffsite } from "./backup/offsite";
+import { catchUpOffsite, copyOffsite } from "./backup/offsite";
 import { openLibrary } from "./library/library";
 import { dirname, resolve } from "node:path";
 
@@ -52,6 +52,15 @@ export async function startServer({
     },
     backupKeepDays,
   );
+  // Pen drive plugged back in → the copy that was missed goes out
+  const catchUp = setInterval(() => {
+    try {
+      catchUpOffsite(database.raw, backupDir, license);
+    } catch (err) {
+      console.error("Backup copy failed:", (err as Error).message);
+    }
+  }, 120_000);
+  catchUp.unref();
   // Built in the background on first start; search works once it's ready
   const library = openLibrary(
     resolve(dirname(dbFile), "medicine-library.sqlite"),
@@ -70,6 +79,7 @@ export async function startServer({
     await app.listen({ port, host });
   } catch (err) {
     stopBackups();
+    clearInterval(catchUp);
     library.close();
     database.close();
     throw err;
@@ -82,6 +92,7 @@ export async function startServer({
     /** Stop cleanly — the database file is never left half-written */
     close: async () => {
       stopBackups();
+      clearInterval(catchUp);
       await app.close();
       library.close();
       database.close();

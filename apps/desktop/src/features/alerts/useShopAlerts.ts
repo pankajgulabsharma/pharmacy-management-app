@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   BadgeCheck,
   Store,
@@ -8,6 +8,7 @@ import {
   PackageX,
   PauseCircle,
   Repeat,
+  ShieldAlert,
   TriangleAlert,
   Wallet,
   type LucideIcon,
@@ -30,6 +31,10 @@ import { missingShopDetails } from "@medicare/domain/settings/defaults";
 import { tr } from "@/lib/i18n";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
 import { useRefills } from "@/features/customers/refills/useRefills";
+import {
+  backupProblem,
+  useBackupHealth,
+} from "@/features/settings/backup/useBackupHealth";
 
 export type ShopAlert = {
   key: string;
@@ -65,6 +70,12 @@ export function useShopAlerts(): ShopAlert[] {
   const customers = useCustomerStore((s) => s.customers);
   const payments = useCustomerStore((s) => s.payments);
   const licence = useLicenseStore((s) => s.state);
+  const isOwner = can(role, "admin", access);
+  const backupHealth = useBackupHealth((s) => s.health);
+  // Only the owner can see (and fix) backups
+  useEffect(() => {
+    if (isOwner) useBackupHealth.getState().watch();
+  }, [isOwner]);
 
   return useMemo(() => {
     const list: ShopAlert[] = [];
@@ -90,6 +101,34 @@ export function useShopAlerts(): ShopAlert[] {
         icon: Store,
         level: "amber",
         to: "/settings?section=shop",
+      });
+
+    // Data safety: only on this computer → the shop can lose everything
+    const backup = isOwner ? backupProblem(backupHealth) : null;
+    if (backup)
+      list.push({
+        key: "backup",
+        title: tr(
+          backup.kind === "no-offsite"
+            ? "Backup only on this computer"
+            : "Backup not copied outside",
+        ),
+        desc:
+          backup.kind === "no-offsite"
+            ? tr(
+                "If it is stolen or breaks, the data is gone — keep a copy on Google Drive or a pen drive (1 click).",
+              )
+            : backup.days === null
+              ? tr(
+                  "Not copied yet — is the pen drive / Google Drive connected?",
+                )
+              : tr(
+                  "Last copied {{n}} days ago — is the pen drive / Google Drive connected?",
+                  { n: backup.days },
+                ),
+        icon: ShieldAlert,
+        level: backup.kind === "no-offsite" ? "amber" : "red",
+        to: "/settings?section=backup",
       });
 
     const stock = stockReport(batches, medicines, expiringDays);
@@ -234,6 +273,8 @@ export function useShopAlerts(): ShopAlert[] {
     payments,
     licence,
     refillCount,
+    isOwner,
+    backupHealth,
   ]);
 }
 

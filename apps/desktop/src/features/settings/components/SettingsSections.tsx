@@ -1,13 +1,11 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Monitor, Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FormField } from "@/components/common/FormField";
-import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import {
   PAYMENT_METHOD_LABELS,
@@ -518,57 +516,6 @@ export function AppearanceSection() {
           ))}
         </div>
       </div>
-    </SettingsCard>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Data                                                               */
-/* ------------------------------------------------------------------ */
-
-export function DataSection() {
-  const resetToDefaults = useSettingsStore((s) => s.resetToDefaults);
-  const [confirm, setConfirm] = useState(false);
-
-  return (
-    <SettingsCard title="Data" description="What is stored where.">
-      <ul className="space-y-1.5 text-[11px] text-muted-foreground list-disc pl-4">
-        <li>
-          <b className="text-foreground">
-            Medicines, stock, bills, purchases, customers, settings and users
-          </b>{" "}
-          are saved in the shop database on the server — every counter sees the
-          same data.
-        </li>
-        <li>
-          <b className="text-foreground">Theme and language</b> are remembered
-          on this computer only.
-        </li>
-      </ul>
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setConfirm(true)}
-          className="h-8 rounded-lg text-[11px] text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-        >
-          Reset all settings to defaults
-        </Button>
-      </div>
-      <ConfirmDialog
-        open={confirm}
-        title="Reset all settings?"
-        description="Billing defaults, expiry windows, doctors, counters and role access go back to their original values. Your shop's name, address, GSTIN and licence are kept."
-        confirmLabel="Reset settings"
-        onConfirm={() => {
-          setConfirm(false);
-          resetToDefaults().then(
-            () => toast.success("Settings reset to defaults"),
-            showError,
-          );
-        }}
-        onClose={() => setConfirm(false)}
-      />
     </SettingsCard>
   );
 }

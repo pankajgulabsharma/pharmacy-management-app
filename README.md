@@ -99,6 +99,8 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 32. ✅ What to order, dead stock, profit by medicine / company
 33. ✅ Refill reminders on WhatsApp
 34. ✅ Distributor's invoice file → purchase lines
+35. ✅ WhatsApp opens straight in Web / the app; order list goes to the supplier
+36. ✅ Backup & data: one-click Google Drive / pen drive, folder browser, missed copies catch up, bell warns
 
 ## Windows installer
 
@@ -307,17 +309,23 @@ removes Windows' "unknown publisher" warning.
 **Backups** — `apps/server/data/backups/`:
 
 - made automatically once a day (the last 30 are kept), and with
-  Settings → Backup & restore → _Backup now_;
+  Settings → Backup & data → _Backup now_;
 - _Download_ saves a copy (keep one on a pen drive); _Bring a backup file_
   adds one back from a pen drive / another PC;
 - _Restore_ puts every counter back to that moment — a safety copy of the
   current data is made first, so a restore can itself be undone.
 - zipped (`.sqlite.gz`, ~10× smaller); older `.sqlite` files still work;
-- **second copy outside the computer** (free): Settings → Backup → choose
-  Google Drive for desktop (`G:\My Drive`), OneDrive or a pen drive. Every
-  backup is copied to `…\MediCare Backups\<shop> (<machine code>)\`
-  with `LICENCE-INFO.txt` (shop, computer, machine code, licence key, what
-  to do on a new computer). A missing drive is shown in Settings;
+- **second copy outside the computer** (free): Settings → Backup & data
+  shows what it found on the main computer — Google Drive for desktop,
+  OneDrive, Dropbox, pen drives — as one-click cards, or _Other folder…_ to
+  browse (no path typing; works from any counter). Every backup is copied
+  to `…\MediCare Backups\<shop> (<machine code>)\` with
+  `LICENCE-INFO.txt` (shop, computer, machine code, licence key, what to do
+  on a new computer). A pen drive that is pulled out is never re-created on
+  the computer's own disk; when it is plugged in again the missed copy goes
+  out by itself within 2 minutes. A folder on the computer's own disk (or a
+  D: partition) is warned about. The owner's bell warns when there is no
+  second copy, or none for 3 days;
 - **year-end**: the first backup of every financial year is kept for ever.
 
 ## Bill numbers

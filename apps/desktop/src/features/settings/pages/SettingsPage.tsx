@@ -3,7 +3,6 @@ import {
   ArrowRightLeft,
   BadgeCheck,
   Building2,
-  Database,
   HardDriveDownload,
   Printer,
   Network,
@@ -22,7 +21,6 @@ import { KEYS } from "@/app/shortcuts/registry";
 import {
   AppearanceSection,
   BillingSection,
-  DataSection,
   InventorySection,
   ListsSection,
   ShopProfileSection,
@@ -47,8 +45,7 @@ type SectionId =
   | "network"
   | "license"
   | "appearance"
-  | "switch"
-  | "data";
+  | "switch";
 
 const SECTIONS: {
   id: SectionId;
@@ -89,7 +86,7 @@ const SECTIONS: {
   },
   {
     id: "backup",
-    label: "Backup & restore",
+    label: "Backup & data",
     icon: HardDriveDownload,
     Component: BackupSection,
   },
@@ -117,7 +114,6 @@ const SECTIONS: {
     icon: ArrowRightLeft,
     Component: SwitchSection,
   },
-  { id: "data", label: "Data", icon: Database, Component: DataSection },
 ];
 
 export default function SettingsPage() {

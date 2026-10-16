@@ -17,6 +17,8 @@ import { openDatabase, type Database } from "../db/client";
 import { seedDemoData } from "../db/seed";
 import { EventBus } from "../events";
 import { signIn } from "../test/signIn";
+import { catchUpOffsite } from "./offsite";
+import { kindOf } from "./places";
 import {
   KEEP_AUTO,
   createBackup,
@@ -24,6 +26,7 @@ import {
   startAutoBackup,
 } from "./backup";
 
+const lic = { enforce: false, publicKey: "", machine: "TEST-MACHINE" };
 let dir: string;
 let database: Database;
 let app: ReturnType<typeof buildApp>;
@@ -36,7 +39,12 @@ beforeAll(async () => {
   await seedDemoData(database);
   const bus = new EventBus();
   bus.emit = (t) => void events.push(t);
-  app = buildApp({ database, bus, backupDir: join(dir, "backups") });
+  app = buildApp({
+    database,
+    bus,
+    backupDir: join(dir, "backups"),
+    license: lic,
+  });
   owner = await signIn(app);
 });
 afterAll(async () => {
@@ -148,11 +156,16 @@ describe("backup & restore", () => {
         payload: { folder },
       });
     expect((await put("relative/path")).statusCode).toBe(400);
+    // a drive that isn't plugged in is never created on this disk
+    expect((await put(drive)).statusCode).toBe(400);
+    expect(existsSync(drive)).toBe(false);
+    mkdirSync(drive);
     const r = await put(drive);
     expect(r.statusCode).toBe(200);
     const { offsite } = r.json();
     expect(offsite.target).toContain(join("My Drive", "MediCare Backups"));
     expect(offsite.lastError).toBeNull();
+    expect(offsite).toMatchObject({ connected: true, kind: "local" });
     // the newest backup was copied right away, with the licence details
     const files = readdirSync(offsite.target);
     expect(files.some((f) => f.endsWith(".sqlite.gz"))).toBe(true);
@@ -175,9 +188,68 @@ describe("backup & restore", () => {
       .run(JSON.stringify({ folder: blocked }));
     const again = (await call("POST", "/api/backups")).json();
     expect(again.backup.name).toMatch(/manual/);
-    expect(again.offsite.lastError).toMatch(/Copy failed/);
+    expect(again.offsite.lastError).toMatch(/not found/);
+    expect(again.offsite.connected).toBe(false);
+    expect(
+      existsSync(blocked) && !readdirSync(dir).includes("MediCare Backups"),
+    ).toBe(true);
     // switched off
     expect((await put("")).json().offsite.folder).toBe("");
+  });
+
+  it("pen drive plugged back in → the missed copy goes out by itself", async () => {
+    const pen = join(dir, "PEN");
+    mkdirSync(pen);
+    const put = (folder: string) =>
+      app.inject({
+        method: "PUT",
+        url: "/api/backups/offsite",
+        headers: owner,
+        payload: { folder },
+      });
+    const { offsite } = (await put(pen)).json();
+    // pulled out; a backup is made meanwhile
+    rmSync(pen, { recursive: true, force: true });
+    const { backup } = (await call("POST", "/api/backups")).json();
+    expect(catchUpOffsite(database.raw, join(dir, "backups"), lic)).toBe(false);
+    expect(existsSync(pen)).toBe(false);
+    // back in → copied; nothing more to do after that
+    mkdirSync(pen);
+    expect(catchUpOffsite(database.raw, join(dir, "backups"), lic)).toBe(true);
+    expect(existsSync(join(offsite.target, backup.name))).toBe(true);
+    expect(catchUpOffsite(database.raw, join(dir, "backups"), lic)).toBe(false);
+    const health = (await call("GET", "/api/backups/health")).json();
+    expect(health.offsite).toMatchObject({ connected: true, lastError: null });
+    expect(health.lastBackupAt).toBeTruthy();
+    await put("");
+  });
+
+  it("folder picker lists folders only; screen shows the data's size", async () => {
+    mkdirSync(join(dir, "pick", "B Folder"), { recursive: true });
+    mkdirSync(join(dir, "pick", "a folder"));
+    mkdirSync(join(dir, "pick", ".hidden"));
+    writeFileSync(join(dir, "pick", "file.txt"), "x");
+    const r = await call(
+      "GET",
+      `/api/backups/browse?path=${encodeURIComponent(join(dir, "pick"))}`,
+    );
+    expect(r.json()).toEqual({
+      path: join(dir, "pick"),
+      parent: dir,
+      folders: ["a folder", "B Folder"],
+    });
+    expect((await call("GET", "/api/backups/browse?path=rel")).statusCode).toBe(
+      400,
+    );
+    const missing = await call(
+      "GET",
+      `/api/backups/browse?path=${encodeURIComponent(join(dir, "nope"))}`,
+    );
+    expect(missing.json().error).toMatch(/connected/);
+    const all = (await call("GET", "/api/backups")).json();
+    expect(all.places.at(-1)).toMatchObject({ kind: "local" });
+    expect(all.data.counts.medicines).toBeGreaterThan(10);
+    expect(all.data.sizeBytes).toBeGreaterThan(0);
   });
 
   it("first start of a new financial year keeps a year-end copy for ever", async () => {
@@ -239,5 +311,18 @@ describe("backup & restore", () => {
     const all = listBackups(d);
     expect(all.filter((b) => b.kind === "auto")).toHaveLength(KEEP_AUTO);
     expect(all.filter((b) => b.kind === "manual")).toHaveLength(1);
+  });
+});
+
+describe("where a folder is", () => {
+  const known = [
+    { label: "Google Drive", path: "/x/My Drive", kind: "cloud" as const },
+    { label: "PEN", path: "/media/u/PEN", kind: "drive" as const },
+  ];
+  it("cloud / pen drive / this computer", () => {
+    expect(kindOf("/x/My Drive/Shop", known)).toBe("cloud");
+    expect(kindOf("/media/u/PEN", known)).toBe("drive");
+    expect(kindOf("/media/u/PENNY", known)).toBe("local");
+    expect(kindOf("/home/u/Documents", known)).toBe("local");
   });
 });

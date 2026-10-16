@@ -3,7 +3,8 @@
  * Download / upload let the owner keep a copy on a pen drive or another PC.
  */
 import { createReadStream } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import type { DatabaseSync } from "node:sqlite";
 import type { FastifyInstance } from "fastify";
 import type { Database } from "../db/client";
 import type { EventBus } from "../events";
@@ -21,13 +22,43 @@ import {
   copyOffsite,
   offsiteStatus,
   setOffsiteFolder,
-  suggestedFolders,
 } from "../backup/offsite";
+import { browse, places } from "../backup/places";
 import type { LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
 import { parse } from "../shop/schemas";
 
 const folderInput = z.object({ folder: z.string().max(400) }).strict();
+const browseQuery = z.object({ path: z.string().min(1).max(400) });
+
+/** "Your data": where it is, how big, how much is in it */
+function dataInfo(raw: DatabaseSync) {
+  const one = (sql: string) =>
+    (raw.prepare(sql).get() as { n: number } | undefined)?.n ?? 0;
+  const file =
+    (
+      raw.prepare("PRAGMA database_list").all() as {
+        name: string;
+        file: string;
+      }[]
+    ).find((d) => d.name === "main")?.file ?? "";
+  return {
+    folder: file ? dirname(file) : "",
+    sizeBytes: one(
+      "SELECT page_count * page_size n FROM pragma_page_count(), pragma_page_size()",
+    ),
+    counts: {
+      medicines: one("SELECT count(*) n FROM medicines"),
+      bills: one("SELECT count(*) n FROM sales"),
+      customers: one("SELECT count(*) n FROM customers"),
+      purchases: one("SELECT count(*) n FROM purchases"),
+      suppliers: one("SELECT count(*) n FROM suppliers"),
+    },
+  };
+}
+
+const newestBackup = (dir: string) =>
+  listBackups(dir).find((b) => b.kind !== "before-restore") ?? null;
 
 type Params = { Params: { name: string } };
 const MAX_UPLOAD = 500 * 1024 * 1024; // 500 MB — years of bills
@@ -51,8 +82,21 @@ export function backupRoutes(
     keepAuto: KEEP_AUTO,
     backups: listBackups(dir),
     offsite: offsiteStatus(raw, license),
-    suggestions: suggestedFolders(),
+    places: places(),
+    data: dataInfo(raw),
   }));
+
+  // For the alert bell: is the data safe?
+  app.get("/api/backups/health", async () => ({
+    lastBackupAt: newestBackup(dir)?.createdAt ?? null,
+    offsite: offsiteStatus(raw, license),
+  }));
+
+  // Folder picker: one level of folders on the main computer
+  app.get("/api/backups/browse", async (req) => {
+    const { path } = parse(browseQuery, req.query);
+    return browse(path);
+  });
 
   app.post("/api/backups", async (_req, reply) => {
     const backup = await createBackup(raw, dir, "manual");
