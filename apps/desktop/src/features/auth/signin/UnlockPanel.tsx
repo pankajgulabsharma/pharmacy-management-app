@@ -1,12 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Copy, Loader2, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  KeyRound,
+  Loader2,
+  MessageCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { SignInPerson } from "@medicare/domain/auth/types";
 import { checkPassword } from "@medicare/domain/auth/users";
 import { Button } from "@/components/ui/button";
 import { apiGet, apiRequest } from "@/lib/api";
 import { tr } from "@/lib/i18n";
-import { PersonHeader } from "./SignInPanels";
 
 type Req = { machine: string; request: string; shop: string };
 
@@ -67,30 +72,44 @@ export function UnlockPanel({
   };
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-3">
-      <PersonHeader person={person} onBack={onBack}>
-        <p className="max-w-xs text-[12px] text-muted-foreground">
-          {tr(
-            "No code? Your MediCare provider can unlock it. Send them these details:",
-          )}
+    <form onSubmit={submit} noValidate className="space-y-4">
+      <div className="relative text-center">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label={tr("Back")}
+          className="absolute left-0 top-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <KeyRound className="h-6 w-6" />
+        </span>
+        <h1 className="text-[17px] font-semibold">
+          {tr("Unlock {{name}}", { name: person.name })}
+        </h1>
+        <p className="text-[12px] text-muted-foreground">
+          {tr("Your MediCare provider sends an unlock code — 2 quick steps.")}
         </p>
-      </PersonHeader>
-      <div className="rounded-xl border border-border bg-muted/40 p-3 text-[12px]">
+      </div>
+
+      <Step n={1} title="Send these details to your provider">
         {req ? (
           <>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">
-                {tr("Machine code")}
-              </span>
-              <b className="font-mono">{req.machine}</b>
+            <div className="grid grid-cols-2 gap-2">
+              <Tile label="Machine code" value={req.machine} small />
+              <Tile label="Request no." value={req.request} />
             </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">{tr("Request no.")}</span>
-              <b className="font-mono text-[15px] tracking-widest">
-                {req.request}
-              </b>
-            </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#25D366] text-[12px] font-semibold text-white hover:bg-[#1fb857]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {tr("WhatsApp")}
+              </a>
               <button
                 type="button"
                 onClick={() =>
@@ -98,58 +117,60 @@ export function UnlockPanel({
                     ?.writeText(message)
                     .then(() => toast.success(tr("Copied")))
                 }
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card text-[12px] font-medium hover:bg-muted"
               >
-                <Copy className="h-3.5 w-3.5" />
+                <Copy className="h-4 w-4" />
                 {tr("Copy")}
               </button>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(message)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#128C7E] hover:underline"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                {tr("Send on WhatsApp")}
-              </a>
             </div>
           </>
         ) : (
-          <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="mx-auto my-3 h-5 w-5 animate-spin text-muted-foreground" />
         )}
-      </div>
-      <textarea
-        aria-label={tr("Unlock code")}
-        placeholder={tr("Paste the unlock code (MU1.…)")}
-        value={code}
-        onChange={(e) => {
-          setCode(e.target.value);
-          setError("");
-        }}
-        rows={2}
-        spellCheck={false}
-        className={`${input} py-2 font-mono text-[11px]`}
-      />
-      <input
-        type="password"
-        autoComplete="new-password"
-        aria-label={tr("New password (6+ characters)")}
-        placeholder={tr("New password (6+ characters)")}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className={`${input} h-10`}
-      />
-      <input
-        type="password"
-        autoComplete="new-password"
-        aria-label={tr("New password again")}
-        placeholder={tr("New password again")}
-        value={again}
-        onChange={(e) => setAgain(e.target.value)}
-        className={`${input} h-10`}
-      />
+      </Step>
+
+      <Step n={2} title="Type the code they send, and a new password">
+        <div className="space-y-2">
+          <textarea
+            aria-label={tr("Unlock code")}
+            placeholder={tr("Paste the unlock code (MU1.…)")}
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value);
+              setError("");
+            }}
+            rows={2}
+            spellCheck={false}
+            className={`${input} resize-none py-2 font-mono text-[11px]`}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="password"
+              autoComplete="new-password"
+              aria-label={tr("New password (6+ characters)")}
+              placeholder={tr("New password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${input} h-10`}
+            />
+            <input
+              type="password"
+              autoComplete="new-password"
+              aria-label={tr("New password again")}
+              placeholder={tr("Again")}
+              value={again}
+              onChange={(e) => setAgain(e.target.value)}
+              className={`${input} h-10`}
+            />
+          </div>
+        </div>
+      </Step>
+
       {error ? (
-        <p role="alert" className="text-[12px] text-red-600">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-700 dark:bg-red-950/50 dark:text-red-400"
+        >
           {error}
         </p>
       ) : null}
@@ -159,8 +180,53 @@ export function UnlockPanel({
         className="h-11 w-full rounded-xl text-[13px]"
       >
         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        {tr("Set new password")}
+        {tr("Unlock & set new password")}
       </Button>
     </form>
+  );
+}
+
+function Step({
+  n,
+  title,
+  children,
+}: {
+  n: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-muted/30 p-3">
+      <p className="mb-2 flex items-center gap-2 text-[12px] font-semibold">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
+          {n}
+        </span>
+        {tr(title)}
+      </p>
+      {children}
+    </section>
+  );
+}
+
+function Tile({
+  label,
+  value,
+  small,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card px-2.5 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {tr(label)}
+      </p>
+      <p
+        className={`font-mono font-semibold tracking-wider ${small ? "text-[12px]" : "text-[18px]"}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }

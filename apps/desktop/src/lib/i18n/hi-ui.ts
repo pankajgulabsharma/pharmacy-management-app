@@ -1432,4 +1432,13 @@ export const HI_UI: Record<string, string> = {
     "इसे प्रिंट करें या लिखकर घर पर रखें — इस कंप्यूटर के पास नहीं। यह सिर्फ़ अभी दिखेगा और एक बार ही चलेगा।",
   "This unlock code is not right for this computer (or older than 24 hours)":
     "यह अनलॉक कोड इस कंप्यूटर के लिए सही नहीं है (या 24 घंटे से पुराना है)",
+  "Unlock {{name}}": "{{name}} को अनलॉक करें",
+  "Your MediCare provider sends an unlock code — 2 quick steps.":
+    "आपका MediCare प्रोवाइडर अनलॉक कोड भेजेगा — बस 2 आसान स्टेप।",
+  "Send these details to your provider": "ये जानकारी अपने प्रोवाइडर को भेजें",
+  "Type the code they send, and a new password":
+    "उनका भेजा कोड और नया पासवर्ड डालें",
+  Again: "दोबारा",
+  "Unlock & set new password": "अनलॉक करें और नया पासवर्ड सेट करें",
+  WhatsApp: "WhatsApp",
 };
