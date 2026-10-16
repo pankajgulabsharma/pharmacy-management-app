@@ -81,6 +81,13 @@ function tokenOf(req: FastifyRequest, path: string): string {
 /** While on hold (licence), these still work: sign-in, licence, backups, network */
 const ON_HOLD_ALLOWED = /^\/api\/(auth|license|backups|system)(\/|$)/;
 
+/** Before signing in: the sign-in screen's tiles, sign-in, owner recovery */
+const PUBLIC = new Set([
+  "/api/auth/login",
+  "/api/auth/people",
+  "/api/auth/recover",
+]);
+
 export function authGuard(
   app: FastifyInstance,
   raw: DatabaseSync,
@@ -90,7 +97,7 @@ export function authGuard(
   app.decorateRequest("token", "");
   app.addHook("preHandler", async (req) => {
     const path = req.url.split("?")[0];
-    if (!path.startsWith("/api/") || path === "/api/auth/login") return;
+    if (!path.startsWith("/api/") || PUBLIC.has(path)) return;
     const token = tokenOf(req, path);
     const session = resolveSession(raw, token);
     if (!session) throw new AuthError("Please sign in again", 401);

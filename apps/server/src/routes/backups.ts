@@ -24,6 +24,7 @@ import {
   setOffsiteFolder,
 } from "../backup/offsite";
 import { browse, places } from "../backup/places";
+import { recoveryInfo } from "../auth/recovery";
 import type { LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
 import { parse } from "../shop/schemas";
@@ -86,10 +87,11 @@ export function backupRoutes(
     data: dataInfo(raw),
   }));
 
-  // For the alert bell: is the data safe?
+  // For the owner's alert bell: is the data safe — and can the owner get in?
   app.get("/api/backups/health", async () => ({
     lastBackupAt: newestBackup(dir)?.createdAt ?? null,
     offsite: offsiteStatus(raw, license),
+    recoveryCode: recoveryInfo(raw).createdAt !== null,
   }));
 
   // Folder picker: one level of folders on the main computer

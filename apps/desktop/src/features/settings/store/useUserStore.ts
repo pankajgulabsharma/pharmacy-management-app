@@ -18,6 +18,8 @@ type UserState = {
   add: (input: UserInput) => Promise<void>;
   update: (id: string, input: UserUpdate) => Promise<void>;
   resetPassword: (id: string, password: string) => Promise<void>;
+  /** Counter PIN (null = remove) */
+  setPin: (id: string, pin: string | null) => Promise<void>;
 };
 
 const path = (id: string) => `/api/users/${encodeURIComponent(id)}`;
@@ -54,6 +56,14 @@ export const useUserStore = create<UserState>()((set, get) => {
             `${path(id)}/password`,
             { password },
           )
+        ).user,
+      ),
+    setPin: async (id, pin) =>
+      put(
+        (
+          await apiRequest<{ user: UserRecord }>("POST", `${path(id)}/pin`, {
+            pin,
+          })
         ).user,
       ),
   };

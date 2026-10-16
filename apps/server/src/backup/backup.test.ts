@@ -221,6 +221,7 @@ describe("backup & restore", () => {
     const health = (await call("GET", "/api/backups/health")).json();
     expect(health.offsite).toMatchObject({ connected: true, lastError: null });
     expect(health.lastBackupAt).toBeTruthy();
+    expect(health.recoveryCode).toBe(false);
     await put("");
   });
 

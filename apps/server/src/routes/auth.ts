@@ -8,17 +8,27 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { ROLES } from "@medicare/domain/auth/types";
 import {
+  PIN_LENGTH,
   USER_LIMITS,
+  canUsePin,
   checkPassword,
+  checkPin,
   cleanNewUser,
   cleanUserUpdate,
   normalizeUsername,
 } from "@medicare/domain/auth/users";
+import type { SignInPerson } from "@medicare/domain/auth/types";
 import { RuleError } from "@medicare/domain/lib/errors";
 import type { Database } from "../db/client";
 import { LoginLimiter } from "../auth/limiter";
 import { verifyPassword } from "../auth/password";
 import * as store from "../auth/store";
+import {
+  newRecoveryCode,
+  recoveryInfo,
+  useRecoveryCode,
+} from "../auth/recovery";
+import { loadSettings } from "./settings";
 import { parse } from "../shop/schemas";
 import { licenseState, type LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
@@ -26,13 +36,23 @@ import { NotFoundError } from "../shop/errors";
 const password = z.string().max(USER_LIMITS.passwordMax);
 const role = z.enum(ROLES as ["owner", "pharmacist", "cashier"]);
 
+const pinField = z.string().max(PIN_LENGTH);
+/** Username + password, or a tile on the sign-in screen (id) + PIN / password */
 const loginInput = z
   .object({
-    username: z.string().max(60),
-    password,
+    username: z.string().max(60).optional(),
+    userId: z.string().max(60).optional(),
+    password: password.optional(),
+    pin: pinField.optional(),
     remember: z.boolean().optional(),
   })
+  .strict()
+  .refine((b) => (b.username ?? b.userId) !== undefined, "Choose who you are")
+  .refine((b) => (b.password ?? b.pin) !== undefined, "Enter the password");
+const recoverInput = z
+  .object({ userId: z.string().max(60), code: z.string().max(40), password })
   .strict();
+const pinInput = z.object({ pin: pinField.nullable() }).strict();
 const changePasswordInput = z
   .object({ current: password, next: password })
   .strict();
@@ -56,28 +76,64 @@ export function authRoutes(
   { raw }: Database,
   license: LicenseOptions,
   limiter = new LoginLimiter(),
+  pinLimiter = new LoginLimiter(5, 60_000),
 ) {
+  /** Who can sign in — the tiles on the sign-in screen (no usernames) */
+  app.get("/api/auth/people", async () => {
+    const people: SignInPerson[] = store
+      .loadUsers(raw)
+      .filter((u) => u.active)
+      .map((u): SignInPerson => ({
+        id: u.id,
+        name: u.name,
+        role: u.role,
+        method:
+          u.hasPin && canUsePin(u.role) && !u.mustChangePassword
+            ? "pin"
+            : "password",
+      }))
+      // Owners first, then pharmacists, then cashiers — A to Z
+      .sort(
+        (a, b) =>
+          ROLES.indexOf(a.role) - ROLES.indexOf(b.role) ||
+          a.name.localeCompare(b.name),
+      );
+    return { shop: loadSettings(raw).shop.name, people };
+  });
+
   app.post("/api/auth/login", async (req, reply) => {
     const body = parse(loginInput, req.body);
-    const username = normalizeUsername(body.username);
-    const key = `${req.ip}|${username}`;
-    const wait = limiter.lockedFor(key);
-    if (wait)
-      return reply.code(429).send({
-        error: `Too many wrong attempts — try again in ${wait} seconds`,
-        retryInSec: wait,
+    const byPin = body.pin !== undefined;
+    const who = body.userId ?? normalizeUsername(body.username ?? "");
+    // A PIN is short: wrong tries are counted per person, from any counter
+    const lim = byPin ? pinLimiter : limiter;
+    const key = byPin ? `pin|${who}` : `${req.ip}|${who}`;
+    const tooMany = (sec: number) =>
+      reply.code(429).send({
+        error: `Too many wrong attempts — try again in ${sec} seconds`,
+        retryInSec: sec,
       });
-    const found = store.findUser(raw, "username", username);
-    // Always check a password (even for unknown names) so timing reveals nothing
-    const ok = await verifyPassword(body.password, found?.passwordHash);
+    const wait = lim.lockedFor(key);
+    if (wait) return tooMany(wait);
+    const found = body.userId
+      ? store.findUser(raw, "id", body.userId)
+      : store.findUser(raw, "username", who);
+    // Always check (even for unknown people) so timing reveals nothing
+    const pinAllowed =
+      found && canUsePin(found.user.role) && !found.user.mustChangePassword;
+    const ok = byPin
+      ? await verifyPassword(
+          body.pin!,
+          pinAllowed ? (found.pinHash ?? undefined) : undefined,
+        )
+      : await verifyPassword(body.password ?? "", found?.passwordHash);
     if (!found || !ok || !found.user.active) {
-      const locked = limiter.fail(key);
+      const locked = lim.fail(key);
       return locked
-        ? reply.code(429).send({
-            error: `Too many wrong attempts — try again in ${locked} seconds`,
-            retryInSec: locked,
-          })
-        : reply.code(401).send({ error: "Wrong username or password" });
+        ? tooMany(locked)
+        : reply.code(401).send({
+            error: byPin ? "Wrong PIN" : "Wrong username or password",
+          });
     }
     limiter.success(key);
     // Licence: how many computers may bill at the same time
@@ -92,7 +148,7 @@ export function authRoutes(
     const s = store.createSession(
       raw,
       found.user.id,
-      body.remember === true,
+      body.remember === true && !byPin,
       req.ip,
     );
     return {
@@ -100,6 +156,33 @@ export function authRoutes(
       expiresAt: s.expiresAt,
       user: store.toUser(found.user),
     };
+  });
+
+  /** Owner forgot the password: recovery code → new password */
+  app.post("/api/auth/recover", async (req, reply) => {
+    const body = parse(recoverInput, req.body);
+    const key = `recover|${req.ip}`;
+    const wait = limiter.lockedFor(key);
+    if (wait)
+      return reply.code(429).send({
+        error: `Too many wrong attempts — try again in ${wait} seconds`,
+        retryInSec: wait,
+      });
+    const target = store.findUser(raw, "id", body.userId)?.user;
+    if (!target || target.role !== "owner" || !target.active)
+      throw new RuleError(
+        "Only an owner's password can be reset with the code",
+      );
+    const bad = checkPassword(body.password, target.username);
+    if (bad) throw new RuleError(bad);
+    if (!(await useRecoveryCode(raw, body.code))) {
+      limiter.fail(key);
+      return reply.code(400).send({ error: "This recovery code is not right" });
+    }
+    limiter.success(key);
+    await store.setPassword(raw, target.id, body.password, false);
+    store.endUserSessions(raw, target.id);
+    return { ok: true };
   });
 
   app.get("/api/auth/me", async (req) => {
@@ -158,8 +241,29 @@ export function authRoutes(
       .prepare("UPDATE users SET name = ?, role = ?, active = ? WHERE id = ?")
       .run(next.name, next.role, next.active ? 1 : 0, current.id);
     if (!next.active) store.endUserSessions(raw, current.id);
+    // Became an owner → password only from now on
+    if (!canUsePin(next.role)) await store.setPin(raw, current.id, null);
     return { user: store.findUser(raw, "id", current.id)!.user };
   });
+
+  /** Counter PIN for a staff member (null = remove) */
+  app.post<Params>("/api/users/:id/pin", async (req) => {
+    const target = store.findUser(raw, "id", req.params.id)?.user;
+    if (!target) throw new NotFoundError("User not found");
+    const { pin } = parse(pinInput, req.body);
+    if (pin !== null) {
+      if (!canUsePin(target.role))
+        throw new RuleError("Owners sign in with their password");
+      const bad = checkPin(pin);
+      if (bad) throw new RuleError(bad);
+    }
+    await store.setPin(raw, target.id, pin);
+    return { user: store.findUser(raw, "id", target.id)!.user };
+  });
+
+  /** Owner's recovery code: when it was made / make a new one (shown once) */
+  app.get("/api/users/recovery-code", async () => recoveryInfo(raw));
+  app.post("/api/users/recovery-code", async () => newRecoveryCode(raw));
 
   /** Forgot password: the owner sets a temporary one; the person must change it */
   app.post<Params>("/api/users/:id/password", async (req) => {

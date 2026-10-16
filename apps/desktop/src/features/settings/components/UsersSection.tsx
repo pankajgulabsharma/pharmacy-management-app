@@ -1,6 +1,14 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Check, KeyRound, Pencil, UserPlus } from "lucide-react";
+import {
+  Check,
+  Copy,
+  KeyRound,
+  LifeBuoy,
+  Pencil,
+  RectangleEllipsis,
+  UserPlus,
+} from "lucide-react";
 import {
   GRANTABLE,
   PERMISSION_LABELS,
@@ -15,7 +23,13 @@ import {
   type Role,
   type UserRecord,
 } from "@medicare/domain/auth/types";
-import { checkPassword } from "@medicare/domain/auth/users";
+import {
+  PIN_LENGTH,
+  canUsePin,
+  checkPassword,
+  checkPin,
+} from "@medicare/domain/auth/users";
+import { apiGet, apiRequest } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormField } from "@/components/common/FormField";
@@ -25,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useUserStore } from "../store/useUserStore";
+import { useBackupHealth } from "../backup/useBackupHealth";
 import { SettingsCard } from "./SettingsCard";
 
 const showError = (err: unknown) =>
@@ -36,6 +51,7 @@ export function UsersSection() {
   const meId = useAuthStore((s) => s.session?.user.id);
   const [resetFor, setResetFor] = useState<UserRecord | null>(null);
   const [editFor, setEditFor] = useState<UserRecord | null>(null);
+  const [pinFor, setPinFor] = useState<UserRecord | null>(null);
 
   useEffect(() => {
     void load().catch(showError);
@@ -67,6 +83,9 @@ export function UsersSection() {
                   {tr("Role")}
                 </th>
                 <th className="px-3 py-2 text-left font-medium">
+                  {tr("Sign-in")}
+                </th>
+                <th className="px-3 py-2 text-left font-medium">
                   {tr("Status")}
                 </th>
                 <th className="px-3 py-2" />
@@ -75,7 +94,7 @@ export function UsersSection() {
             <tbody>
               {!loaded ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-4 text-muted-foreground">
+                  <td colSpan={6} className="px-3 py-4 text-muted-foreground">
                     {tr("Loading…")}
                   </td>
                 </tr>
@@ -128,6 +147,31 @@ export function UsersSection() {
                               </option>
                             ))}
                           </select>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {canUsePin(u.role) ? (
+                          <button
+                            type="button"
+                            onClick={() => setPinFor(u)}
+                            title={tr(u.hasPin ? "Change PIN" : "Set PIN")}
+                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] hover:bg-muted"
+                          >
+                            <RectangleEllipsis className="h-3.5 w-3.5 text-muted-foreground" />
+                            {u.hasPin ? (
+                              <StatusBadge tone="success" shape="rounded">
+                                {"PIN"}
+                              </StatusBadge>
+                            ) : (
+                              <span className="font-medium text-primary">
+                                {tr("Set PIN")}
+                              </span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">
+                            {tr("Password")}
+                          </span>
                         )}
                       </td>
                       <td className="px-3 py-2">
@@ -188,6 +232,7 @@ export function UsersSection() {
           </table>
         </div>
       </SettingsCard>
+      <RecoveryCodeCard />
       <RoleAccessCard />
       {editFor ? (
         <EditUserDialog
@@ -199,6 +244,9 @@ export function UsersSection() {
           }}
           onClose={() => setEditFor(null)}
         />
+      ) : null}
+      {pinFor ? (
+        <SetPinDialog user={pinFor} onClose={() => setPinFor(null)} />
       ) : null}
       {resetFor ? (
         <ResetPasswordDialog
@@ -370,6 +418,177 @@ function ResetPasswordDialog({
         />
       </FormField>
     </ConfirmDialog>
+  );
+}
+
+/** Counter PIN: tap the name on the sign-in screen + 4 digits */
+function SetPinDialog({
+  user,
+  onClose,
+}: {
+  user: UserRecord;
+  onClose: () => void;
+}) {
+  const id = useId();
+  const setPin = useUserStore((s) => s.setPin);
+  const [pin, setValue] = useState("");
+  const bad = checkPin(pin);
+  const save = (value: string | null, done: string) =>
+    setPin(user.id, value).then(() => {
+      toast.success(tr(done));
+      onClose();
+    }, showError);
+  return (
+    <ConfirmDialog
+      open
+      tone="default"
+      icon={RectangleEllipsis}
+      title={tr(
+        user.hasPin ? "Change PIN for {{name}}" : "Set PIN for {{name}}",
+        {
+          name: user.name,
+        },
+      )}
+      description={tr(
+        "On the sign-in screen they tap their name and type these 4 digits — quick at a busy counter. Tell them the PIN; they can keep using their password too.",
+      )}
+      confirmLabel="Save PIN"
+      cancelLabel="Cancel"
+      confirmDisabled={bad !== null}
+      onConfirm={() => void save(pin, "PIN saved")}
+      onClose={onClose}
+    >
+      <FormField
+        label="New PIN"
+        htmlFor={`${id}-pin`}
+        hint={
+          pin.length === PIN_LENGTH && bad ? bad : "4 digits, not 1111 or 1234"
+        }
+      >
+        <input
+          id={`${id}-pin`}
+          data-autofocus
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={PIN_LENGTH}
+          value={pin}
+          onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))}
+          className={cn(
+            fieldClass,
+            "w-32 text-center font-mono text-lg tracking-[0.5em]",
+          )}
+        />
+      </FormField>
+      {user.hasPin ? (
+        <button
+          type="button"
+          onClick={() => void save(null, "PIN removed — password only now")}
+          className="text-[11px] font-medium text-red-600 hover:underline"
+        >
+          {tr("Remove PIN")}
+        </button>
+      ) : null}
+    </ConfirmDialog>
+  );
+}
+
+/**
+ * Owner forgot the password → this code sets a new one on the sign-in
+ * screen. No SMS, no internet. Shown once; one use.
+ */
+function RecoveryCodeCard() {
+  const [madeOn, setMadeOn] = useState<string | null | undefined>(undefined);
+  const [code, setCode] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    void apiGet<{ createdAt: string | null }>("/api/users/recovery-code").then(
+      (r) => setMadeOn(r.createdAt),
+      showError,
+    );
+  }, []);
+  const make = () =>
+    apiRequest<{ code: string; createdAt: string }>(
+      "POST",
+      "/api/users/recovery-code",
+    ).then((r) => {
+      setCode(r.code);
+      setMadeOn(r.createdAt);
+      void useBackupHealth.getState().refresh(); // the bell's reminder goes
+    }, showError);
+
+  return (
+    <SettingsCard
+      title="Owner recovery code"
+      description="If an owner forgets the password, this code sets a new one from the sign-in screen (Forgot password?). No SMS, no internet needed."
+    >
+      {code ? (
+        <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 text-center space-y-2">
+          <p className="font-mono text-2xl font-semibold tracking-[0.25em]">
+            {code}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {tr(
+              "Write it on paper and keep it at home — not near this computer. It is shown only now and works once.",
+            )}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              navigator.clipboard
+                ?.writeText(code)
+                .then(() => toast.success(tr("Copied")))
+            }
+            className="h-8 rounded-lg text-[11px] gap-1.5"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {tr("Copy")}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-[12px]">
+            <LifeBuoy
+              className={cn(
+                "h-4 w-4",
+                madeOn ? "text-emerald-600" : "text-amber-600",
+              )}
+            />
+            {madeOn === undefined
+              ? tr("Loading…")
+              : madeOn
+                ? tr("Made on {{date}} — keep it safe", {
+                    date: new Date(madeOn).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    }),
+                  })
+                : tr("Not made yet — make one now, it takes a second")}
+          </p>
+          <Button
+            type="button"
+            variant={madeOn ? "outline" : "default"}
+            onClick={() => (madeOn ? setConfirm(true) : void make())}
+            className="h-8 rounded-lg text-[11px] gap-1.5"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            {tr(madeOn ? "Make a new code" : "Make a recovery code")}
+          </Button>
+        </div>
+      )}
+      <ConfirmDialog
+        open={confirm}
+        title={tr("Make a new recovery code?")}
+        description={tr("The old code stops working.")}
+        confirmLabel="Make a new code"
+        onConfirm={() => {
+          setConfirm(false);
+          void make();
+        }}
+        onClose={() => setConfirm(false)}
+      />
+    </SettingsCard>
   );
 }
 

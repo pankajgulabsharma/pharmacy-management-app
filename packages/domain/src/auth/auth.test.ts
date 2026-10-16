@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { can, cleanRoleAccess } from "./permissions";
-import { checkPassword, cleanNewUser, cleanUserUpdate } from "./users";
+import {
+  canUsePin,
+  checkPassword,
+  checkPin,
+  cleanNewUser,
+  cleanRecoveryCode,
+  cleanUserUpdate,
+  formatRecoveryCode,
+  initials,
+} from "./users";
 import type { UserRecord } from "./types";
 
 const user = (p: Partial<UserRecord>): UserRecord => ({
@@ -11,6 +20,7 @@ const user = (p: Partial<UserRecord>): UserRecord => ({
   active: true,
   mustChangePassword: false,
   createdAt: "",
+  hasPin: false,
   ...p,
 });
 
@@ -139,5 +149,27 @@ describe("user accounts", () => {
         "u1",
       ),
     ).toEqual({ name: "Cash Ier", role: "pharmacist", active: false });
+  });
+});
+
+describe("PIN & recovery code", () => {
+  it("4 digits, not an easy one", () => {
+    expect(checkPin("4821")).toBeNull();
+    expect(checkPin("482")).toMatch(/4 digits/);
+    expect(checkPin("48a1")).toMatch(/4 digits/);
+    expect(checkPin("1111")).toMatch(/easy/);
+    expect(checkPin("1234")).toMatch(/easy/);
+    expect(checkPin("9876")).toMatch(/easy/);
+    expect(canUsePin("owner")).toBe(false);
+    expect(canUsePin("cashier")).toBe(true);
+  });
+  it("initials for the sign-in tiles", () => {
+    expect(initials("Ravi Kumar Sharma")).toBe("RS");
+    expect(initials("  pankaj ")).toBe("PA");
+    expect(initials("")).toBe("?");
+  });
+  it("recovery code is typed back any way", () => {
+    expect(cleanRecoveryCode("k7qm 3xhp-9tda")).toBe("K7QM3XHP9TDA");
+    expect(formatRecoveryCode("k7qm3xhp9tda")).toBe("K7QM-3XHP-9TDA");
   });
 });

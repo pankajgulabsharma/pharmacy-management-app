@@ -18,6 +18,7 @@ type UserRow = {
   name: string;
   role: Role;
   password_hash: string;
+  pin_hash: string | null;
   active: number;
   must_change_password: number;
   created_at: string;
@@ -31,6 +32,7 @@ const toRecord = (r: UserRow): UserRecord => ({
   active: r.active === 1,
   mustChangePassword: r.must_change_password === 1,
   createdAt: r.created_at,
+  hasPin: !!r.pin_hash,
 });
 
 export const toUser = ({
@@ -63,7 +65,13 @@ export function findUser(
   const row = raw
     .prepare(`SELECT * FROM users WHERE ${where} = ?`)
     .get(value) as UserRow | undefined;
-  return row ? { user: toRecord(row), passwordHash: row.password_hash } : null;
+  return row
+    ? {
+        user: toRecord(row),
+        passwordHash: row.password_hash,
+        pinHash: row.pin_hash,
+      }
+    : null;
 }
 
 export async function createUser(
@@ -101,6 +109,17 @@ export async function setPassword(
       "UPDATE users SET password_hash = ?, must_change_password = ? WHERE id = ?",
     )
     .run(hash, mustChange ? 1 : 0, userId);
+}
+
+/** Counter PIN (null = remove it) */
+export async function setPin(
+  raw: DatabaseSync,
+  userId: string,
+  pin: string | null,
+) {
+  raw
+    .prepare("UPDATE users SET pin_hash = ? WHERE id = ?")
+    .run(pin ? await hashPassword(pin) : null, userId);
 }
 
 const sha = (token: string) => createHash("sha256").update(token).digest("hex");

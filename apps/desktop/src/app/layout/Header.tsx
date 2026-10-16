@@ -4,6 +4,7 @@ import {
   ChevronDown,
   KeyRound,
   LogOut,
+  Users,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -22,17 +23,10 @@ import {
 } from "@/features/auth/store/useAuthStore";
 import { ChangePasswordDialog } from "@/features/auth/components/ChangePasswordDialog";
 import { ROLE_LABELS } from "@medicare/domain/auth/types";
+import { initials } from "@medicare/domain/auth/users";
 import { tr } from "@/lib/i18n";
 
 /** "Pankaj Sharma" → "PS" */
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join("");
-}
 import { useUIStore } from "@/stores/useUIStore";
 import { KEYS } from "@/app/shortcuts/registry";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
@@ -128,6 +122,18 @@ export function Header() {
             <DropdownMenuItem onClick={() => setPwOpen(true)}>
               <KeyRound className="h-3.5 w-3.5" />
               {tr("Change password")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                void logout();
+                navigate("/login", { replace: true });
+              }}
+            >
+              <Users className="h-3.5 w-3.5" />
+              {tr("Switch user")}
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                {formatCombo(preferredCombo(KEYS.switchUser)).join("+")}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {

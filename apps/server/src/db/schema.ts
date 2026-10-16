@@ -562,6 +562,8 @@ export const users = sqliteTable("users", {
   name: text("name").notNull(),
   role: text("role", { enum: ["owner", "pharmacist", "cashier"] }).notNull(),
   passwordHash: text("password_hash").notNull(),
+  /** Staff: 4-digit PIN for the counter (slow hash too); null = password only */
+  pinHash: text("pin_hash"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   /** Starter password (first owner / reset) → must choose a new one */
   mustChangePassword: integer("must_change_password", { mode: "boolean" })

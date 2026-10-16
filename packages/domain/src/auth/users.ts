@@ -15,6 +15,45 @@ export const USER_LIMITS = {
   passwordMax: 200,
 } as const;
 
+/** Staff sign in at the counter with a PIN; owners always use a password */
+export const PIN_LENGTH = 4;
+export const canUsePin = (role: Role) => role !== "owner";
+
+/** Returns a message, or null when the PIN is acceptable */
+export function checkPin(pin: string): string | null {
+  if (!new RegExp(`^\\d{${PIN_LENGTH}}$`).test(pin))
+    return `PIN must be ${PIN_LENGTH} digits`;
+  const d = [...pin].map(Number);
+  const same = d.every((x) => x === d[0]);
+  const up = d.every((x, i) => i === 0 || x === d[i - 1] + 1);
+  const down = d.every((x, i) => i === 0 || x === d[i - 1] - 1);
+  if (same || up || down)
+    return "PIN is too easy to guess (like 1111 or 1234) — choose another";
+  return null;
+}
+
+/** "Ravi Kumar Sharma" → "RS", "ravi" → "RA" */
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+/**
+ * Owner's recovery code: 12 letters/digits in 3 groups ("K7QM-3XHP-9TDA"),
+ * no look-alikes (0/O, 1/I/L). Typed back in any case, with or without dashes.
+ */
+export const RECOVERY_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+export const cleanRecoveryCode = (code: string) =>
+  code.toUpperCase().replace(/[^0-9A-Z]/g, "");
+export function formatRecoveryCode(raw: string) {
+  const c = cleanRecoveryCode(raw);
+  return [c.slice(0, 4), c.slice(4, 8), c.slice(8, 12)]
+    .filter(Boolean)
+    .join("-");
+}
+
 const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
 
 /** "  Ravi.K " → "ravi.k" (sign-in names are case-insensitive) */

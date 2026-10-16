@@ -1,5 +1,26 @@
-import { useState } from "react";
-import { useAuthStore, useCurrentUser } from "../store/useAuthStore";
+import { useEffect, useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Cross, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import type { SignInPerson } from "@medicare/domain/auth/types";
+import { Button } from "@/components/ui/button";
+import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
+import { useNow } from "@/hooks/useNow";
+import { apiRequest } from "@/lib/api";
+import { tr } from "@/lib/i18n";
+import {
+  useAuthStore,
+  useCurrentUser,
+  type LoginResult,
+} from "../store/useAuthStore";
+import { usePeople } from "../signin/usePeople";
+import {
+  PasswordPanel,
+  PeopleGrid,
+  PinPanel,
+  RecoverPanel,
+  UsernamePanel,
+} from "../signin/SignInPanels";
 
 /** Only redirect back to our own screens — never to another site */
 function safeFrom(state: unknown): string {
@@ -11,223 +32,218 @@ function safeFrom(state: unknown): string {
     ? from
     : "/dashboard";
 }
-import { useTranslation } from "react-i18next";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Eye, EyeOff, Cross, Loader2 } from "lucide-react";
-import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
-import { cn } from "@/lib/utils";
-import { tr } from "@/lib/i18n";
+
+type View =
+  | { kind: "people" }
+  | { kind: "pin" | "password" | "recover"; person: SignInPerson }
+  | { kind: "username" };
+
+/** Left half: the shop's name and the time — the counter's "lock screen" */
+function BrandPanel({ shop }: { shop: string }) {
+  const now = new Date(useNow(15_000));
+  return (
+    <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-8 text-white md:flex">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/5"
+      />
+      <div className="relative flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+          <Cross className="h-6 w-6" strokeWidth={2.5} />
+        </span>
+        <span className="leading-tight">
+          <span className="block text-[14px] font-semibold">
+            MediCare Pharmacy
+          </span>
+          <span className="block text-[11px] text-white/70">
+            {tr("Pharmacy Management System")}
+          </span>
+        </span>
+      </div>
+      <div className="relative">
+        <p className="text-[44px] font-light leading-none tabular-nums">
+          {now.toLocaleTimeString("en-IN", {
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </p>
+        <p className="mt-2 text-[13px] text-white/80">
+          {now.toLocaleDateString("en-IN", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </p>
+        {shop ? (
+          <p className="mt-6 text-[22px] font-semibold leading-snug">{shop}</p>
+        ) : null}
+      </div>
+      <p className="relative text-[11px] text-white/70">
+        {tr("Tap your name · staff type their PIN · Ctrl+L switches user")}
+      </p>
+    </div>
+  );
+}
 
 export default function LoginPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((st) => st.login);
+  const loginAs = useAuthStore((st) => st.loginAs);
   const user = useCurrentUser();
+  const people = usePeople();
+  const [view, setView] = useState<View>({ kind: "people" });
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Esc: back to the tiles
+  useEffect(() => {
+    if (view.kind === "people") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setView({ kind: "people" });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view.kind]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedEmail || !trimmedPassword) {
-      toast.warning(t("login.errorEmpty"));
-      return;
+  /** Signed in → welcome + back to the screen; else the message to show */
+  const finish = (r: LoginResult): string | null => {
+    if (r.ok) {
+      toast.success(tr("Welcome, {{name}}", { name: r.user.name }));
+      navigate(safeFrom(location.state), { replace: true });
+      return null;
     }
-
-    setLoading(true);
-
-    try {
-      const result = await login(trimmedEmail, password, remember);
-      if (result.ok) {
-        toast.success(t("login.success"), {
-          description: `${result.user.name} · ${t("login.successDesc")}`,
-        });
-        // Back to the screen they were trying to open (only in-app paths)
-        navigate(safeFrom(location.state), { replace: true });
-      } else if (result.reason === "locked") {
-        toast.error(
-          tr("Too many wrong attempts — try again in {{sec}} seconds", {
-            sec: result.retryInSec ?? 30,
-          }),
-        );
-      } else if (result.reason === "offline") {
-        toast.error(tr(result.message));
-      } else {
-        toast.error(t("login.errorInvalid"));
-      }
-    } finally {
-      setLoading(false);
-      setPassword(""); // security: clear password from state after attempt
-    }
+    if (r.reason === "locked")
+      return tr("Too many wrong attempts — try again in {{sec}} seconds", {
+        sec: r.retryInSec ?? 30,
+      });
+    return tr(r.message);
   };
 
   if (user) return <Navigate to={safeFrom(location.state)} replace />;
 
+  const shop = people.status === "ready" ? people.shop : "";
+  const back = () => setView({ kind: "people" });
+
+  let panel;
+  if (people.status === "loading")
+    panel = (
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  else if (people.status === "offline" && view.kind !== "username")
+    panel = (
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <WifiOff className="h-8 w-8 text-muted-foreground" />
+        <p className="text-[14px] font-semibold">
+          {tr("Can't reach the main computer")}
+        </p>
+        <p className="max-w-xs text-[12px] text-muted-foreground">
+          {tr(
+            "Is MediCare open on the main computer, and this computer on the shop Wi-Fi?",
+          )}
+        </p>
+        <Button
+          type="button"
+          onClick={people.retry}
+          className="h-10 rounded-xl gap-1.5"
+        >
+          <RefreshCw className="h-4 w-4" />
+          {tr("Try again")}
+        </Button>
+      </div>
+    );
+  else if (view.kind === "pin")
+    panel = (
+      <PinPanel
+        person={view.person}
+        onBack={back}
+        onSubmit={async (pin) => finish(await loginAs(view.person.id, { pin }))}
+      />
+    );
+  else if (view.kind === "password")
+    panel = (
+      <PasswordPanel
+        person={view.person}
+        onBack={back}
+        onSubmit={async (password, remember) =>
+          finish(await loginAs(view.person.id, { password }, remember))
+        }
+        onForgot={() => setView({ kind: "recover", person: view.person })}
+      />
+    );
+  else if (view.kind === "recover")
+    panel = (
+      <RecoverPanel
+        person={view.person}
+        onBack={() => setView({ kind: "password", person: view.person })}
+        onSubmit={async (code, password) => {
+          try {
+            await apiRequest("POST", "/api/auth/recover", {
+              userId: view.person.id,
+              code,
+              password,
+            });
+            toast.success(tr("New password set — sign in with it now"));
+            setView({ kind: "password", person: view.person });
+            return null;
+          } catch (err) {
+            return tr(err instanceof Error ? err.message : "Could not save");
+          }
+        }}
+      />
+    );
+  else if (view.kind === "username")
+    panel = (
+      <UsernamePanel
+        onBack={people.status === "ready" ? back : undefined}
+        onSubmit={async (username, password, remember) =>
+          finish(await login(username, password, remember))
+        }
+      />
+    );
+  else
+    panel = (
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-[20px] font-semibold">
+            {tr("Who is signing in?")}
+          </h1>
+          <p className="text-[12px] text-muted-foreground">
+            {tr("Tap your name")}
+          </p>
+        </div>
+        <PeopleGrid
+          people={people.status === "ready" ? people.people : []}
+          onPick={(p) => setView({ kind: p.method, person: p })}
+        />
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setView({ kind: "username" })}
+            className="text-[12px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+          >
+            {tr("Sign in with username")}
+          </button>
+        </div>
+      </div>
+    );
+
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 transition-colors duration-300">
-      <div className="absolute top-5 right-5 z-20">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50 px-4 transition-colors dark:from-slate-950 dark:to-indigo-950/40">
+      <div className="absolute right-5 top-5 z-20">
         <ThemeLanguageSwitcher />
       </div>
-
-      <Card className="w-full max-w-md border border-border shadow-xl bg-card text-card-foreground animate-in fade-in-0 zoom-in-95 duration-300">
-        <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-md">
-            <Cross
-              className="w-8 h-8 text-primary-foreground"
-              strokeWidth={2.5}
-            />
-          </div>
-
-          <div>
-            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
-              {t("login.title")}
-            </CardTitle>
-            <CardDescription className="text-sm mt-1 text-muted-foreground">
-              {t("login.subtitle")}
-            </CardDescription>
-          </div>
-        </CardHeader>
-
-        <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-foreground"
-              >
-                {t("login.email")}
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="text"
-                autoComplete="username"
-                placeholder={t("login.emailPlaceholder")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                className={cn(
-                  "h-12 rounded-xl bg-input border border-border text-foreground",
-                  "placeholder:text-muted-foreground",
-                  "focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring",
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-foreground"
-              >
-                {t("login.password")}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder={t("login.passwordPlaceholder")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  className={cn(
-                    "h-12 rounded-xl bg-input border border-border text-foreground pr-12",
-                    "placeholder:text-muted-foreground",
-                    "focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring",
-                  )}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  disabled={loading}
-                  className="peer sr-only"
-                />
-                <div
-                  className={cn(
-                    "h-4 w-4 rounded-md border-2 flex items-center justify-center transition-all",
-                    remember
-                      ? "bg-primary border-primary"
-                      : "bg-background border-border",
-                  )}
-                >
-                  {remember && (
-                    <svg
-                      className="h-3 w-3 text-primary-foreground"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {t("login.remember")}
-                </span>
-              </label>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("login.loading")}
-                </>
-              ) : (
-                t("login.button")
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300">
+        <BrandPanel shop={shop} />
+        <div className="flex min-h-[520px] flex-1 flex-col justify-center p-8 sm:p-10">
+          <div className="mx-auto w-full max-w-sm">{panel}</div>
+        </div>
+      </div>
     </div>
   );
 }

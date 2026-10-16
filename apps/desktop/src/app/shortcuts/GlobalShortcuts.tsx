@@ -14,6 +14,7 @@ export function GlobalShortcuts() {
   const [helpOpen, setHelpOpen] = useState(false);
   const role = useAuthStore((s) => s.session?.user.role);
   const access = useSettingsStore((s) => s.roles);
+  const logout = useAuthStore((s) => s.logout);
 
   useHotkeys([
     ...navItemsFor(role, access).map((item) => ({
@@ -24,6 +25,13 @@ export function GlobalShortcuts() {
     { keys: KEYS.newBill, handler: () => navigate("/billing?focus=search") },
     { keys: KEYS.help, handler: () => setHelpOpen(true) },
     { keys: KEYS.toggleSidebar, handler: toggleSidebar },
+    {
+      keys: KEYS.switchUser,
+      handler: () => {
+        void logout();
+        navigate("/login", { replace: true });
+      },
+    },
   ]);
 
   return <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />;

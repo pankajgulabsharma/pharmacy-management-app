@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CalendarX,
   HandCoins,
+  LifeBuoy,
   PackageX,
   PauseCircle,
   Repeat,
@@ -129,6 +130,19 @@ export function useShopAlerts(): ShopAlert[] {
         icon: ShieldAlert,
         level: backup.kind === "no-offsite" ? "amber" : "red",
         to: "/settings?section=backup",
+      });
+
+    // Owner forgets the password with no code → locked out of the shop
+    if (isOwner && backupHealth && !backupHealth.recoveryCode)
+      list.push({
+        key: "recovery-code",
+        title: tr("Make an owner recovery code"),
+        desc: tr(
+          "If you forget your password, this code lets you back in — no SMS needed. Takes a second.",
+        ),
+        icon: LifeBuoy,
+        level: "amber",
+        to: "/settings?section=users",
       });
 
     const stock = stockReport(batches, medicines, expiringDays);

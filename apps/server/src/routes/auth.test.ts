@@ -324,3 +324,109 @@ describe("shop settings (one copy for every counter)", () => {
     expect(extra.statusCode).toBe(400);
   });
 });
+
+describe("sign-in screen: tiles, PIN, recovery code", () => {
+  const pinLogin = (userId: string, pin: string) =>
+    call("POST", "/api/auth/login", undefined, { userId, pin });
+
+  it("tiles show names and how to sign in — never usernames", async () => {
+    const r = await call("GET", "/api/auth/people");
+    expect(r.statusCode).toBe(200);
+    const { shop, people } = r.json();
+    expect(shop).toBeTruthy();
+    expect(people).toEqual([
+      {
+        id: "u_admin",
+        name: "Pankaj Sharma",
+        role: "owner",
+        method: "password",
+      },
+      {
+        id: "u_pharmacist",
+        name: "Anita Verma",
+        role: "pharmacist",
+        method: "password",
+      },
+      { id: "u_cashier", name: "Ravi Kumar", role: "cashier", method: "pin" },
+    ]);
+    expect(JSON.stringify(people)).not.toMatch(/username|Hash/);
+  });
+
+  it("staff PIN: right → signed in (not remembered); wrong → refused; 5 wrong → pause", async () => {
+    const ok = await pinLogin("u_cashier", "2468");
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().user.role).toBe("cashier");
+    expect(ok.json().expiresAt - Date.now()).toBeLessThanOrEqual(
+      12 * 3_600_000,
+    );
+    // a tile + password works too
+    const pw = await call("POST", "/api/auth/login", undefined, {
+      userId: "u_pharmacist",
+      password: "pharmacist",
+    });
+    expect(pw.statusCode).toBe(200);
+    expect((await pinLogin("u_cashier", "1357")).json().error).toBe(
+      "Wrong PIN",
+    );
+    for (let i = 0; i < 3; i++) await pinLogin("u_cashier", "1357");
+    const locked = await pinLogin("u_cashier", "1357");
+    expect(locked.statusCode).toBe(429);
+    // even the right PIN waits now (from any counter)
+    expect((await pinLogin("u_cashier", "2468")).statusCode).toBe(429);
+  });
+
+  it("owner sets / removes PINs; owners never sign in with one", async () => {
+    const owner = await signIn(app);
+    const set = (id: string, pin: string | null) =>
+      call("POST", `/api/users/${id}/pin`, owner, { pin });
+    expect((await set("u_pharmacist", "1234")).json().error).toMatch(/easy/);
+    expect((await set("u_pharmacist", "12")).json().error).toMatch(/4 digits/);
+    expect((await set("u_admin", "4826")).json().error).toMatch(/password/);
+    const r = await set("u_pharmacist", "4826");
+    expect(r.json().user.hasPin).toBe(true);
+    expect((await pinLogin("u_pharmacist", "4826")).statusCode).toBe(200);
+    // made an owner → PIN removed
+    await call("PUT", "/api/users/u_pharmacist", owner, {
+      name: "Anita Verma",
+      role: "owner",
+      active: true,
+    });
+    expect((await pinLogin("u_pharmacist", "4826")).statusCode).toBe(401);
+    // a cashier can't set PINs
+    const cashier = await signIn(app, "cashier");
+    expect(
+      (await call("POST", "/api/users/u_cashier/pin", cashier, { pin: "5791" }))
+        .statusCode,
+    ).toBe(403);
+    expect((await set("u_cashier", null)).json().user.hasPin).toBe(false);
+    expect((await pinLogin("u_cashier", "2468")).statusCode).toBe(401);
+  });
+
+  it("owner forgot the password: recovery code (once) sets a new one", async () => {
+    const owner = await signIn(app);
+    expect(
+      (await call("GET", "/api/users/recovery-code", owner)).json().createdAt,
+    ).toBeNull();
+    const { code } = (
+      await call("POST", "/api/users/recovery-code", owner)
+    ).json();
+    expect(code).toMatch(/^[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}$/);
+    const recover = (c: string, userId = "u_admin", password = "newpass9") =>
+      call("POST", "/api/auth/recover", undefined, {
+        userId,
+        code: c,
+        password,
+      });
+    expect((await recover("AAAA-BBBB-CCCC")).statusCode).toBe(400);
+    expect((await recover(code, "u_cashier")).statusCode).toBe(400);
+    expect(
+      (await recover(code.toLowerCase().replace(/-/g, " "))).statusCode,
+    ).toBe(200);
+    // the old password and old sessions are gone; the new one works
+    expect((await call("GET", "/api/auth/me", owner)).statusCode).toBe(401);
+    expect((await login("admin", "admin")).statusCode).toBe(401);
+    expect((await login("admin", "newpass9")).statusCode).toBe(200);
+    // used up
+    expect((await recover(code)).statusCode).toBe(400);
+  });
+});

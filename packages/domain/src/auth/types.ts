@@ -20,7 +20,21 @@ export type User = {
 };
 
 /** A row in Settings → Users */
-export type UserRecord = User & { active: boolean; createdAt: string };
+export type UserRecord = User & {
+  active: boolean;
+  createdAt: string;
+  /** Can sign in with a 4-digit PIN (staff only — owners use a password) */
+  hasPin: boolean;
+};
+
+/** A tile on the sign-in screen (no username, nothing secret) */
+export type SignInPerson = {
+  id: string;
+  name: string;
+  role: Role;
+  /** "pin" = tap the tile + 4 digits; "password" = owner / no PIN yet */
+  method: "pin" | "password";
+};
 
 export type UserInput = {
   username: string;

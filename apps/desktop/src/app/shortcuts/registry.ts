@@ -109,6 +109,8 @@ export const KEYS = {
   newBill: ["F2", "Alt+N"],
   globalSearch: "Mod+K",
   toggleSidebar: "Mod+B",
+  /** Sign out to the name tiles — the next person taps theirs */
+  switchUser: ["Mod+L", "Alt+Q"],
 
   // Lists (Medicines, Inventory, Purchases, Suppliers, Returns…)
   focusSearch: ["/", "Mod+F"],
@@ -173,6 +175,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: KEYS.globalSearch, label: "Search everything" },
       { keys: KEYS.help, label: "Show this list" },
       { keys: KEYS.toggleSidebar, label: "Collapse / expand sidebar" },
+      { keys: KEYS.switchUser, label: "Switch user (sign out)" },
     ],
   },
   {

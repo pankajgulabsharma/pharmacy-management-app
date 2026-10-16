@@ -13,6 +13,21 @@ body,
 }
 
 @theme {
+  --animate-pin-shake: pin-shake 0.4s ease-in-out;
+  @keyframes pin-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-8px);
+    }
+    40%,
+    80% {
+      transform: translateX(8px);
+    }
+  }
   --color-background: #f8fafc;
   --color-foreground: #0f172a;
 

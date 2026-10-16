@@ -43,10 +43,20 @@ export const DEMO_USERS = [
   { id: "u_cashier", username: "cashier", name: "Ravi Kumar", role: "cashier" },
 ] as const;
 
+/** Demo counter PIN: the cashier taps the tile and types 2468 */
+export const DEMO_PINS: Record<string, string> = { u_cashier: "2468" };
+
 /** Slow password hashes, made once per run (outside any transaction) */
 let hashes: Promise<string[]> | null = null;
 const demoHashes = () =>
   (hashes ??= Promise.all(DEMO_USERS.map((u) => hashPassword(u.username))));
+let pinHashes: Promise<(string | null)[]> | null = null;
+const demoPinHashes = () =>
+  (pinHashes ??= Promise.all(
+    DEMO_USERS.map((u) =>
+      DEMO_PINS[u.id] ? hashPassword(DEMO_PINS[u.id]) : null,
+    ),
+  ));
 
 /**
  * Puts the demo shop into the database in ONE transaction, using the same
@@ -56,9 +66,11 @@ export async function seedDemoData({
   raw,
 }: Database): Promise<Record<string, number>> {
   const now = new Date().toISOString();
+  const pins = await demoPinHashes();
   const users = (await demoHashes()).map((passwordHash, i) => ({
     ...DEMO_USERS[i],
     passwordHash,
+    pinHash: pins[i],
     createdAt: now,
   }));
   writeTx(raw, () => {

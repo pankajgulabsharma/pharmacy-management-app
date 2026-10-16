@@ -41,6 +41,12 @@ type AuthState = {
     password: string,
     remember: boolean,
   ) => Promise<LoginResult>;
+  /** Sign-in screen tile: the person's id + PIN or password */
+  loginAs: (
+    userId: string,
+    secret: { pin: string } | { password: string },
+    remember?: boolean,
+  ) => Promise<LoginResult>;
   logout: () => Promise<void>;
   /** Re-read my name / role from the server (the owner may have changed it) */
   refreshMe: () => Promise<void>;
@@ -121,17 +127,15 @@ const signedOut = () => {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      session: null,
-      remember: false,
-
-      login: async (username, password, remember) => {
+    (set, get) => {
+      const signIn = async (body: object): Promise<LoginResult> => {
+        const remember = (body as { remember?: boolean }).remember === true;
         try {
           const r = await apiRequest<{
             token: string;
             expiresAt: number;
             user: User;
-          }>("POST", "/api/auth/login", { username, password, remember });
+          }>("POST", "/api/auth/login", body);
           setApiAuth(r.token, signedOut);
           set({
             session: { user: r.user, token: r.token, expiresAt: r.expiresAt },
@@ -155,36 +159,46 @@ export const useAuthStore = create<AuthState>()(
             };
           return { ok: false, reason: "invalid", message: e.message };
         }
-      },
+      };
+      return {
+        session: null,
+        remember: false,
 
-      logout: async () => {
-        // Tell the server (ends the token there); sign out here even if it's offline
-        if (get().session)
-          await apiRequest("POST", "/api/auth/logout", {}, 3000).catch(
-            () => {},
+        login: (username, password, remember) =>
+          signIn({ username, password, remember }),
+        loginAs: (userId, secret, remember = false) =>
+          signIn({ userId, ...secret, remember }),
+
+        logout: async () => {
+          // Tell the server (ends the token there); sign out here even if it's offline
+          if (get().session)
+            await apiRequest("POST", "/api/auth/logout", {}, 3000).catch(
+              () => {},
+            );
+          signedOut();
+        },
+
+        refreshMe: async () => {
+          if (!get().session) return;
+          const r = await apiGet<{ user: User; expiresAt: number }>(
+            "/api/auth/me",
           );
-        signedOut();
-      },
+          const s = get().session;
+          if (s)
+            set({ session: { ...s, user: r.user, expiresAt: r.expiresAt } });
+        },
 
-      refreshMe: async () => {
-        if (!get().session) return;
-        const r = await apiGet<{ user: User; expiresAt: number }>(
-          "/api/auth/me",
-        );
-        const s = get().session;
-        if (s) set({ session: { ...s, user: r.user, expiresAt: r.expiresAt } });
-      },
-
-      changePassword: async (current, next) => {
-        const r = await apiRequest<{ user: User }>(
-          "POST",
-          "/api/auth/password",
-          { current, next },
-        );
-        const s = get().session;
-        if (s) set({ session: { ...s, user: r.user } });
-      },
-    }),
+        changePassword: async (current, next) => {
+          const r = await apiRequest<{ user: User }>(
+            "POST",
+            "/api/auth/password",
+            { current, next },
+          );
+          const s = get().session;
+          if (s) set({ session: { ...s, user: r.user } });
+        },
+      };
+    },
     {
       name: "medicare-session",
       version: 2,

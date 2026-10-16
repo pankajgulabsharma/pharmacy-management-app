@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { apiGet } from "@/lib/api";
 import { daysSince, type Offsite } from "./types";
 
-type Health = { lastBackupAt: string | null; offsite: Offsite };
+type Health = {
+  lastBackupAt: string | null;
+  offsite: Offsite;
+  /** Owner recovery code made (forgot-password without SMS) */
+  recoveryCode: boolean;
+};
 
 type Store = {
   health: Health | null;

@@ -63,6 +63,19 @@ every action against the person's role — hiding a button is not enough.
 A brand-new (empty) database gets one account, `admin` / `admin`, which must
 choose a new password at the first sign-in. Add people in Settings → Users.
 
+**Sign-in screen** — a tile per person (no usernames shown). Staff
+(pharmacist / cashier) can get a **4-digit PIN** from the owner (Settings →
+Users → _Set PIN_; easy ones like 1111 / 1234 are refused): tap the name,
+type the PIN, done. Owners always use their password. 5 wrong PINs pause
+that person for a minute (from every counter). **Ctrl+L** (or Alt+Q / menu →
+_Switch user_) signs out to the tiles. _Sign in with username_ stays as a
+fallback. Demo: the cashier's PIN is `2468`.
+
+**Owner forgot the password** (no SMS, no internet): Settings → Users →
+_Owner recovery code_ makes a 12-letter code, shown once — write it down and
+keep it at home. Sign-in screen → owner's tile → _Forgot password?_ → code +
+new password. One use; the bell reminds the owner until a code is made.
+
 ## Backend roadmap
 
 1. ✅ Monorepo layout
@@ -101,6 +114,7 @@ choose a new password at the first sign-in. Add people in Settings → Users.
 34. ✅ Distributor's invoice file → purchase lines
 35. ✅ WhatsApp opens straight in Web / the app; order list goes to the supplier
 36. ✅ Backup & data: one-click Google Drive / pen drive, folder browser, missed copies catch up, bell warns
+37. ✅ Sign-in tiles + staff PIN, Ctrl+L switch user, owner recovery code
 
 ## Windows installer
 

@@ -1240,4 +1240,80 @@ export const HI_UI: Record<string, string> = {
   "Backup saved on this computer — the second copy is made when the drive is back":
     "बैकअप इस कंप्यूटर पर सेव हुआ — ड्राइव जुड़ते ही दूसरी कॉपी बन जाएगी",
   "Pen drive": "पेन ड्राइव",
+  // Step 39: sign-in tiles, PIN, recovery code
+  "Pharmacy Management System": "फ़ार्मेसी मैनेजमेंट सिस्टम",
+  "Tap your name · staff type their PIN · Ctrl+L switches user":
+    "अपने नाम पर टैप करें · स्टाफ़ अपना PIN डालें · Ctrl+L से यूज़र बदलें",
+  "Welcome, {{name}}": "स्वागत है, {{name}}",
+  "Can't reach the main computer": "मुख्य कंप्यूटर से जुड़ नहीं पा रहे",
+  "Is MediCare open on the main computer, and this computer on the shop Wi-Fi?":
+    "क्या मुख्य कंप्यूटर पर MediCare खुला है, और यह कंप्यूटर दुकान के Wi-Fi पर है?",
+  "New password set — sign in with it now":
+    "नया पासवर्ड सेट हो गया — अब उससे साइन इन करें",
+  "Who is signing in?": "कौन साइन इन कर रहा है?",
+  "Tap your name": "अपने नाम पर टैप करें",
+  "Sign in with username": "यूज़रनेम से साइन इन करें",
+  "{{n}} of {{total}} digits": "{{total}} में से {{n}} अंक",
+  "People who can sign in": "साइन इन कर सकने वाले लोग",
+  "Enter your 4-digit PIN": "अपना 4 अंकों का PIN डालें",
+  "Keep me signed in on this computer (7 days)":
+    "इस कंप्यूटर पर साइन इन रखें (7 दिन)",
+  "Enter your password": "अपना पासवर्ड डालें",
+  Password: "पासवर्ड",
+  "Forgot password?": "पासवर्ड भूल गए?",
+  "Ask the owner — Settings → Users & roles → Reset password.":
+    "मालिक से कहें — सेटिंग्स → यूज़र और रोल → पासवर्ड रीसेट।",
+  "Enter username and password": "यूज़रनेम और पासवर्ड डालें",
+  "Type the 12-letter recovery code": "12 अक्षरों का रिकवरी कोड डालें",
+  "The two passwords differ": "दोनों पासवर्ड अलग हैं",
+  "Type the recovery code you wrote down (Settings → Users & roles), then choose a new password.":
+    "जो रिकवरी कोड आपने लिखकर रखा था (सेटिंग्स → यूज़र और रोल) वह डालें, फिर नया पासवर्ड चुनें।",
+  "Recovery code": "रिकवरी कोड",
+  "New password (6+ characters)": "नया पासवर्ड (6+ अक्षर)",
+  "New password again": "नया पासवर्ड दोबारा",
+  "No code? Another owner can reset it from Settings → Users & roles.":
+    "कोड नहीं है? दूसरा मालिक सेटिंग्स → यूज़र और रोल से रीसेट कर सकता है।",
+  "Sign-in": "साइन इन",
+  "Set PIN": "PIN सेट करें",
+  "Change PIN": "PIN बदलें",
+  "On the sign-in screen they tap their name and type these 4 digits — quick at a busy counter. Tell them the PIN; they can keep using their password too.":
+    "साइन इन स्क्रीन पर वे अपने नाम पर टैप करके ये 4 अंक डालेंगे — भीड़ वाले काउंटर पर जल्दी। उन्हें PIN बता दें; पासवर्ड भी चलता रहेगा।",
+  "Remove PIN": "PIN हटाएँ",
+  "Write it on paper and keep it at home — not near this computer. It is shown only now and works once.":
+    "इसे कागज़ पर लिखकर घर पर रखें — इस कंप्यूटर के पास नहीं। यह सिर्फ़ अभी दिखेगा और एक बार ही चलेगा।",
+  "Made on {{date}} — keep it safe": "{{date}} को बना — संभालकर रखें",
+  "Not made yet — make one now, it takes a second":
+    "अभी नहीं बना — अभी बना लें, एक सेकंड लगेगा",
+  "Make a new recovery code?": "नया रिकवरी कोड बनाएँ?",
+  "The old code stops working.": "पुराना कोड काम करना बंद कर देगा।",
+  "Save PIN": "PIN सेव करें",
+  "New PIN": "नया PIN",
+  "Owner recovery code": "मालिक का रिकवरी कोड",
+  "If an owner forgets the password, this code sets a new one from the sign-in screen (Forgot password?). No SMS, no internet needed.":
+    "मालिक पासवर्ड भूल जाए तो यह कोड साइन इन स्क्रीन से नया पासवर्ड सेट करता है (पासवर्ड भूल गए?)। SMS या इंटरनेट की ज़रूरत नहीं।",
+  "Make a new code": "नया कोड बनाएँ",
+  "Make a recovery code": "रिकवरी कोड बनाएँ",
+  "Make an owner recovery code": "मालिक का रिकवरी कोड बनाएँ",
+  "If you forget your password, this code lets you back in — no SMS needed. Takes a second.":
+    "पासवर्ड भूल गए तो यह कोड आपको वापस अंदर लाएगा — SMS की ज़रूरत नहीं। एक सेकंड लगेगा।",
+  "Switch user": "यूज़र बदलें",
+  "Switch user (sign out)": "यूज़र बदलें (साइन आउट)",
+  "Sign in": "साइन इन",
+  "Please wait…": "कृपया रुकें…",
+  "Set new password": "नया पासवर्ड सेट करें",
+  "Wrong PIN": "गलत PIN",
+  "Change PIN for {{name}}": "{{name}} का PIN बदलें",
+  "Set PIN for {{name}}": "{{name}} का PIN सेट करें",
+  "PIN saved": "PIN सेव हुआ",
+  "PIN removed — password only now": "PIN हटा दिया — अब सिर्फ़ पासवर्ड",
+  "4 digits, not 1111 or 1234": "4 अंक, 1111 या 1234 जैसे नहीं",
+  "PIN must be 4 digits": "PIN 4 अंकों का होना चाहिए",
+  "PIN is too easy to guess (like 1111 or 1234) — choose another":
+    "PIN बहुत आसान है (जैसे 1111 या 1234) — दूसरा चुनें",
+  "Owners sign in with their password": "मालिक पासवर्ड से साइन इन करते हैं",
+  "This recovery code is not right": "यह रिकवरी कोड सही नहीं है",
+  "Only an owner's password can be reset with the code":
+    "कोड से सिर्फ़ मालिक का पासवर्ड रीसेट होता है",
+  "Hide password": "पासवर्ड छुपाएँ",
+  "Show password": "पासवर्ड दिखाएँ",
 };
