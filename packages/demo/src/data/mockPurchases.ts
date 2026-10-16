@@ -186,7 +186,13 @@ function generate(): Purchase[] {
     counters[supplier.id] =
       (counters[supplier.id] ?? 1000 + int(0, 400)) + int(3, 25);
 
-    const createdAt = `${invoiceISO}T${String(int(9, 20)).padStart(2, "0")}:${String(int(0, 59)).padStart(2, "0")}:00`;
+    const planned = `${invoiceISO}T${String(int(9, 20)).padStart(2, "0")}:${String(int(0, 59)).padStart(2, "0")}:00`;
+    // Today's invoice early in the morning: never later than "now" (a
+    // stock movement in the future breaks closing stock / reports)
+    const createdAt =
+      new Date(planned).getTime() < Date.now() - 60_000
+        ? planned
+        : localStamp(new Date(Date.now() - 5 * 60_000));
     const stockPosted = i < STOCK_POSTED_COUNT;
 
     out.push({
@@ -214,3 +220,9 @@ function generate(): Purchase[] {
 }
 
 export const mockPurchases: Purchase[] = generate();
+
+/** "2026-10-17T03:39:00" in the computer's own time (like the planned ones) */
+function localStamp(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
+}
