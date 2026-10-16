@@ -63,6 +63,9 @@ import {
 } from "@medicare/domain/customers/ledger";
 
 const DOCTORS = DEMO_SETTINGS.doctors;
+/** Who billed (the demo users) — the cashier makes most bills */
+const BILLED_BY = ["Ravi Kumar", "Anita Verma", "Ravi Kumar", "Pankaj Sharma"];
+const billedByFor = (n: number) => BILLED_BY[n % BILLED_BY.length];
 const COUNTERS = DEMO_SETTINGS.counters;
 
 /** Demo customer accounts (khata) — named customers get one */
@@ -348,6 +351,7 @@ function buildDemo() {
           };
         }
         built.sale.imported = true;
+        built.sale.billedBy = billedByFor(sales.length);
         sales.push(built.sale);
       }
 
@@ -384,6 +388,7 @@ function buildDemo() {
           at,
         );
         built.sale.imported = true;
+        built.sale.billedBy = billedByFor(sales.length);
         sales.push(built.sale);
       }
     }
@@ -463,6 +468,7 @@ function buildDemo() {
     });
     batches = r2.batches;
     movements.push(...r2.movements);
+    built.sale.billedBy = billedByFor(sales.length);
     sales.push(built.sale);
   }
 

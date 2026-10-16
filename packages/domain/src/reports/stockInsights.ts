@@ -291,6 +291,21 @@ export type ProfitRow = {
  * medicine and per company, for bills in the period. Before customer
  * returns — same as the "Estimated margin" card.
  */
+/** What the batches actually sold on one bill line cost (purchase price) */
+export function lineCostPaise(
+  l: Sale["lines"][number],
+  costOf: ReadonlyMap<string, number>,
+): Paise {
+  const ups = l.unitsPerStrip > 0 ? l.unitsPerStrip : 1;
+  let cost = 0;
+  for (const a of l.allocations)
+    cost += Math.round(
+      (a.qtyStrip + a.qtyLoose / ups) *
+        rupeesToPaise(costOf.get(a.batchId) ?? 0),
+    );
+  return cost;
+}
+
 export function profitBy(
   sales: readonly Sale[],
   batches: readonly StockBatch[],
@@ -304,12 +319,7 @@ export function profitBy(
     if (!inRange(s.createdAt, range)) continue;
     for (const l of s.lines) {
       const ups = l.unitsPerStrip > 0 ? l.unitsPerStrip : 1;
-      let cost = 0;
-      for (const a of l.allocations)
-        cost += Math.round(
-          (a.qtyStrip + a.qtyLoose / ups) *
-            rupeesToPaise(costOf.get(a.batchId) ?? 0),
-        );
+      const cost = lineCostPaise(l, costOf);
       const r = meds.get(l.medicineId) ?? {
         key: l.medicineId,
         name: l.medicineName,

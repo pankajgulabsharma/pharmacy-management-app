@@ -4,7 +4,13 @@ import { allowedOrigins } from "./cors";
 /** What changed — every open app reloads just that part */
 /** "all" = everything changed (a backup was restored) — reload it all */
 export type Topic =
-  "medicines" | "suppliers" | "settings" | "users" | "license" | "all";
+  | "medicines"
+  | "suppliers"
+  | "settings"
+  | "users"
+  | "license"
+  | "commission"
+  | "all";
 
 const TOPICS: readonly Topic[] = [
   "medicines",
@@ -12,6 +18,7 @@ const TOPICS: readonly Topic[] = [
   "settings",
   "users",
   "license",
+  "commission",
 ];
 
 /** "/api/medicines/import" → "medicines" */

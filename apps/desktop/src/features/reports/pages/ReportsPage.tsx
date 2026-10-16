@@ -12,8 +12,12 @@ import {
   IndianRupee,
   Landmark,
   Package,
+  Stethoscope,
   Truck,
 } from "lucide-react";
+import { can } from "@medicare/domain/auth/permissions";
+import { useAuthStore } from "@/features/auth/store/useAuthStore";
+import { CommissionTab } from "@/features/commission/CommissionTab";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -61,17 +65,22 @@ import {
   stockReport,
 } from "@medicare/domain/reports/reports";
 
-type Tab = "sales" | "purchases" | "gst" | "stock" | "register";
+type Tab = "sales" | "purchases" | "gst" | "stock" | "register" | "commission";
 
-const TABS: SegmentedTab<Tab>[] = [
+const ALL_TABS: SegmentedTab<Tab>[] = [
   { id: "sales", label: "Sales", icon: IndianRupee },
   { id: "purchases", label: "Purchases", icon: Truck },
   { id: "gst", label: "GST", icon: Landmark },
   { id: "stock", label: "Stock", icon: Package },
   { id: "register", label: "Schedule register", icon: ClipboardList },
+  // Owner only: doctor referrals & staff commission
+  { id: "commission", label: "Doctors & staff", icon: Stethoscope },
 ];
 
 export default function ReportsPage() {
+  const role = useAuthStore((s) => s.session?.user.role);
+  const owner = can(role, "admin");
+  const TABS = owner ? ALL_TABS : ALL_TABS.filter((t) => t.id !== "commission");
   const purchases = usePurchaseStore((s) => s.purchases);
   const debitNotes = usePurchaseStore((s) => s.returns);
   const batches = useInventoryStore((s) => s.batches);
@@ -84,7 +93,7 @@ export default function ReportsPage() {
   const [tab, setTab] = useState<Tab>(
     oneOf(
       intent.tab,
-      ["sales", "purchases", "gst", "stock", "register"] as const,
+      TABS.map((t) => t.id),
       "sales",
     ),
   );
@@ -153,6 +162,7 @@ export default function ReportsPage() {
   );
 
   const exportCsv = () => {
+    if (tab === "commission") return; // its own Export button
     const stamp =
       tab === "stock"
         ? today
@@ -205,16 +215,18 @@ export default function ReportsPage() {
               onChange={setTab}
               ariaLabel="Report"
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={exportCsv}
-              className="h-9 rounded-lg text-[12px] gap-1.5"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export CSV
-              <Kbd keys={KEYS.exportReport} className="ml-1" />
-            </Button>
+            {tab !== "commission" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={exportCsv}
+                className="h-9 rounded-lg text-[12px] gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+                <Kbd keys={KEYS.exportReport} className="ml-1" />
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -292,6 +304,13 @@ export default function ReportsPage() {
           </div>
         ) : null}
         {reg ? <RegisterTab rows={reg} periodLabel={periodLabel} /> : null}
+        {tab === "commission" && owner ? (
+          <CommissionTab
+            sales={sales}
+            range={range}
+            periodLabel={periodLabel}
+          />
+        ) : null}
       </div>
     </div>
   );

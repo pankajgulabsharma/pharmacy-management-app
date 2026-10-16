@@ -590,3 +590,26 @@ export const sessions = sqliteTable(
   },
   (s) => [index("sessions_user_idx").on(s.userId)],
 );
+
+/**
+ * Commission paid to a doctor (referrals) or a staff member, for a period.
+ * The amounts owed are worked out from the bills; only payouts are stored.
+ */
+export const commissionPayouts = sqliteTable(
+  "commission_payouts",
+  {
+    id: id(),
+    kind: text("kind", { enum: ["doctor", "staff"] }).notNull(),
+    name: text("name").notNull(),
+    fromDate: text("from_date").notNull(),
+    toDate: text("to_date").notNull(),
+    amountPaise: paise("amount_paise"),
+    paidAt: text("paid_at").notNull(),
+    note: text("note").notNull().default(""),
+    paidBy: text("paid_by").notNull().default(""),
+  },
+  (t) => [
+    index("commission_payouts_period_idx").on(t.fromDate),
+    check("commission_payouts_amount_ok", sql`${t.amountPaise} > 0`),
+  ],
+);

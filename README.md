@@ -116,6 +116,7 @@ new password. One use; the bell reminds the owner until a code is made.
 36. ✅ Backup & data: one-click Google Drive / pen drive, folder browser, missed copies catch up, bell warns
 37. ✅ Sign-in tiles + staff PIN, Ctrl+L switch user, owner recovery code
 38. ✅ Shop network: one switch, new counters find the main computer by themselves, who is connected now
+39. ✅ Doctor referrals & staff commission (owner only): rates, paid / due, payouts with undo
 
 ## Windows installer
 
@@ -349,6 +350,20 @@ removes Windows' "unknown publisher" warning.
   D: partition) is warned about. The owner's bell warns when there is no
   second copy, or none for 3 days;
 - **year-end**: the first backup of every financial year is kept for ever.
+
+## Doctor referrals & staff commission
+
+Reports → **Doctors & staff** (owner only — the server refuses everyone
+else). Worked out from what the bills already have: the doctor picked on the
+bill and who billed it — nothing extra to type at the counter.
+
+- _Rates_: commission on the **bill amount** or on the **profit**, a % per
+  doctor and per staff member (0 = none; they still show — doctor-wise
+  sales is useful on its own). Same doctor however the name was typed.
+- Returns are taken off. **Pay** records a payout for the period (cash /
+  UPI / cheque / bank); it then shows as _Paid_, and can be undone.
+- Only payouts are stored (table `commission_payouts`); rates live in
+  settings. Export gives the CSV.
 
 ## Bill numbers
 

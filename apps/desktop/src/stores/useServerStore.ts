@@ -3,6 +3,7 @@ import { API_URL, ApiError, apiToken } from "@/lib/api";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUserStore } from "@/features/settings/store/useUserStore";
+import { useCommissionStore } from "@/features/commission/useCommissionStore";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
@@ -28,7 +29,8 @@ import { can } from "@medicare/domain/auth/permissions";
  *    changes made outside the app (Drizzle Studio, sqlite3).
  */
 type ServerStatus = "checking" | "online" | "offline";
-type Topic = "medicines" | "suppliers" | "settings" | "users" | "license";
+type Topic =
+  "medicines" | "suppliers" | "settings" | "users" | "license" | "commission";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
@@ -36,6 +38,12 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
   suppliers: () => useSupplierStore.getState().loadFromServer(),
   settings: () => useSettingsStore.getState().loadFromServer(),
   license: () => useLicenseStore.getState().loadFromServer(),
+  // Owner only, and only once the Commission report has been opened
+  commission: async () => {
+    const c = useCommissionStore.getState();
+    const role = useAuthStore.getState().session?.user.role;
+    if (c.loaded && can(role, "admin")) await c.load();
+  },
   // My role may have changed; the owner's Users screen refreshes too
   // (only an owner may read the user list — anyone else would get "no")
   users: async () => {

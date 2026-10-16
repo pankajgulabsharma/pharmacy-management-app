@@ -1341,4 +1341,57 @@ export const HI_UI: Record<string, string> = {
   "No other counter connected yet.": "अभी कोई दूसरा काउंटर नहीं जुड़ा।",
   "Only this computer — sharing is off.":
     "सिर्फ़ यह कंप्यूटर — शेयरिंग बंद है।",
+  // Step 41: doctor referrals & staff commission
+  "Bills with the doctor's name · {{period}}":
+    "डॉक्टर के नाम वाले बिल · {{period}}",
+  "Bills each person made · {{period}}": "हर व्यक्ति के बनाए बिल · {{period}}",
+  "1 bill": "1 बिल",
+  "{{n}} bills": "{{n}} बिल",
+  "Mark paid": "भुगतान हुआ",
+  "Due {{amount}}": "बाकी {{amount}}",
+  Pay: "भुगतान",
+  "Paid {{amount}} to {{name}}": "{{name}} को {{amount}} दिए",
+  "Undo this payout?": "यह भुगतान वापस लें?",
+  "The amount shows as due again.": "रकम फिर से बाकी दिखेगी।",
+  "Payout removed": "भुगतान हटाया",
+  "Pay {{name}}": "{{name}} को भुगतान",
+  "For {{period}} · due {{amount}}": "{{period}} के लिए · बाकी {{amount}}",
+  Rate: "दर",
+  "Commission (₹)": "कमीशन (₹)",
+  "Paid / due": "दिया / बाकी",
+  "Bills with a doctor": "डॉक्टर वाले बिल",
+  "Commission this period": "इस अवधि का कमीशन",
+  "Paid for this period": "इस अवधि के लिए दिया",
+  "Paid on": "दिया गया",
+  To: "किसे",
+  "Paid by": "कैसे दिया",
+  "Commission rates saved": "कमीशन दरें सेव हुईं",
+  "Commission rates": "कमीशन दरें",
+  "Leave empty (0) for no commission — they still show in the report.":
+    "कमीशन नहीं देना हो तो खाली (0) छोड़ें — रिपोर्ट में फिर भी दिखेंगे।",
+  "Commission on": "कमीशन किस पर",
+  "Bill amount": "बिल रकम",
+  Profit: "मुनाफ़ा",
+  "% of what the customer paid (after returns)":
+    "ग्राहक ने जो दिया उसका % (रिटर्न के बाद)",
+  "% of the profit on those bills (after returns)":
+    "उन बिलों के मुनाफ़े का % (रिटर्न के बाद)",
+  "Save rates": "दरें सेव करें",
+  "No doctors yet — add them in Settings → Doctors & counters, or pick one on a bill.":
+    "अभी कोई डॉक्टर नहीं — सेटिंग्स → डॉक्टर और काउंटर में जोड़ें, या बिल पर चुनें।",
+  Staff: "स्टाफ़",
+  "No staff yet": "अभी कोई स्टाफ़ नहीं",
+  "Doctors & staff": "डॉक्टर और स्टाफ़",
+  "Doctor referrals": "डॉक्टर रेफ़रल",
+  "Staff commission": "स्टाफ़ कमीशन",
+  "No bill in this period has a doctor's name — pick the doctor on the bill (Billing → Doctor).":
+    "इस अवधि के किसी बिल पर डॉक्टर का नाम नहीं — बिल पर डॉक्टर चुनें (बिलिंग → डॉक्टर)।",
+  Rates: "दरें",
+  "on profit": "मुनाफ़े पर",
+  "on bill amount": "बिल रकम पर",
+  Cheque: "चेक",
+  "Bank transfer": "बैंक ट्रांसफ़र",
+  "“From” must be on or before “To”":
+    "“From” की तारीख़ “To” से पहले या उसी दिन होनी चाहिए",
+  "Payout not found": "भुगतान नहीं मिला",
 };

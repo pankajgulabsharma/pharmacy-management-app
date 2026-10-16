@@ -9,6 +9,7 @@ import { shopRoutes } from "./routes/shop";
 import { authRoutes } from "./routes/auth";
 import { settingsRoutes } from "./routes/settings";
 import { backupRoutes } from "./routes/backups";
+import { commissionRoutes } from "./routes/commission";
 import { serveApp } from "./static";
 import { systemRoutes, type SystemHooks } from "./routes/system";
 import { licenseRoutes } from "./routes/license";
@@ -87,6 +88,7 @@ export function buildApp({
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir, license);
   systemRoutes(app, system, () => bus.connections());
+  commissionRoutes(app, database);
   catalogRoutes(app, database);
   libraryRoutes(app, library);
   supplierRoutes(app, database);
