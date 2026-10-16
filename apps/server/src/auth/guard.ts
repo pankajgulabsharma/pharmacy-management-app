@@ -87,6 +87,7 @@ const PUBLIC = new Set([
   "/api/auth/login",
   "/api/auth/people",
   "/api/auth/recover",
+  "/api/setup",
 ]);
 
 export function authGuard(

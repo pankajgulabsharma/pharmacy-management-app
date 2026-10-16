@@ -44,6 +44,17 @@ export function loadSettings(raw: DatabaseSync): Settings {
   return sanitizeSettings(obj);
 }
 
+/** Save every section (inside the caller's transaction) */
+export function saveSettings(raw: DatabaseSync, next: Settings) {
+  const now = new Date().toISOString();
+  const save = raw.prepare(
+    `INSERT INTO settings (key, value_json, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`,
+  );
+  for (const key of Object.keys(next) as (keyof Settings)[])
+    save.run(key, JSON.stringify(next[key]), now);
+}
+
 export function settingsRoutes(app: FastifyInstance, { raw }: Database) {
   app.get("/api/settings", async () => ({ settings: loadSettings(raw) }));
 
@@ -52,13 +63,7 @@ export function settingsRoutes(app: FastifyInstance, { raw }: Database) {
     const change = parse(settingsChange, req.body) as Partial<Settings>;
     return writeTx(raw, () => {
       const next = applySettingsChange(loadSettings(raw), change);
-      const now = new Date().toISOString();
-      const save = raw.prepare(
-        `INSERT INTO settings (key, value_json, updated_at) VALUES (?, ?, ?)
-         ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`,
-      );
-      for (const key of Object.keys(next) as (keyof Settings)[])
-        save.run(key, JSON.stringify(next[key]), now);
+      saveSettings(raw, next);
       return { settings: next };
     });
   });

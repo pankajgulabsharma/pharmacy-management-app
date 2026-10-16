@@ -29,6 +29,7 @@ import {
   useRecoveryCode,
 } from "../auth/recovery";
 import { loadSettings } from "./settings";
+import { needsSetup } from "./setup";
 import { parse } from "../shop/schemas";
 import { licenseState, type LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
@@ -98,7 +99,12 @@ export function authRoutes(
           ROLES.indexOf(a.role) - ROLES.indexOf(b.role) ||
           a.name.localeCompare(b.name),
       );
-    return { shop: loadSettings(raw).shop.name, people };
+    return {
+      shop: loadSettings(raw).shop.name,
+      people,
+      // Brand-new shop → the one-screen setup instead of the tiles
+      setup: needsSetup(raw),
+    };
   });
 
   app.post("/api/auth/login", async (req, reply) => {

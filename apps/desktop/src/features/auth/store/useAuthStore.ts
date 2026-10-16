@@ -47,6 +47,8 @@ type AuthState = {
     secret: { pin: string } | { password: string },
     remember?: boolean,
   ) => Promise<LoginResult>;
+  /** Signed in by another route (first-start setup) */
+  adoptSession: (s: Session) => void;
   logout: () => Promise<void>;
   /** Re-read my name / role from the server (the owner may have changed it) */
   refreshMe: () => Promise<void>;
@@ -168,6 +170,11 @@ export const useAuthStore = create<AuthState>()(
           signIn({ username, password, remember }),
         loginAs: (userId, secret, remember = false) =>
           signIn({ userId, ...secret, remember }),
+
+        adoptSession: (sess) => {
+          setApiAuth(sess.token, signedOut);
+          set({ session: sess, remember: false });
+        },
 
         logout: async () => {
           // Tell the server (ends the token there); sign out here even if it's offline

@@ -21,6 +21,7 @@ import {
   RecoverPanel,
   UsernamePanel,
 } from "../signin/SignInPanels";
+import { SetupDone, SetupPanel } from "../signin/SetupPanel";
 
 /** Only redirect back to our own screens — never to another site */
 function safeFrom(state: unknown): string {
@@ -39,7 +40,7 @@ type View =
   | { kind: "username" };
 
 /** Left half: the shop's name and the time — the counter's "lock screen" */
-function BrandPanel({ shop }: { shop: string }) {
+function BrandPanel({ shop, setup }: { shop: string; setup?: boolean }) {
   const now = new Date(useNow(15_000));
   return (
     <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-8 text-white md:flex">
@@ -84,7 +85,11 @@ function BrandPanel({ shop }: { shop: string }) {
         ) : null}
       </div>
       <p className="relative text-[11px] text-white/70">
-        {tr("Tap your name · staff type their PIN · Ctrl+L switches user")}
+        {tr(
+          setup
+            ? "Bills, stock, udhaar and GST — ready in a minute."
+            : "Tap your name · staff type their PIN · Ctrl+L switches user",
+        )}
       </p>
     </div>
   );
@@ -95,6 +100,12 @@ export default function LoginPage() {
   const location = useLocation();
   const login = useAuthStore((st) => st.login);
   const loginAs = useAuthStore((st) => st.loginAs);
+  const adoptSession = useAuthStore((st) => st.adoptSession);
+  // First start: the recovery code is shown once, after signing in
+  const [setupDone, setSetupDone] = useState<{
+    name: string;
+    code: string;
+  } | null>(null);
   const user = useCurrentUser();
   const people = usePeople();
   const [view, setView] = useState<View>({ kind: "people" });
@@ -123,13 +134,36 @@ export default function LoginPage() {
     return tr(r.message);
   };
 
-  if (user) return <Navigate to={safeFrom(location.state)} replace />;
+  if (user && !setupDone)
+    return <Navigate to={safeFrom(location.state)} replace />;
 
   const shop = people.status === "ready" ? people.shop : "";
   const back = () => setView({ kind: "people" });
+  const settingUp = people.status === "ready" && people.setup;
 
   let panel;
-  if (people.status === "loading")
+  if (setupDone)
+    panel = (
+      <SetupDone
+        name={setupDone.name}
+        code={setupDone.code}
+        onOpen={() => navigate("/dashboard", { replace: true })}
+      />
+    );
+  else if (people.status === "ready" && people.setup)
+    panel = (
+      <SetupPanel
+        onDone={(r) => {
+          setSetupDone({ name: r.user.name, code: r.recoveryCode });
+          adoptSession({
+            user: r.user,
+            token: r.token,
+            expiresAt: r.expiresAt,
+          });
+        }}
+      />
+    );
+  else if (people.status === "loading")
     panel = (
       <div className="flex justify-center py-16">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -239,9 +273,17 @@ export default function LoginPage() {
         <ThemeLanguageSwitcher />
       </div>
       <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300">
-        <BrandPanel shop={shop} />
-        <div className="flex min-h-[520px] flex-1 flex-col justify-center p-8 sm:p-10">
-          <div className="mx-auto w-full max-w-sm">{panel}</div>
+        <BrandPanel shop={settingUp ? "" : shop} setup={settingUp} />
+        <div className="flex max-h-[calc(100vh-2rem)] min-h-[520px] flex-1 flex-col overflow-y-auto p-8 sm:p-10">
+          <div
+            className={
+              settingUp && !setupDone
+                ? "m-auto w-full max-w-md"
+                : "m-auto w-full max-w-sm"
+            }
+          >
+            {panel}
+          </div>
         </div>
       </div>
     </div>

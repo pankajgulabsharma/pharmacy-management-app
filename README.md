@@ -60,8 +60,14 @@ every action against the person's role — hiding a button is not enough.
 | `pharmacist`                    | Pharmacist | Bills, stock, purchases, suppliers, medicines; sees Reports |
 | `cashier`                       | Cashier    | Bills, returns, held bills, customers & udhaar              |
 
-A brand-new (empty) database gets one account, `admin` / `admin`, which must
-choose a new password at the first sign-in. Add people in Settings → Users.
+**First start (new shop): one screen and go.** Instead of the sign-in
+tiles, a brand-new shop shows _Welcome! Set up your shop_: shop name, mobile,
+address, drug licence no., GSTIN (optional) and the owner's name + password.
+_Start using MediCare_ saves it, signs the owner in and shows the owner
+recovery code once. No `admin / admin` to tell anyone, no forced password
+change. (Behind it the shop starts with one account, username `admin` —
+kept for _Sign in with username_; the setup screen never comes back.)
+Add people in Settings → Users.
 
 **Sign-in screen** — a tile per person (no usernames shown). Staff
 (pharmacist / cashier) can get a **4-digit PIN** from the owner (Settings →
@@ -117,6 +123,7 @@ new password. One use; the bell reminds the owner until a code is made.
 37. ✅ Sign-in tiles + staff PIN, Ctrl+L switch user, owner recovery code
 38. ✅ Shop network: one switch, new counters find the main computer by themselves, who is connected now
 39. ✅ Doctor referrals & staff commission (owner only): rates, paid / due, payouts with undo
+40. ✅ First start: one setup screen (shop + owner) and go
 
 ## Windows installer
 
@@ -131,10 +138,10 @@ rights, no Node.js, no separate server: the app contains everything.
 
 On the first start the app asks what this computer is:
 
-| Choice            | What it does                                                                                                                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Main computer** | Keeps the data (`%APPDATA%\MediCare Pharmacy\data`) and the daily backups. Starts empty with one account `admin` / `admin` (must be changed). The installed app never contains demo data (development only: `npm run db:seed`). |
-| **Extra counter** | Keeps no data — connects to the main computer's address.                                                                                                                                                                        |
+| Choice            | What it does                                                                                                                                                                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Main computer** | Keeps the data (`%APPDATA%\MediCare Pharmacy\data`) and the daily backups. Starts empty: the first start shows one setup screen (shop details + owner name and password). The installed app never contains demo data (development only: `npm run db:seed`). |
+| **Extra counter** | Keeps no data — connects to the main computer's address.                                                                                                                                                                                                    |
 
 Change it later with **Ctrl+Shift+S** (or Settings → This computer & network).
 Uninstalling never deletes the shop's data.

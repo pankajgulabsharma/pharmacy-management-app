@@ -1394,4 +1394,26 @@ export const HI_UI: Record<string, string> = {
   "“From” must be on or before “To”":
     "“From” की तारीख़ “To” से पहले या उसी दिन होनी चाहिए",
   "Payout not found": "भुगतान नहीं मिला",
+  // Step 42: first-start setup
+  optional: "ज़रूरी नहीं",
+  "Welcome! Set up your shop": "स्वागत है! अपनी दुकान सेट करें",
+  "One minute — you can change all of this later in Settings.":
+    "बस एक मिनट — यह सब बाद में सेटिंग्स में बदल सकते हैं।",
+  "Your shop": "आपकी दुकान",
+  "You (owner)": "आप (मालिक)",
+  "6+ characters": "6+ अक्षर",
+  "Start using MediCare": "MediCare शुरू करें",
+  "All set, {{name}}!": "सब तैयार है, {{name}}!",
+  "If you ever forget your password, this code lets you back in. Write it on paper and keep it at home — it is shown only now.":
+    "अगर कभी पासवर्ड भूल जाएँ तो यह कोड आपको वापस अंदर लाएगा। इसे कागज़ पर लिखकर घर पर रखें — यह सिर्फ़ अभी दिखेगा।",
+  "I've written it down — open MediCare": "लिख लिया — MediCare खोलें",
+  "Shop name": "दुकान का नाम",
+  "Your name": "आपका नाम",
+  "Password again": "पासवर्ड दोबारा",
+  "Enter your name": "अपना नाम लिखें",
+  "Bills, stock, udhaar and GST — ready in a minute.":
+    "बिल, स्टॉक, उधार और GST — एक मिनट में तैयार।",
+  "Choose a password only you know (not “admin”)":
+    "ऐसा पासवर्ड चुनें जो सिर्फ़ आप जानें (“admin” नहीं)",
+  "This shop is already set up": "यह दुकान पहले से सेट है",
 };
