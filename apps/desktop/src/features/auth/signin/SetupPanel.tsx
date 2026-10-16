@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRight, CheckCircle2, Copy, Loader2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import type { User } from "@medicare/domain/auth/types";
 import { checkPassword } from "@medicare/domain/auth/users";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/api";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { printRecoveryCode } from "./printRecoveryCode";
 
 type Shop = Pick<
   ShopProfile,
@@ -22,6 +23,8 @@ type Done = {
   expiresAt: number;
   user: User;
   recoveryCode: string;
+  /** As typed on the form (printed on the recovery slip) */
+  shopName: string;
 };
 
 const input =
@@ -104,12 +107,11 @@ export function SetupPanel({
     if (Object.values(found).some(Boolean)) return;
     setBusy(true);
     try {
-      onDone(
-        await apiRequest<Done>("POST", "/api/setup", {
-          shop,
-          owner: { name: name.trim(), password },
-        }),
-      );
+      const r = await apiRequest<Omit<Done, "shopName">>("POST", "/api/setup", {
+        shop,
+        owner: { name: name.trim(), password },
+      });
+      onDone({ ...r, shopName: shop.name.trim() });
     } catch (err) {
       toast.error(tr(err instanceof Error ? err.message : "Could not save"));
     } finally {
@@ -254,10 +256,12 @@ export function SetupPanel({
 export function SetupDone({
   name,
   code,
+  shop,
   onOpen,
 }: {
   name: string;
   code: string;
+  shop: string;
   onOpen: () => void;
 }) {
   return (
@@ -269,7 +273,7 @@ export function SetupDone({
         </h1>
         <p className="text-[12px] text-muted-foreground">
           {tr(
-            "If you ever forget your password, this code lets you back in. Write it on paper and keep it at home — it is shown only now.",
+            "If you ever forget your password, this code lets you back in. Print it or write it down and keep it at home — it is shown only now.",
           )}
         </p>
       </div>
@@ -289,6 +293,14 @@ export function SetupDone({
           <Copy className="h-3.5 w-3.5" />
           {tr("Copy")}
         </button>
+        <button
+          type="button"
+          onClick={() => void printRecoveryCode(code, shop).catch(() => {})}
+          className="mt-2 ml-4 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+        >
+          <Printer className="h-3.5 w-3.5" />
+          {tr("Print")}
+        </button>
       </div>
       <Button
         type="button"
@@ -296,7 +308,7 @@ export function SetupDone({
         onClick={onOpen}
         className="h-11 w-full rounded-xl text-[13px] gap-1.5"
       >
-        {tr("I've written it down — open MediCare")}
+        {tr("Open MediCare")}
         <ArrowRight className="h-4 w-4" />
       </Button>
     </div>

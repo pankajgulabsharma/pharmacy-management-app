@@ -1416,4 +1416,20 @@ export const HI_UI: Record<string, string> = {
   "Choose a password only you know (not “admin”)":
     "ऐसा पासवर्ड चुनें जो सिर्फ़ आप जानें (“admin” नहीं)",
   "This shop is already set up": "यह दुकान पहले से सेट है",
+  // Step 43: provider unlock code, print recovery code
+  "Paste the unlock code you received": "जो अनलॉक कोड मिला है वह पेस्ट करें",
+  "No code? Your MediCare provider can unlock it. Send them these details:":
+    "कोड नहीं है? आपका MediCare प्रोवाइडर अनलॉक कर देगा। उन्हें ये जानकारी भेजें:",
+  "Request no.": "रिक्वेस्ट नं.",
+  "Unlock code": "अनलॉक कोड",
+  "Paste the unlock code (MU1.…)": "अनलॉक कोड पेस्ट करें (MU1.…)",
+  "If you ever forget your password, this code lets you back in. Print it or write it down and keep it at home — it is shown only now.":
+    "अगर कभी पासवर्ड भूल जाएँ तो यह कोड आपको वापस अंदर लाएगा। इसे प्रिंट करें या लिखकर घर पर रखें — यह सिर्फ़ अभी दिखेगा।",
+  Print: "प्रिंट",
+  "Open MediCare": "MediCare खोलें",
+  "Lost the code too?": "कोड भी नहीं है?",
+  "Print it or write it down and keep it at home — not near this computer. It is shown only now and works once.":
+    "इसे प्रिंट करें या लिखकर घर पर रखें — इस कंप्यूटर के पास नहीं। यह सिर्फ़ अभी दिखेगा और एक बार ही चलेगा।",
+  "This unlock code is not right for this computer (or older than 24 hours)":
+    "यह अनलॉक कोड इस कंप्यूटर के लिए सही नहीं है (या 24 घंटे से पुराना है)",
 };

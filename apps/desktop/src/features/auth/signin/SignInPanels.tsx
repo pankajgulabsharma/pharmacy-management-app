@@ -377,10 +377,13 @@ export function RecoverPanel({
   person,
   onBack,
   onSubmit,
+  onNoCode,
 }: {
   person: SignInPerson;
   onBack: () => void;
   onSubmit: (code: string, password: string) => Promise<string | null>;
+  /** Lost the code too → the provider's unlock code */
+  onNoCode: () => void;
 }) {
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -447,11 +450,15 @@ export function RecoverPanel({
         </p>
       ) : null}
       <SubmitButton busy={busy}>Set new password</SubmitButton>
-      <p className="text-center text-[11px] text-muted-foreground">
-        {tr(
-          "No code? Another owner can reset it from Settings → Users & roles.",
-        )}
-      </p>
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onNoCode}
+          className="text-[12px] font-medium text-primary hover:underline"
+        >
+          {tr("Lost the code too?")}
+        </button>
+      </div>
     </form>
   );
 }

@@ -81,6 +81,16 @@ fallback. Demo: the cashier's PIN is `2468`.
 _Owner recovery code_ makes a 12-letter code, shown once — write it down and
 keep it at home. Sign-in screen → owner's tile → _Forgot password?_ → code +
 new password. One use; the bell reminds the owner until a code is made.
+_Print_ puts it on a small slip.
+
+**Lost the code too?** (always works, ₹0) On the same screen: _Lost the code
+too?_ shows this computer's **machine code** and a **request no.** — the
+owner sends them to you (Copy / WhatsApp). You run
+`npm run license -- unlock --machine XXXX-XXXX-XXXX-XXXX --request 123456`
+and send back the unlock code (`MU1.…`, signed with your licence private
+key — nobody else can make one). It works once, for that computer and that
+request, within 24 hours; then the owner chooses a new password. Listed in
+`~/.medicare-vendor/unlocks.csv`.
 
 ## Backend roadmap
 
@@ -124,6 +134,7 @@ new password. One use; the bell reminds the owner until a code is made.
 38. ✅ Shop network: one switch, new counters find the main computer by themselves, who is connected now
 39. ✅ Doctor referrals & staff commission (owner only): rates, paid / due, payouts with undo
 40. ✅ First start: one setup screen (shop + owner) and go
+41. ✅ Never locked out: print the recovery code; provider's unlock code as the last way in
 
 ## Windows installer
 

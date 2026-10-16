@@ -22,6 +22,7 @@ import {
   UsernamePanel,
 } from "../signin/SignInPanels";
 import { SetupDone, SetupPanel } from "../signin/SetupPanel";
+import { UnlockPanel } from "../signin/UnlockPanel";
 
 /** Only redirect back to our own screens — never to another site */
 function safeFrom(state: unknown): string {
@@ -36,7 +37,7 @@ function safeFrom(state: unknown): string {
 
 type View =
   | { kind: "people" }
-  | { kind: "pin" | "password" | "recover"; person: SignInPerson }
+  | { kind: "pin" | "password" | "recover" | "unlock"; person: SignInPerson }
   | { kind: "username" };
 
 /** Left half: the shop's name and the time — the counter's "lock screen" */
@@ -105,6 +106,7 @@ export default function LoginPage() {
   const [setupDone, setSetupDone] = useState<{
     name: string;
     code: string;
+    shop: string;
   } | null>(null);
   const user = useCurrentUser();
   const people = usePeople();
@@ -147,6 +149,7 @@ export default function LoginPage() {
       <SetupDone
         name={setupDone.name}
         code={setupDone.code}
+        shop={setupDone.shop}
         onOpen={() => navigate("/dashboard", { replace: true })}
       />
     );
@@ -154,7 +157,11 @@ export default function LoginPage() {
     panel = (
       <SetupPanel
         onDone={(r) => {
-          setSetupDone({ name: r.user.name, code: r.recoveryCode });
+          setSetupDone({
+            name: r.user.name,
+            code: r.recoveryCode,
+            shop: r.shopName,
+          });
           adoptSession({
             user: r.user,
             token: r.token,
@@ -210,11 +217,20 @@ export default function LoginPage() {
         onForgot={() => setView({ kind: "recover", person: view.person })}
       />
     );
+  else if (view.kind === "unlock")
+    panel = (
+      <UnlockPanel
+        person={view.person}
+        onBack={() => setView({ kind: "recover", person: view.person })}
+        onDone={() => setView({ kind: "password", person: view.person })}
+      />
+    );
   else if (view.kind === "recover")
     panel = (
       <RecoverPanel
         person={view.person}
         onBack={() => setView({ kind: "password", person: view.person })}
+        onNoCode={() => setView({ kind: "unlock", person: view.person })}
         onSubmit={async (code, password) => {
           try {
             await apiRequest("POST", "/api/auth/recover", {

@@ -6,6 +6,7 @@ import {
   KeyRound,
   LifeBuoy,
   Pencil,
+  Printer,
   RectangleEllipsis,
   UserPlus,
 } from "lucide-react";
@@ -40,6 +41,7 @@ import { tr } from "@/lib/i18n";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useUserStore } from "../store/useUserStore";
 import { useBackupHealth } from "../backup/useBackupHealth";
+import { printRecoveryCode } from "@/features/auth/signin/printRecoveryCode";
 import { SettingsCard } from "./SettingsCard";
 
 const showError = (err: unknown) =>
@@ -497,6 +499,7 @@ function SetPinDialog({
  * screen. No SMS, no internet. Shown once; one use.
  */
 function RecoveryCodeCard() {
+  const shopName = useSettingsStore((s) => s.shop.name);
   const [madeOn, setMadeOn] = useState<string | null | undefined>(undefined);
   const [code, setCode] = useState("");
   const [confirm, setConfirm] = useState(false);
@@ -528,22 +531,34 @@ function RecoveryCodeCard() {
           </p>
           <p className="text-[11px] text-muted-foreground">
             {tr(
-              "Write it on paper and keep it at home — not near this computer. It is shown only now and works once.",
+              "Print it or write it down and keep it at home — not near this computer. It is shown only now and works once.",
             )}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              navigator.clipboard
-                ?.writeText(code)
-                .then(() => toast.success(tr("Copied")))
-            }
-            className="h-8 rounded-lg text-[11px] gap-1.5"
-          >
-            <Copy className="h-3.5 w-3.5" />
-            {tr("Copy")}
-          </Button>
+          <div className="flex justify-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                navigator.clipboard
+                  ?.writeText(code)
+                  .then(() => toast.success(tr("Copied")))
+              }
+              className="h-8 rounded-lg text-[11px] gap-1.5"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              {tr("Copy")}
+            </Button>
+            <Button
+              type="button"
+              onClick={() =>
+                void printRecoveryCode(code, shopName).catch(showError)
+              }
+              className="h-8 rounded-lg text-[11px] gap-1.5"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              {tr("Print")}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">

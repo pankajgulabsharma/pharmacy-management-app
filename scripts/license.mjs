@@ -20,6 +20,12 @@
  *
  *   npm run license -- show MC1.xxxx.yyyy
  *       What is inside a key.
+ *
+ *   npm run license -- unlock --machine 7KQ2-M9XD-4TRA-PZ6E --request 482913
+ *       Owner forgot the password AND lost the recovery code: their sign-in
+ *       screen (Forgot password? → No code?) shows the machine code and a
+ *       request number. This makes the unlock code for exactly that — one
+ *       use, 24 hours. Send it on WhatsApp. Listed in unlocks.csv.
  */
 import {
   createPrivateKey,
@@ -142,6 +148,32 @@ if (cmd === "keygen") {
   );
   console.log(key);
   console.log(`\n(Saved in ${csv})`);
+} else if (cmd === "unlock") {
+  if (!existsSync(PRIVATE))
+    fail("No signing key yet — run:  npm run license -- keygen");
+  const machine = arg("machine")?.trim().toUpperCase();
+  const request = arg("request")?.trim();
+  if (!machine || !/^[A-Z0-9]{4}(-[A-Z0-9]{4}){3}$/.test(machine))
+    fail(
+      "Give the machine code shown on their screen:  --machine XXXX-XXXX-XXXX-XXXX",
+    );
+  if (!request || !/^\d{6}$/.test(request))
+    fail(
+      "Give the 6-digit request number shown on their screen:  --request 123456",
+    );
+  const sig = sign(
+    null,
+    Buffer.from(`MU1|${machine}|${request}`),
+    createPrivateKey(readFileSync(PRIVATE)),
+  );
+  const code = `MU1.${sig.toString("base64url")}`;
+  const csv = join(DIR, "unlocks.csv");
+  if (!existsSync(csv)) appendFileSync(csv, "date,machine,request\n");
+  appendFileSync(csv, `${new Date().toISOString()},${machine},${request}\n`);
+  console.log(
+    `✓ Unlock code for ${machine} (request ${request}) — works once, within 24 hours:\n`,
+  );
+  console.log(code);
 } else if (cmd === "show") {
   const key = rest[0] ?? "";
   try {

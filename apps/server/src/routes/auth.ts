@@ -29,6 +29,7 @@ import {
   useRecoveryCode,
 } from "../auth/recovery";
 import { loadSettings } from "./settings";
+import { unlockRequest, useUnlockCode } from "../auth/unlock";
 import { needsSetup } from "./setup";
 import { parse } from "../shop/schemas";
 import { licenseState, type LicenseOptions } from "../license/state";
@@ -52,6 +53,9 @@ const loginInput = z
   .refine((b) => (b.password ?? b.pin) !== undefined, "Enter the password");
 const recoverInput = z
   .object({ userId: z.string().max(60), code: z.string().max(40), password })
+  .strict();
+const unlockInput = z
+  .object({ userId: z.string().max(60), code: z.string().max(200), password })
   .strict();
 const pinInput = z.object({ pin: pinField.nullable() }).strict();
 const changePasswordInput = z
@@ -184,6 +188,42 @@ export function authRoutes(
     if (!(await useRecoveryCode(raw, body.code))) {
       limiter.fail(key);
       return reply.code(400).send({ error: "This recovery code is not right" });
+    }
+    limiter.success(key);
+    await store.setPassword(raw, target.id, body.password, false);
+    store.endUserSessions(raw, target.id);
+    return { ok: true };
+  });
+
+  /** No recovery code either: the provider's unlock code (see auth/unlock.ts) */
+  app.get("/api/auth/unlock-request", async () => ({
+    machine: license.machine,
+    request: unlockRequest(raw),
+    shop: loadSettings(raw).shop.name,
+  }));
+
+  app.post("/api/auth/unlock", async (req, reply) => {
+    const body = parse(unlockInput, req.body);
+    const key = `unlock|${req.ip}`;
+    const wait = limiter.lockedFor(key);
+    if (wait)
+      return reply.code(429).send({
+        error: `Too many wrong attempts — try again in ${wait} seconds`,
+        retryInSec: wait,
+      });
+    const target = store.findUser(raw, "id", body.userId)?.user;
+    if (!target || target.role !== "owner" || !target.active)
+      throw new RuleError(
+        "Only an owner's password can be reset with the code",
+      );
+    const bad = checkPassword(body.password, target.username);
+    if (bad) throw new RuleError(bad);
+    if (!useUnlockCode(raw, body.code, license.publicKey, license.machine)) {
+      limiter.fail(key);
+      return reply.code(400).send({
+        error:
+          "This unlock code is not right for this computer (or older than 24 hours)",
+      });
     }
     limiter.success(key);
     await store.setPassword(raw, target.id, body.password, false);
