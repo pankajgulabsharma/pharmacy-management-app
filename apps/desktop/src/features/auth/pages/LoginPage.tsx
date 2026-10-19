@@ -293,13 +293,13 @@ export default function LoginPage() {
     );
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50 px-4 transition-colors dark:from-slate-950 dark:to-indigo-950/40">
+    <div className="relative flex h-screen flex-col overflow-y-auto pt-14 bg-gradient-to-br from-slate-100 to-indigo-50 px-4 transition-colors dark:from-slate-950 dark:to-indigo-950/40">
       <div className="absolute right-5 top-5 z-20">
         <ThemeLanguageSwitcher />
       </div>
-      <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300">
+      <div className="m-auto flex w-full max-w-4xl shrink-0 overflow-hidden rounded-3xl border border-border bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300">
         <BrandPanel shop={settingUp ? "" : shop} setup={settingUp} />
-        <div className="flex max-h-[calc(100vh-2rem)] min-h-[520px] flex-1 flex-col overflow-y-auto p-8 sm:p-10">
+        <div className="flex min-h-[520px] flex-1 flex-col overflow-y-auto p-8 sm:p-10">
           <div
             className={
               settingUp && !setupDone
@@ -311,7 +311,8 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-4 flex flex-col items-center gap-1">
+      {/* In the page flow — never on top of the card on small screens */}
+      <div className="flex shrink-0 flex-col items-center gap-1 pb-4 pt-5">
         <button
           type="button"
           onClick={() => setHelpOpen(true)}

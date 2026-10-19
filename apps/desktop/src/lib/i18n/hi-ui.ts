@@ -1542,4 +1542,19 @@ export const HI_UI: Record<string, string> = {
   "Approval code / last 4 digits (optional)":
     "अप्रूवल कोड / आख़िरी 4 अंक (ज़रूरी नहीं)",
   "Transaction ID (optional)": "ट्रांज़ैक्शन ID (ज़रूरी नहीं)",
+  "1 day left": "1 दिन बाकी",
+  "{{n}} days left": "{{n}} दिन बाकी",
+  "Billing is paused": "बिलिंग रुकी हुई है",
+  "Licence ended": "लाइसेंस ख़त्म",
+  "Renew now — billing stops when these days are over.":
+    "अभी रिन्यू करें — ये दिन ख़त्म होते ही बिलिंग रुक जाएगी।",
+  "Free trial": "फ़्री ट्रायल",
+  "Every feature is open. Activate your licence any time.":
+    "सारे फ़ीचर खुले हैं। लाइसेंस कभी भी एक्टिवेट करें।",
+  "Renewal due": "रिन्यूअल बाकी",
+  "Renew the AMC in time — nothing changes until the last day.":
+    "AMC समय पर रिन्यू करें — आख़िरी दिन तक कुछ नहीं बदलेगा।",
+  "Activate licence": "लाइसेंस एक्टिवेट करें",
+  Hide: "छुपाएँ",
+  "Hide until the app is opened again": "ऐप दोबारा खुलने तक छुपाएँ",
 };

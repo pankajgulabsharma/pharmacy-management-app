@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MediCare Pharmacy</title>
+    <script>
+      // Same theme as the app from the very first frame (no light/dark flash)
+      try {
+        var t = localStorage.getItem("theme") || "light";
+        if (
+          t === "dark" ||
+          (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)
+        )
+          document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
     <style>
       /* App loader — one look for the very first start (below, before any
          script) and every later wait (components/common/AppLoader.tsx) */

@@ -36,6 +36,14 @@ export function AppLayout() {
   const loadError = useServerStore((s) =>
     s.status === "offline" ? s.error : null,
   );
+  // First start: ONE loader, full screen — it carries on from the page's
+  // own loader, so nothing jumps (no layout behind a second spinner)
+  if (!loaded && !loadError)
+    return (
+      <div className="mc-boot bg-background">
+        <AppLoader />
+      </div>
+    );
   return (
     <div className="h-screen flex overflow-hidden bg-background">
       <Sidebar />

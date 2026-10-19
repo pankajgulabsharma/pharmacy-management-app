@@ -41,16 +41,16 @@ const getKey = (m: MedicineWithStock) => m.id;
 /** Every column but the name has a fixed width — the name takes the rest */
 const COLUMNS: readonly TableColumn[] = [
   { key: "name", label: "Medicine" },
-  { key: "category", label: "Category", width: "w-[108px]" },
-  { key: "brand", label: "Brand / HSN", width: "w-[130px]" },
-  { key: "rack", label: "Rack", width: "w-[64px]" },
-  { key: "pack", label: "Pack", width: "w-[92px]" },
-  { key: "expiry", label: "Expiry", width: "w-[76px]" },
-  { key: "stock", label: "Stock", width: "w-[112px]" },
-  { key: "mrp", label: "MRP (₹)", width: "w-[76px]", align: "text-right" },
-  { key: "sale", label: "Sale (₹)", width: "w-[76px]", align: "text-right" },
-  { key: "status", label: "Status", width: "w-[92px]" },
-  { key: "actions", label: "", width: "w-[88px]", align: "text-right" },
+  { key: "category", label: "Category", width: "w-[124px]" },
+  { key: "brand", label: "Brand / HSN", width: "w-[112px]" },
+  { key: "rack", label: "Rack", width: "w-[76px]" },
+  { key: "pack", label: "Pack", width: "w-[96px]" },
+  { key: "expiry", label: "Expiry", width: "w-[64px]" },
+  { key: "stock", label: "Stock", width: "w-[104px]" },
+  { key: "mrp", label: "MRP (₹)", width: "w-[72px]", align: "text-right" },
+  { key: "sale", label: "Sale (₹)", width: "w-[72px]", align: "text-right" },
+  { key: "status", label: "Status", width: "w-[80px]" },
+  { key: "actions", label: "", width: "w-[80px]", align: "text-right" },
 ];
 
 export function MedicineTable({
@@ -97,7 +97,7 @@ export function MedicineTable({
           Fixed layout: column widths never change while scrolling (an
           auto table re-measures the rows on screen, so the header jumped)
         */}
-        <table className="w-full min-w-[1060px] table-fixed text-[11px] border-collapse">
+        <table className="w-full min-w-[1100px] table-fixed text-[11px] border-collapse">
           <colgroup>
             {COLUMNS.map((c) => (
               <col key={c.key} className={c.width ?? "w-full"} />
@@ -156,11 +156,18 @@ export function MedicineTable({
                       {[m.salt, m.strength].filter(Boolean).join(" · ") || "—"}
                     </p>
                   </td>
-                  <td className="px-3 py-2.5 text-[10px] text-muted-foreground whitespace-nowrap">
-                    {CATEGORY_LABELS[m.category]}
+                  <td
+                    className="px-3 py-2.5 text-[10px] text-muted-foreground"
+                    title={CATEGORY_LABELS[m.category]}
+                  >
+                    <span className="line-clamp-2 leading-snug">
+                      {CATEGORY_LABELS[m.category]}
+                    </span>
                   </td>
                   <td className="px-3 py-2.5">
-                    <p className="leading-tight">{m.brand}</p>
+                    <p className="truncate leading-tight" title={m.brand}>
+                      {m.brand}
+                    </p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {m.hsn}
                     </p>
@@ -169,7 +176,9 @@ export function MedicineTable({
                   {/* Rack */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {m.rack ? (
-                      <CodeChip tone="primary">{m.rack}</CodeChip>
+                      <CodeChip tone="primary" className="max-w-full truncate">
+                        {m.rack}
+                      </CodeChip>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

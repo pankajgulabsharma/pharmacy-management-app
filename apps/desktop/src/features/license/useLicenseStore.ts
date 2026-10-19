@@ -21,6 +21,8 @@ export type LicenseState = {
     expiresAt: string;
     counters: number;
     plan?: Plan;
+    /** A trial key of the length the provider chose */
+    trial?: boolean;
   } | null;
   counters: number | null;
   plan: Plan;
