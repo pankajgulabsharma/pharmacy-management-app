@@ -1442,7 +1442,6 @@ export const HI_UI: Record<string, string> = {
   "Unlock & set new password": "अनलॉक करें और नया पासवर्ड सेट करें",
   WhatsApp: "WhatsApp",
   // Step 48: support, plans, my PIN
-  "Upgrade — contact {{company}}": "अपग्रेड — {{company}} से संपर्क करें",
   "Powered by": "द्वारा संचालित",
   "Help & support": "मदद और सपोर्ट",
   "Support contact details are not filled in yet (packages/domain/src/vendor.ts).":
@@ -1485,4 +1484,7 @@ export const HI_UI: Record<string, string> = {
   "Mon–Sat, 10 am – 7 pm": "सोम–शनि, सुबह 10 – शाम 7",
   "Tap your name · type your PIN · Ctrl+L switches user":
     "अपने नाम पर टैप करें · अपना PIN डालें · Ctrl+L से यूज़र बदलें",
+  Upgrade: "अपग्रेड",
+  "Upgrade opens Help & support — your provider sends a new licence key.":
+    "अपग्रेड दबाने पर मदद और सपोर्ट खुलेगा — आपका प्रोवाइडर नई लाइसेंस की भेजेगा।",
 };

@@ -383,7 +383,7 @@ removes Windows' "unknown publisher" warning.
   installer. They show in **Help & support** (header ⓘ button, user menu,
   sign-in screen "Need help?") with the shop's machine code, plan, licence
   and version — sent along on WhatsApp / e-mail by themselves — and in the
-  footer "© year Company · Powered by Company".
+  footer "Powered by Company · © year".
 - **My PIN** (user menu, any role incl. the owner, needs the password).
   On the sign-in screen: _Forgot PIN? Use password_ → _Forgot password?_ →
   recovery code → _Lost the code too?_ → your unlock code.

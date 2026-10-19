@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Lock, Sparkles } from "lucide-react";
 import { PLAN_LABEL, type Plan } from "@medicare/domain/license/plan";
-import { VENDOR } from "@medicare/domain/vendor";
-import { Button } from "@/components/ui/button";
+import { UpgradeButton } from "./UpgradeButton";
 import { tr } from "@/lib/i18n";
 import { SupportDialog } from "./SupportDialog";
 
@@ -31,14 +30,13 @@ export function LockedFeature({
           </span>
         </p>
         <p className="text-[11px] text-muted-foreground">{tr(description)}</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">
+          {tr(
+            "Upgrade opens Help & support — your provider sends a new licence key.",
+          )}
+        </p>
       </div>
-      <Button
-        type="button"
-        onClick={() => setHelp(true)}
-        className="h-9 rounded-lg text-[12px]"
-      >
-        {tr("Upgrade — contact {{company}}", { company: VENDOR.company })}
-      </Button>
+      <UpgradeButton onClick={() => setHelp(true)} />
       {help ? <SupportDialog onClose={() => setHelp(false)} /> : null}
     </section>
   );

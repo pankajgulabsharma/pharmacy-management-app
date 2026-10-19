@@ -15,7 +15,7 @@ export type Vendor = {
 };
 
 export const VENDOR: Vendor = {
-  company: "Vintez Solution",
+  company: "Vyntez Solution",
   /** Support phone, e.g. "+91 98200 12345" */
   phone: "",
   /** WhatsApp number with country code, digits only, e.g. "919820012345" */
