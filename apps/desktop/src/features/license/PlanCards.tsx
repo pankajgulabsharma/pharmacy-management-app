@@ -64,12 +64,12 @@ export function PlanCards({ plan }: { plan: Plan }) {
           <section
             key={p}
             className={cn(
-              "relative flex flex-col rounded-2xl border p-4 transition",
+              "relative flex flex-col rounded-2xl p-4 transition",
               mine
-                ? "border-primary bg-gradient-to-b from-primary/[0.07] to-transparent shadow-[0_0_0_3px] shadow-primary/15"
+                ? "animated-border border-2 shadow-lg shadow-primary/10 [--mc-fill:color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))]"
                 : upgrade
-                  ? "border-violet-300 bg-gradient-to-b from-violet-500/[0.06] to-transparent dark:border-violet-800"
-                  : "border-border opacity-80",
+                  ? "border border-violet-300 bg-gradient-to-b from-violet-500/[0.06] to-transparent dark:border-violet-800"
+                  : "border border-border opacity-80",
             )}
           >
             {mine ? (

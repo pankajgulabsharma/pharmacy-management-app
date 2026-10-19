@@ -12,8 +12,10 @@
         if (
           t === "dark" ||
           (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)
-        )
+        ) {
           document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = "dark";
+        }
       } catch (e) {}
     </script>
     <style>
@@ -120,25 +122,37 @@
         );
         animation: mc-slide 1.3s ease-in-out infinite;
       }
+      /* Edge to edge, same colour as the app — no white frame round the
+         loader (the browser's default 8px body margin) */
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: #f8fafc;
+      }
+      html.dark,
+      html.dark body,
+      html.dark #root {
+        background: #020617;
+      }
       .mc-boot {
-        height: 100vh;
+        position: fixed;
+        inset: 0;
+        z-index: 40;
         display: grid;
         place-items: center;
         background: #f8fafc;
+      }
+      .dark .mc-boot {
+        background: #020617;
       }
       .dark .mc-title {
         color: #f1f5f9;
       }
       .dark .mc-sub {
         color: #94a3b8;
-      }
-      @media (prefers-color-scheme: dark) {
-        .mc-boot {
-          background: #0b1120;
-        }
-        .mc-boot .mc-title {
-          color: #f1f5f9;
-        }
       }
       @keyframes mc-spin {
         to {

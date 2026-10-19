@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Barcode, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/common/ModalShell";
+import { DialogCloseButton } from "@/components/common/DialogCloseButton";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { cn } from "@/lib/utils";
@@ -107,16 +108,21 @@ function Labels({
       open
       onClose={onClose}
       labelledBy={`${id}-t`}
-      className="max-w-md"
+      className="max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto"
     >
       <div className="p-4 space-y-3">
-        <h2
-          id={`${id}-t`}
-          className="text-sm font-semibold inline-flex items-center gap-2"
-        >
-          <Barcode className="h-4 w-4 text-primary" />
-          {tr("Barcode labels")} — {m.name}
-        </h2>
+        <div className="flex items-start justify-between gap-2">
+          <h2
+            id={`${id}-t`}
+            className="min-w-0 pt-1.5 text-sm font-semibold flex items-center gap-2"
+          >
+            <Barcode className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate" title={m.name}>
+              {tr("Barcode labels")} — {m.name}
+            </span>
+          </h2>
+          <DialogCloseButton onClick={onClose} className="-mr-1.5 -mt-1" />
+        </div>
         {!item ? (
           <div className="rounded-lg border border-border bg-muted/30 p-3 text-[12px] space-y-2">
             <p>

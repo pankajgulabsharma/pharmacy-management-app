@@ -6,8 +6,8 @@
  *   multi   several counters on the shop network + staff commission
  *
  * The plan comes from the licence key (or from how many computers it
- * allows). Trials and development copies show everything, so a shop can
- * try it all before buying.
+ * allows). A trial is the Single computer plan (one counter);
+ * development copies show everything.
  */
 export type Plan = "single" | "multi";
 export type Feature = "staffCommission";
@@ -32,7 +32,8 @@ export function planOf(
   counters: number | null,
   explicit?: Plan,
 ): Plan {
-  if (status === "off" || status === "trial") return "multi";
+  if (status === "off") return "multi";
+  if (status === "trial") return "single";
   if (explicit === "single" || explicit === "multi") return explicit;
   return (counters ?? 1) > 1 ? "multi" : "single";
 }

@@ -149,10 +149,19 @@ export function MedicineTable({
                   )}
                 >
                   <td className="px-3 py-2.5">
-                    <p className="font-medium text-foreground leading-tight">
-                      {m.name} <ScheduleBadge schedule={m.schedule} />
+                    <p className="flex min-w-0 items-center gap-1 font-medium text-foreground leading-tight">
+                      <span className="truncate" title={m.name}>
+                        {m.name}
+                      </span>
+                      <ScheduleBadge
+                        schedule={m.schedule}
+                        className="shrink-0"
+                      />
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <p
+                      className="truncate text-[10px] text-muted-foreground mt-0.5"
+                      title={[m.salt, m.strength].filter(Boolean).join(" · ")}
+                    >
                       {[m.salt, m.strength].filter(Boolean).join(" · ") || "—"}
                     </p>
                   </td>
@@ -168,7 +177,7 @@ export function MedicineTable({
                     <p className="truncate leading-tight" title={m.brand}>
                       {m.brand}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <p className="truncate text-[10px] text-muted-foreground mt-0.5">
                       {m.hsn}
                     </p>
                   </td>

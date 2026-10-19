@@ -67,7 +67,9 @@ function lookOf(s: LicenseState): Look {
       icon: Sparkles,
       pill: tr("Free trial"),
       title: days,
-      text: tr("Every feature is open. Activate your licence any time."),
+      text: tr(
+        "Single computer trial — one billing counter. Activate your licence any time.",
+      ),
     };
   return {
     tone: "warn",

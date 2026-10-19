@@ -136,8 +136,13 @@ function createWindow() {
 
   // Links to other sites open in the normal browser, never inside the app
   win.webContents.setWindowOpenHandler(({ url }) => {
-    // Web pages in the browser; "Send on WhatsApp" in the WhatsApp app
-    if (/^https?:/.test(url) || /^whatsapp:\/\/send\?/.test(url))
+    // Web pages in the browser; "Send on WhatsApp" in the WhatsApp app;
+    // call / e-mail (Help & support) in the phone / mail app
+    if (
+      /^https?:/.test(url) ||
+      /^whatsapp:\/\/send\?/.test(url) ||
+      /^(tel|mailto):/.test(url)
+    )
       void shell.openExternal(url);
     return { action: "deny" };
   });

@@ -31,11 +31,12 @@ function Channel({
   tone: string;
 }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-sm"
+    // A button, not a link: the shop's details travel in the address, and
+    // a link would show all of it in the corner on hover
+    <button
+      type="button"
+      onClick={() => window.open(href, "_blank", "noopener,noreferrer")}
+      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left text-foreground transition hover:border-primary hover:shadow-sm"
     >
       <span
         className={cn(
@@ -53,7 +54,7 @@ function Channel({
           {value}
         </span>
       </span>
-    </a>
+    </button>
   );
 }
 

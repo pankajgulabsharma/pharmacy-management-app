@@ -107,3 +107,40 @@ tbody tr {
   scroll-margin-top: 2.5rem; /* sticky header (h-9) + a little air */
   scroll-margin-bottom: 0.25rem;
 }
+
+/* ------------------------------------------------------------------ */
+/* Moving colourful border (e.g. "Your plan"): a bright streak runs    */
+/* round the edge. Use with a transparent `border-2`.                  */
+/* ------------------------------------------------------------------ */
+@property --mc-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.animated-border {
+  --mc-fill: var(--color-card);
+  border-color: transparent;
+  background:
+    linear-gradient(var(--mc-fill), var(--mc-fill)) padding-box,
+    conic-gradient(
+        from var(--mc-border-angle),
+        color-mix(in oklab, var(--color-primary) 30%, var(--color-card)) 0 50%,
+        #22d3ee 64%,
+        #6366f1 74%,
+        #a855f7 84%,
+        #ec4899 92%,
+        color-mix(in oklab, var(--color-primary) 30%, var(--color-card)) 100%
+      )
+      border-box;
+  animation: mc-border-run 3.5s linear infinite;
+}
+@keyframes mc-border-run {
+  to {
+    --mc-border-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animated-border {
+    animation-duration: 12s;
+  }
+}

@@ -1549,8 +1549,8 @@ export const HI_UI: Record<string, string> = {
   "Renew now — billing stops when these days are over.":
     "अभी रिन्यू करें — ये दिन ख़त्म होते ही बिलिंग रुक जाएगी।",
   "Free trial": "फ़्री ट्रायल",
-  "Every feature is open. Activate your licence any time.":
-    "सारे फ़ीचर खुले हैं। लाइसेंस कभी भी एक्टिवेट करें।",
+  "Single computer trial — one billing counter. Activate your licence any time.":
+    "सिंगल कंप्यूटर ट्रायल — एक बिलिंग काउंटर। लाइसेंस कभी भी एक्टिवेट करें।",
   "Renewal due": "रिन्यूअल बाकी",
   "Renew the AMC in time — nothing changes until the last day.":
     "AMC समय पर रिन्यू करें — आख़िरी दिन तक कुछ नहीं बदलेगा।",

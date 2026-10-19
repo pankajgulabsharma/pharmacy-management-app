@@ -8,8 +8,9 @@ describe("plans", () => {
     expect(planOf("active", 3, "single")).toBe("single");
     expect(planOf("grace", 1, "multi")).toBe("multi");
   });
-  it("trial and development show everything", () => {
-    expect(planOf("trial", 1)).toBe("multi");
+  it("trial is single computer, development shows everything", () => {
+    expect(planOf("trial", 1)).toBe("single");
+    expect(planOf("trial", 3)).toBe("single");
     expect(planOf("off", null)).toBe("multi");
   });
   it("staff commission is a multi-counter feature", () => {
