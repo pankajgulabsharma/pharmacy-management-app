@@ -476,7 +476,7 @@ function SetPinDialog({
         label="New PIN"
         htmlFor={`${id}-pin`}
         hint={
-          pin.length === PIN_LENGTH && bad ? bad : "4 digits, not 1111 or 1234"
+          pin.length === PIN_LENGTH && bad ? bad : "Any 4 digits"
         }
       >
         <input

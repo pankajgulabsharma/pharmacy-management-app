@@ -379,7 +379,7 @@ describe("sign-in screen: tiles, PIN, recovery code", () => {
     const owner = await signIn(app);
     const set = (id: string, pin: string | null) =>
       call("POST", `/api/users/${id}/pin`, owner, { pin });
-    expect((await set("u_pharmacist", "1234")).json().error).toMatch(/easy/);
+    expect((await set("u_pharmacist", "123")).json().error).toMatch(/4 digits/);
     expect((await set("u_pharmacist", "12")).json().error).toMatch(/4 digits/);
     expect((await set("u_admin", "4826")).json().error).toMatch(/own PIN/);
     const r = await set("u_pharmacist", "4826");
@@ -407,7 +407,7 @@ describe("sign-in screen: tiles, PIN, recovery code", () => {
     const mine = (password: string, pin: string | null) =>
       call("POST", "/api/auth/pin", owner, { password, pin });
     expect((await mine("wrong", "4826")).json().error).toMatch(/wrong/);
-    expect((await mine("admin", "1111")).json().error).toMatch(/easy/);
+    expect((await mine("admin", "11a1")).json().error).toMatch(/4 digits/);
     expect((await mine("admin", "4826")).json()).toEqual({ hasPin: true });
     const people = (await call("GET", "/api/auth/people")).json().people;
     expect(people[0]).toMatchObject({ id: "u_admin", method: "pin" });

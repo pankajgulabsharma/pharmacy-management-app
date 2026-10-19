@@ -27,13 +27,7 @@ export const ownerSetsPin = (role: Role) => role !== "owner";
 export function checkPin(pin: string): string | null {
   if (!new RegExp(`^\\d{${PIN_LENGTH}}$`).test(pin))
     return `PIN must be ${PIN_LENGTH} digits`;
-  const d = [...pin].map(Number);
-  const same = d.every((x) => x === d[0]);
-  const up = d.every((x, i) => i === 0 || x === d[i - 1] + 1);
-  const down = d.every((x, i) => i === 0 || x === d[i - 1] - 1);
-  if (same || up || down)
-    return "PIN is too easy to guess (like 1111 or 1234) — choose another";
-  return null;
+  return null; // any 4 digits — the shop chooses
 }
 
 /** "Ravi Kumar Sharma" → "RS", "ravi" → "RA" */

@@ -1487,4 +1487,31 @@ export const HI_UI: Record<string, string> = {
   Upgrade: "अपग्रेड",
   "Upgrade opens Help & support — your provider sends a new licence key.":
     "अपग्रेड दबाने पर मदद और सपोर्ट खुलेगा — आपका प्रोवाइडर नई लाइसेंस की भेजेगा।",
+  "Any 4 digits": "कोई भी 4 अंक",
+  "Recommended for 2+ counters": "2+ काउंटर के लिए सबसे अच्छा",
+  "One billing computer": "एक बिलिंग कंप्यूटर",
+  "Main computer + extra counters": "मुख्य कंप्यूटर + और काउंटर",
+  "Everything in Single computer, plus:":
+    "सिंगल कंप्यूटर का सब कुछ, और साथ में:",
+  "Billing with GST, barcode & bill tabs":
+    "GST, बारकोड और बिल टैब के साथ बिलिंग",
+  "Medicines, batches & expiry, stock": "दवाइयाँ, बैच और एक्सपायरी, स्टॉक",
+  "Purchases, suppliers & returns": "खरीद, सप्लायर और रिटर्न",
+  "Customers, udhaar & refill reminders": "ग्राहक, उधार और रिफ़िल रिमाइंडर",
+  "Reports, GST returns & doctor referrals":
+    "रिपोर्ट, GST रिटर्न और डॉक्टर रेफ़रल",
+  "Daily backups + Google Drive / pen drive copy":
+    "रोज़ बैकअप + Google Drive / पेन ड्राइव कॉपी",
+  "WhatsApp bills & orders, Hindi / English":
+    "WhatsApp बिल और ऑर्डर, हिंदी / English",
+  "Every counter bills from the same stock and the same bills — updated live, nothing to sync.":
+    "हर काउंटर एक ही स्टॉक और बिलों से काम करता है — तुरंत अपडेट, सिंक की ज़रूरत नहीं।",
+  "A % of the bills each person makes, worked out by itself from who billed.":
+    "हर व्यक्ति के बिलों का % — किसने बिल बनाया उससे अपने-आप हिसाब।",
+  "Who is connected now": "अभी कौन जुड़ा है",
+  "See which computers are open and who is signed in on each.":
+    "कौन से कंप्यूटर खुले हैं और किस पर कौन साइन इन है।",
+  "New counters connect by themselves": "नए काउंटर अपने-आप जुड़ते हैं",
+  "“Find main computer” — no IP addresses to type.":
+    "“Find main computer” — IP पता टाइप नहीं करना।",
 };

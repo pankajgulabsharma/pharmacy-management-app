@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, KeyRound, LifeBuoy, Lock } from "lucide-react";
-import {
-  FEATURE_LABEL,
-  PLAN_FEATURES,
-  PLAN_LABEL,
-  type Plan,
-} from "@medicare/domain/license/plan";
+import { Copy, KeyRound, LifeBuoy } from "lucide-react";
+import { PlanCards } from "@/features/license/PlanCards";
 import { VENDOR } from "@medicare/domain/vendor";
 import { SupportDialog } from "@/features/support/SupportDialog";
 import { Button } from "@/components/ui/button";
@@ -132,7 +127,7 @@ export function LicenseSection() {
           </>
         ) : null}
       </dl>
-      <PlanCard plan={state.plan} />
+      <PlanCards plan={state.plan} />
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
         <p className="text-[11px] text-muted-foreground">
           {tr(
@@ -178,59 +173,5 @@ export function LicenseSection() {
         </div>
       </div>
     </SettingsCard>
-  );
-}
-
-/** Both plans side by side — what this shop has, what the other adds */
-function PlanCard({ plan }: { plan: Plan }) {
-  const plans: Plan[] = ["single", "multi"];
-  const base = [
-    "Billing, stock & GST",
-    "Udhaar, reports, backups",
-    "Doctor referrals",
-  ];
-  const extra: Record<Plan, string[]> = {
-    single: ["1 billing computer"],
-    multi: [
-      "Several billing counters",
-      ...PLAN_FEATURES.multi.map((f) => FEATURE_LABEL[f]),
-    ],
-  };
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {plans.map((p) => {
-        const mine = p === plan;
-        return (
-          <div
-            key={p}
-            className={cn(
-              "rounded-xl border p-3",
-              mine ? "border-primary bg-primary/5" : "border-border",
-            )}
-          >
-            <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[13px] font-semibold">{tr(PLAN_LABEL[p])}</p>
-              {mine ? (
-                <StatusBadge tone="info" shape="rounded">
-                  {"Your plan"}
-                </StatusBadge>
-              ) : null}
-            </div>
-            <ul className="space-y-0.5 text-[11px]">
-              {[...base, ...extra[p]].map((f) => (
-                <li key={f} className="flex items-center gap-1.5">
-                  {mine || p === "single" || base.includes(f) ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  ) : (
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  {tr(f)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
-    </div>
   );
 }

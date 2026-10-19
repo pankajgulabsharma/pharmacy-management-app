@@ -62,7 +62,7 @@ export function MyPinDialog({ onClose }: { onClose: () => void }) {
           hint={
             pin.length === PIN_LENGTH && bad
               ? bad
-              : "4 digits, not 1111 or 1234"
+              : "Any 4 digits"
           }
         >
           <input

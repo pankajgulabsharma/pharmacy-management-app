@@ -153,13 +153,12 @@ describe("user accounts", () => {
 });
 
 describe("PIN & recovery code", () => {
-  it("4 digits, not an easy one", () => {
+  it("any 4 digits", () => {
     expect(checkPin("4821")).toBeNull();
     expect(checkPin("482")).toMatch(/4 digits/);
     expect(checkPin("48a1")).toMatch(/4 digits/);
-    expect(checkPin("1111")).toMatch(/easy/);
-    expect(checkPin("1234")).toMatch(/easy/);
-    expect(checkPin("9876")).toMatch(/easy/);
+    expect(checkPin("1111")).toBeNull();
+    expect(checkPin("1234")).toBeNull();
     expect(ownerSetsPin("owner")).toBe(false);
     expect(ownerSetsPin("cashier")).toBe(true);
   });
