@@ -96,11 +96,14 @@ function Labels({
 
   const print = () => {
     if (!item || n < 1) return;
-    printHtml({
+    const job = {
       html: labelsHtml(Array(n).fill(item), labelSize, shopName),
       ...(size.sheet ? {} : { widthMm: size.w, heightMm: size.h }),
       printer: labelPrinter,
-    }).then(onClose, (e: Error) => toast.error(e.message));
+    };
+    // Close first: printing (or cancelling it) never leaves the dialog stuck
+    onClose();
+    printHtml(job).catch((e: Error) => toast.error(e.message));
   };
 
   return (
@@ -108,7 +111,7 @@ function Labels({
       open
       onClose={onClose}
       labelledBy={`${id}-t`}
-      className="max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto"
+      className="max-w-md"
     >
       <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">

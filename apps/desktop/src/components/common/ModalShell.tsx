@@ -110,9 +110,11 @@ export function ModalShell({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    // Taller than the screen → the page of the dialog scrolls (its buttons
+    // never end up out of reach)
+    <div className="fixed inset-0 z-50 flex overflow-y-auto p-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[1px]"
         aria-hidden="true"
         onClick={() => onCloseRef.current()}
       />
@@ -123,7 +125,7 @@ export function ModalShell({
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
         className={cn(
-          "relative z-10 w-full rounded-xl border border-border bg-card shadow-xl",
+          "relative z-10 m-auto w-full rounded-xl border border-border bg-card text-card-foreground shadow-xl",
           className,
         )}
       >

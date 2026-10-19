@@ -153,9 +153,9 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
-        <div className="rounded-xl border border-border bg-muted/30 p-3">
+        <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 text-foreground">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[12px] font-semibold">
+            <p className="text-[12px] font-semibold text-foreground">
               {tr("Your details for support")}
             </p>
             <button
@@ -175,7 +175,7 @@ export function SupportDialog({ onClose }: { onClose: () => void }) {
             {rows.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-muted-foreground">{tr(k)}</dt>
-                <dd className="truncate font-medium">{v}</dd>
+                <dd className="truncate font-medium text-foreground">{v}</dd>
               </div>
             ))}
           </dl>

@@ -23,14 +23,22 @@ export async function printHtml(job: PrintJob): Promise<void> {
     frame.srcdoc = job.html;
     frame.onload = () => {
       const w = frame.contentWindow!;
+      let over = false;
       const done = () => {
-        frame.remove();
+        if (over) return;
+        over = true;
+        // A moment later — some browsers still read the frame just after
+        setTimeout(() => frame.remove(), 1000);
+        window.focus(); // the app screen takes keys and clicks again
         resolve();
       };
       w.addEventListener("afterprint", done, { once: true });
       setTimeout(done, 60_000); // never leave a frame behind
       w.focus();
       w.print(); // copies are chosen in the browser's dialog
+      // Chrome / Edge wait here until Print or Cancel — then we're done,
+      // even if "afterprint" never comes
+      done();
     };
     document.body.appendChild(frame);
   });

@@ -68,8 +68,8 @@ export function PlanCards({ plan }: { plan: Plan }) {
               mine
                 ? "animated-border border-2 shadow-lg shadow-primary/10 [--mc-fill:color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))]"
                 : upgrade
-                  ? "border border-violet-300 bg-gradient-to-b from-violet-500/[0.06] to-transparent dark:border-violet-800"
-                  : "border border-border opacity-80",
+                  ? "animated-border border-2 [--mc-fill:color-mix(in_oklab,#8b5cf6_6%,var(--color-card))] [animation-delay:-1.75s]"
+                  : "animated-border border-2 [animation-delay:-1.75s]",
             )}
           >
             {mine ? (
