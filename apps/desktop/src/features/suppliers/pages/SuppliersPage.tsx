@@ -21,7 +21,7 @@ import { SearchInput } from "@/components/common/SearchInput";
 import { KeyHints } from "@/components/common/KeyHints";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useListNavigation } from "@/hooks/useListNavigation";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -75,8 +75,11 @@ export default function SuppliersPage() {
   // Dashboard links like /suppliers?filter=overdue or ?new=1
   const intent = useUrlIntent();
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
-  const [filter, setFilter] = useState<Filter>(
-    oneOf(intent.filter, FILTERS, "all"),
+  const [filter, setFilter] = useStickyChoice<Filter>(
+    "suppliers.filter",
+    intent.filter,
+    FILTERS,
+    "all",
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<{ open: boolean; editId: string | null }>({

@@ -20,6 +20,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const digitsOnly = (v: string) => v.replace(/\D/g, "");
 
+/** "shop@okicici" — a UPI ID (VPA); anything else → "" */
+export const UPI_ID_RE = /^[a-z0-9._-]{2,64}@[a-z][a-z0-9.-]{1,32}$/i;
+export const cleanUpiId = (v: unknown) => {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  return UPI_ID_RE.test(s) ? s : "";
+};
+
 export function validateShop(s: ShopProfile): Errors<ShopProfile> {
   const e: Errors<ShopProfile> = {};
   if (cleanText(s.name, L.shopNameMax).length < 2)
@@ -150,6 +157,7 @@ export function sanitizeSettings(raw: unknown): Settings {
         L.maxUdhaarLimitPaise,
         d.billing.defaultUdhaarLimitPaise,
       ),
+      upiId: cleanUpiId(billing.upiId),
     },
     inventory: {
       expiringSoonDays: int(

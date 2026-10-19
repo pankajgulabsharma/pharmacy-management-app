@@ -26,7 +26,7 @@ import { KeyHints } from "@/components/common/KeyHints";
 import { Kbd } from "@/components/common/Kbd";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { SELECTED_ROW, useListNavigation } from "@/hooks/useListNavigation";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { cn } from "@/lib/utils";
 import { formatPaise, inrRounded } from "@medicare/domain/lib/money";
@@ -158,8 +158,11 @@ export default function CustomersPage() {
   const [refillsOpen, setRefillsOpen] = useState(intent.refills === "1");
   const [query, setQuery] = useState(intent.q?.slice(0, 60) ?? "");
   const dq = useDeferredValue(query);
-  const [filter, setFilter] = useState<Filter>(
-    oneOf(intent.filter, FILTERS, "all"),
+  const [filter, setFilter] = useStickyChoice<Filter>(
+    "customers.filter",
+    intent.filter,
+    FILTERS,
+    "all",
   );
   const [form, setForm] = useState<{
     open: boolean;

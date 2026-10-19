@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Kbd } from "@/components/common/Kbd";
 import { useHotkeys } from "@/hooks/useHotkeys";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import {
   SegmentedTabs,
@@ -91,30 +91,28 @@ export default function ReportsPage() {
 
   // Dashboard links like /reports?tab=sales&period=today
   const intent = useUrlIntent();
-  const [tab, setTab] = useState<Tab>(
-    oneOf(
-      intent.tab,
-      TABS.map((t) => t.id),
-      "sales",
-    ),
+  const [tab, setTab] = useStickyChoice<Tab>(
+    "reports.tab",
+    intent.tab,
+    TABS.map((t) => t.id),
+    "sales",
   );
   // 7 days: enough to see a trend without a mostly-empty chart
-  const [preset, setPreset] = useState<PeriodPreset>(
-    oneOf(
-      intent.period,
-      [
-        "today",
-        "yesterday",
-        "7d",
-        "30d",
-        "90d",
-        "month",
-        "lastMonth",
-        "fy",
-        "lastFy",
-      ] as const,
+  const [preset, setPreset] = useStickyChoice<PeriodPreset>(
+    "reports.period",
+    intent.period,
+    [
+      "today",
+      "yesterday",
       "7d",
-    ),
+      "30d",
+      "90d",
+      "month",
+      "lastMonth",
+      "fy",
+      "lastFy",
+    ] as const,
+    "7d",
   );
   const [today] = useState(() => toISODate(new Date()));
   const [from, setFrom] = useState(today);

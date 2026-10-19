@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass } from "@/components/common/formStyles";
 import { apiRequest } from "@/lib/api";
+import { useUserStore } from "@/features/settings/store/useUserStore";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,9 @@ export function MyPinDialog({ onClose }: { onClose: () => void }) {
     apiRequest("POST", "/api/auth/pin", { password, pin: value }).then(
       () => {
         toast.success(tr(done));
+        // Settings → Users shows the new PIN badge
+        const users = useUserStore.getState();
+        if (users.loaded) void users.load().catch(() => {});
         onClose();
       },
       (err: unknown) =>
@@ -59,11 +63,7 @@ export function MyPinDialog({ onClose }: { onClose: () => void }) {
         <FormField
           label="New PIN"
           htmlFor="my-pin"
-          hint={
-            pin.length === PIN_LENGTH && bad
-              ? bad
-              : "Any 4 digits"
-          }
+          hint={pin.length === PIN_LENGTH && bad ? bad : "Any 4 digits"}
         >
           <input
             id="my-pin"

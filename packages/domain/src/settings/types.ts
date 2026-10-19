@@ -21,6 +21,8 @@ export type BillingPrefs = {
   billPrefix: string;
   /** Udhaar limit filled in for every NEW customer (0 = no limit) */
   defaultUdhaarLimitPaise: number;
+  /** Shop's UPI ID — billing shows a QR with the bill amount ("" = none) */
+  upiId: string;
 };
 
 export type InventoryPrefs = {

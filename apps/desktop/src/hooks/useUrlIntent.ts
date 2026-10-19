@@ -30,3 +30,35 @@ export function oneOf<T extends string>(
     ? (value as T)
     : fallback;
 }
+
+/**
+ * A tab / filter that survives a refresh (F5): the URL decides when it
+ * says something (?section=license), otherwise the last choice on this
+ * window comes back. Kept per window (sessionStorage) — a new window
+ * starts fresh.
+ */
+export function useStickyChoice<T extends string>(
+  key: string,
+  fromUrl: string | undefined,
+  options: readonly T[],
+  fallback: T,
+) {
+  const storeKey = `medicare-tab:${key}`;
+  const [value, setValue] = useState<T>(() => {
+    let saved: string | undefined;
+    try {
+      saved = window.sessionStorage.getItem(storeKey) ?? undefined;
+    } catch {
+      /* storage blocked */
+    }
+    return oneOf(fromUrl ?? saved, options, fallback);
+  });
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(storeKey, value);
+    } catch {
+      /* storage blocked — just not remembered */
+    }
+  }, [storeKey, value]);
+  return [value, setValue] as const;
+}

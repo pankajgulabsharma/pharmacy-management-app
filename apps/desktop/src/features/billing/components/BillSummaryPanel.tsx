@@ -1,28 +1,19 @@
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { focusAtEnd } from "@/lib/dom";
-import {
-  inrFromPaise,
-  isMoneyInput,
-  paiseToInput,
-  parseRupees,
-  signedInrFromPaise,
-} from "@medicare/domain/lib/money";
+import { inrFromPaise, signedInrFromPaise } from "@medicare/domain/lib/money";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Kbd } from "@/components/common/Kbd";
 import { KEYS } from "@/app/shortcuts/registry";
 import {
-  PAYMENT_METHOD_LABELS,
   type PaymentDraft,
-  type PaymentMethod,
   type SaleTotals,
 } from "@medicare/domain/billing/types";
 import type { BillLineView } from "../hooks/useBillingData";
+import { PaymentPanel } from "../payment/PaymentPanel";
 import { tr } from "@/lib/i18n";
 
 type Props = {
@@ -44,18 +35,6 @@ type Props = {
   amountRef?: (el: HTMLInputElement | null) => void;
 };
 
-const METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
-
-const PAY_INPUT = cn(
-  "h-7 w-full rounded-md !text-[10px] leading-none",
-  "bg-muted/40 border border-border/50 shadow-none",
-  "placeholder:!text-[10px] placeholder:text-muted-foreground",
-  "hover:border-border hover:bg-muted/50",
-  "focus-visible:outline-none focus-visible:ring-1",
-  "focus-visible:ring-ring focus-visible:border-border",
-  "focus-visible:bg-background",
-);
-
 export const BillSummaryPanel = memo(function BillSummaryPanel({
   udhaarSlot,
   billNo,
@@ -71,27 +50,8 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
   amountRef,
 }: Props) {
   const { t } = useTranslation();
-  const receivedRef = useRef<HTMLInputElement | null>(null);
-  // One ref for both the local "Exact amount" button and the Alt+A shortcut
-  const setReceived = (el: HTMLInputElement | null) => {
-    receivedRef.current = el;
-    amountRef?.(el);
-  };
   const net = totals.netPaise;
 
-  const set = (patch: Partial<PaymentDraft>) =>
-    onPaymentChange({ ...payment, ...patch });
-  const setSplit = (key: keyof PaymentDraft["split"], v: string) => {
-    if (isMoneyInput(v)) set({ split: { ...payment.split, [key]: v } });
-  };
-
-  const received = parseRupees(payment.received) ?? 0;
-  const changeDue = Math.max(0, received - net);
-  const splitSum = (["cash", "upi", "card"] as const).reduce(
-    (s, k) => s + (parseRupees(payment.split[k]) ?? 0),
-    0,
-  );
-  const splitLeft = net - splitSum;
   const canSave = !blockReason && !saving;
 
   return (
@@ -204,145 +164,14 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
             <Kbd keys={KEYS.nextPayment} /> {tr("change")}
           </span>
         </h3>
-        <div
-          className="grid grid-cols-3 gap-1 shrink-0 mb-1.5"
-          role="radiogroup"
-          aria-label="Payment method"
-        >
-          {METHODS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="radio"
-              aria-checked={payment.method === m}
-              onClick={() => set({ method: m })}
-              className={cn(
-                "rounded-md border px-1 py-1.5 text-[9px] font-medium transition-colors",
-                payment.method === m
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {tr(PAYMENT_METHOD_LABELS[m])}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto mb-1.5 p-0.5">
-          {payment.method === "cash" && (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="bill-received"
-                  className="text-[9px] text-muted-foreground"
-                >
-                  {tr("Received (₹)")}{" "}
-                  <Kbd keys={KEYS.payAmount} className="ml-1 align-middle" />
-                </label>
-                <button
-                  type="button"
-                  disabled={net === 0}
-                  onClick={() => {
-                    set({ received: paiseToInput(net) });
-                    focusAtEnd(receivedRef.current);
-                  }}
-                  className="text-[9px] font-medium text-primary hover:underline disabled:opacity-50"
-                >
-                  {tr("Exact amount")}
-                </button>
-              </div>
-              <Input
-                id="bill-received"
-                ref={setReceived}
-                value={payment.received}
-                onChange={(e) => {
-                  if (isMoneyInput(e.target.value))
-                    set({ received: e.target.value });
-                }}
-                placeholder={tr("Exact {{amount}} — leave empty", {
-                  amount: inrFromPaise(net),
-                })}
-                className={PAY_INPUT}
-                inputMode="decimal"
-              />
-              <div className="flex justify-between text-[10px]">
-                <span className="text-muted-foreground">
-                  {tr("Change to return")}
-                </span>
-                <span className="font-semibold tabular-nums">
-                  {inrFromPaise(changeDue)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {(payment.method === "upi" || payment.method === "card") && (
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground">
-                {payment.method === "upi" ? "Collect" : "Charge"}{" "}
-                <span className="font-semibold text-foreground">
-                  {inrFromPaise(net)}
-                </span>{" "}
-                via {PAYMENT_METHOD_LABELS[payment.method]}
-              </p>
-              <Input
-                ref={amountRef}
-                value={payment.reference}
-                maxLength={40}
-                onChange={(e) => set({ reference: e.target.value })}
-                placeholder={
-                  payment.method === "upi"
-                    ? "UTR / ref no. (optional)"
-                    : "Approval code (optional)"
-                }
-                className={PAY_INPUT}
-              />
-            </div>
-          )}
-
-          {payment.method === "wallet" && (
-            <p className="text-[9px] text-muted-foreground pt-1">
-              Wallet debit{" "}
-              <span className="font-semibold text-foreground">
-                {inrFromPaise(net)}
-              </span>
-            </p>
-          )}
-
-          {payment.method === "udhaar" ? udhaarSlot : null}
-
-          {payment.method === "split" && (
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground">
-                {splitLeft >= 0 ? "Left" : "Over by"}{" "}
-                <span
-                  className={cn(
-                    "font-semibold",
-                    splitLeft === 0 ? "text-emerald-600" : "text-orange-600",
-                  )}
-                >
-                  {inrFromPaise(Math.abs(splitLeft))}
-                </span>
-              </p>
-              {(["cash", "upi", "card"] as const).map((k) => (
-                <div key={k} className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-muted-foreground w-8 shrink-0 capitalize">
-                    {k}
-                  </span>
-                  <Input
-                    ref={k === "cash" ? amountRef : undefined}
-                    value={payment.split[k]}
-                    onChange={(e) => setSplit(k, e.target.value)}
-                    placeholder="0"
-                    aria-label={`Split ${k} amount`}
-                    className={PAY_INPUT}
-                    inputMode="decimal"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <PaymentPanel
+          payment={payment}
+          onChange={onPaymentChange}
+          net={net}
+          billNo={billNo}
+          udhaarSlot={udhaarSlot}
+          amountRef={amountRef}
+        />
 
         <div className="space-y-1.5 shrink-0">
           {blockReason && lines.length > 0 ? (

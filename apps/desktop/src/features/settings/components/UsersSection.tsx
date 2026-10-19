@@ -41,6 +41,7 @@ import { tr } from "@/lib/i18n";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useUserStore } from "../store/useUserStore";
 import { useBackupHealth } from "../backup/useBackupHealth";
+import { MyPinDialog } from "@/features/auth/components/MyPinDialog";
 import { printRecoveryCode } from "@/features/auth/signin/printRecoveryCode";
 import { SettingsCard } from "./SettingsCard";
 
@@ -54,6 +55,7 @@ export function UsersSection() {
   const [resetFor, setResetFor] = useState<UserRecord | null>(null);
   const [editFor, setEditFor] = useState<UserRecord | null>(null);
   const [pinFor, setPinFor] = useState<UserRecord | null>(null);
+  const [myPin, setMyPin] = useState(false);
 
   useEffect(() => {
     void load().catch(showError);
@@ -152,41 +154,11 @@ export function UsersSection() {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {ownerSetsPin(u.role) ? (
-                          <button
-                            type="button"
-                            onClick={() => setPinFor(u)}
-                            title={tr(u.hasPin ? "Change PIN" : "Set PIN")}
-                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] hover:bg-muted"
-                          >
-                            <RectangleEllipsis className="h-3.5 w-3.5 text-muted-foreground" />
-                            {u.hasPin ? (
-                              <StatusBadge tone="success" shape="rounded">
-                                {"PIN"}
-                              </StatusBadge>
-                            ) : (
-                              <span className="font-medium text-primary">
-                                {tr("Set PIN")}
-                              </span>
-                            )}
-                          </button>
-                        ) : (
-                          // Owners set their own PIN (menu → My PIN)
-                          <span
-                            className="text-[11px] text-muted-foreground"
-                            title={tr(
-                              "Owners set their own PIN (menu → My PIN)",
-                            )}
-                          >
-                            {u.hasPin ? (
-                              <StatusBadge tone="success" shape="rounded">
-                                {"PIN"}
-                              </StatusBadge>
-                            ) : (
-                              tr("Password")
-                            )}
-                          </span>
-                        )}
+                        <PinCell
+                          user={u}
+                          canSet={me || ownerSetsPin(u.role)}
+                          onSet={() => (me ? setMyPin(true) : setPinFor(u))}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
@@ -259,6 +231,7 @@ export function UsersSection() {
           onClose={() => setEditFor(null)}
         />
       ) : null}
+      {myPin ? <MyPinDialog onClose={() => setMyPin(false)} /> : null}
       {pinFor ? (
         <SetPinDialog user={pinFor} onClose={() => setPinFor(null)} />
       ) : null}
@@ -435,6 +408,48 @@ function ResetPasswordDialog({
   );
 }
 
+/**
+ * Sign-in column: staff → the owner sets their PIN; my own row → my PIN
+ * (needs my password); another owner → only shown (they set their own).
+ */
+function PinCell({
+  user,
+  canSet,
+  onSet,
+}: {
+  user: UserRecord;
+  canSet: boolean;
+  onSet: () => void;
+}) {
+  const badge = user.hasPin ? (
+    <StatusBadge tone="success" shape="rounded">
+      {"PIN"}
+    </StatusBadge>
+  ) : null;
+  if (!canSet)
+    return (
+      <span
+        className="text-[11px] text-muted-foreground"
+        title={tr("Owners set their own PIN (menu → My PIN)")}
+      >
+        {badge ?? tr("Password")}
+      </span>
+    );
+  return (
+    <button
+      type="button"
+      onClick={onSet}
+      title={tr(user.hasPin ? "Change PIN" : "Set PIN")}
+      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] hover:bg-muted"
+    >
+      <RectangleEllipsis className="h-3.5 w-3.5 text-muted-foreground" />
+      {badge ?? (
+        <span className="font-medium text-primary">{tr("Set PIN")}</span>
+      )}
+    </button>
+  );
+}
+
 /** Counter PIN: tap the name on the sign-in screen + 4 digits */
 function SetPinDialog({
   user,
@@ -475,9 +490,7 @@ function SetPinDialog({
       <FormField
         label="New PIN"
         htmlFor={`${id}-pin`}
-        hint={
-          pin.length === PIN_LENGTH && bad ? bad : "Any 4 digits"
-        }
+        hint={pin.length === PIN_LENGTH && bad ? bad : "Any 4 digits"}
       >
         <input
           id={`${id}-pin`}

@@ -21,7 +21,7 @@ import { SearchInput } from "@/components/common/SearchInput";
 import { KeyHints } from "@/components/common/KeyHints";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useListNavigation } from "@/hooks/useListNavigation";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { BatchHistoryDialog } from "../components/BatchHistoryDialog";
 import {
@@ -62,13 +62,13 @@ export default function InventoryPage() {
   // Dashboard links like /inventory?status=low&q=dolo
   const intent = useUrlIntent();
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
-  const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>(
-    oneOf(
+  const [statusFilter, setStatusFilter] =
+    useStickyChoice<InventoryStatusFilter>(
+      "inventory.status",
       intent.status,
       ["all", "in_stock", "low", "out", "expiring", "expired"] as const,
       "all",
-    ),
-  );
+    );
   const [adjustTarget, setAdjustTarget] = useState<InventoryBatch | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);

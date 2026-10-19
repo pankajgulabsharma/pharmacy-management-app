@@ -24,7 +24,7 @@ import { SearchInput } from "@/components/common/SearchInput";
 import { KeyHints } from "@/components/common/KeyHints";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useListNavigation } from "@/hooks/useListNavigation";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 
 import {
@@ -92,16 +92,18 @@ export default function PurchasesPage() {
 
   // Dashboard links like /purchases?status=overdue or ?new=1
   const intent = useUrlIntent();
-  const [tab, setTab] = useState<Tab>(
-    oneOf(intent.tab, ["invoices", "returns"] as const, "invoices"),
+  const [tab, setTab] = useStickyChoice<Tab>(
+    "purchases.tab",
+    intent.tab,
+    ["invoices", "returns"] as const,
+    "invoices",
   );
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
-  const [statusFilter, setStatusFilter] = useState<PurchaseStatusFilter>(
-    oneOf(
-      intent.status,
-      ["all", "due", "partial", "overdue", "paid", "cancelled"] as const,
-      "all",
-    ),
+  const [statusFilter, setStatusFilter] = useStickyChoice<PurchaseStatusFilter>(
+    "purchases.status",
+    intent.status,
+    ["all", "due", "partial", "overdue", "paid", "cancelled"] as const,
+    "all",
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const [today] = useState(() => startOfDay(new Date()));

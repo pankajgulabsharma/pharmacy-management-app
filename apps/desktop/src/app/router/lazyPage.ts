@@ -1,5 +1,5 @@
 import { Suspense, createElement, lazy, type ComponentType } from "react";
-import { Loader2 } from "lucide-react";
+import { AppLoader } from "@/components/common/AppLoader";
 
 type Loader = () => Promise<{ default: ComponentType }>;
 
@@ -7,14 +7,7 @@ const loaders: Loader[] = [];
 
 /** Light placeholder for the moment a screen's code arrives */
 const Loading = () =>
-  createElement(
-    "div",
-    { className: "h-full w-full flex items-center justify-center" },
-    createElement(Loader2, {
-      className: "h-5 w-5 animate-spin text-muted-foreground",
-      "aria-label": "Loading",
-    }),
-  );
+  createElement(AppLoader, { size: "screen", message: "Loading…" });
 
 /**
  * A screen whose code is loaded on first use — the app opens faster

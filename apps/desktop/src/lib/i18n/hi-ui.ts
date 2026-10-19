@@ -1514,4 +1514,32 @@ export const HI_UI: Record<string, string> = {
   "New counters connect by themselves": "नए काउंटर अपने-आप जुड़ते हैं",
   "“Find main computer” — no IP addresses to type.":
     "“Find main computer” — IP पता टाइप नहीं करना।",
+  "Cash received (₹)": "नकद मिला (₹)",
+  Exact: "पूरा",
+  "UPI QR for {{amount}}": "{{amount}} के लिए UPI QR",
+  "Scan with any UPI app": "किसी भी UPI ऐप से स्कैन करें",
+  "Amount is filled in — check “paid” on their phone":
+    "रकम भरी हुई है — उनके फ़ोन पर “paid” देख लें",
+  "Add items to show the QR": "QR देखने के लिए आइटम जोड़ें",
+  "Collect {{amount}} on UPI. Add the shop's UPI ID in Settings → Billing to show a QR with the amount.":
+    "UPI पर {{amount}} लें। रकम वाला QR दिखाने के लिए सेटिंग्स → बिलिंग में दुकान की UPI ID डालें।",
+  "UTR / ref no. (optional)": "UTR / रेफ़ नं. (ज़रूरी नहीं)",
+  "{{got}} of {{total}}": "{{total}} में से {{got}}",
+  Balanced: "पूरा हुआ",
+  "Left {{amount}}": "बाकी {{amount}}",
+  "Over by {{amount}}": "{{amount}} ज़्यादा",
+  "Split {{part}} amount": "{{part}} की रकम",
+  "Put the rest here": "बाकी रकम यहाँ डालें",
+  Rest: "बाकी",
+  "Shop's UPI ID": "दुकान की UPI ID",
+  "Billing shows a QR with the bill amount — customers scan and pay":
+    "बिलिंग में बिल की रकम वाला QR दिखेगा — ग्राहक स्कैन करके पे करेंगे",
+  "Like shopname@okicici — see your UPI app":
+    "जैसे shopname@okicici — अपने UPI ऐप में देखें",
+  "Short by": "कम है",
+  "Charge on the card machine": "कार्ड मशीन पर चार्ज करें",
+  "Collect from the wallet app": "वॉलेट ऐप से लें",
+  "Approval code / last 4 digits (optional)":
+    "अप्रूवल कोड / आख़िरी 4 अंक (ज़रूरी नहीं)",
+  "Transaction ID (optional)": "ट्रांज़ैक्शन ID (ज़रूरी नहीं)",
 };

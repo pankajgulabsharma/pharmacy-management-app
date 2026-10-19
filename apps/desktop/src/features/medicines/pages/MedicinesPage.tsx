@@ -22,7 +22,7 @@ import { SearchInput } from "@/components/common/SearchInput";
 import { KeyHints } from "@/components/common/KeyHints";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useListNavigation } from "@/hooks/useListNavigation";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { KEYS } from "@/app/shortcuts/registry";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { tr } from "@/lib/i18n";
@@ -105,13 +105,11 @@ export default function MedicinesPage() {
   // Dashboard links like /medicines?q=dolo or /medicines?new=1
   const intent = useUrlIntent();
   const [query, setQuery] = useState(intent.q?.slice(0, 80) ?? "");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
-    oneOf(
-      // Old links used "low" for Low / Out — they now open "Low"
-      intent.status === "low" ? "low_only" : intent.status,
-      ["all", "in_stock", "low_only", "out", "reorder", "inactive"] as const,
-      "all",
-    ),
+  const [statusFilter, setStatusFilter] = useStickyChoice<StatusFilter>(
+    "medicines.status", // Old links used "low" for Low / Out — they now open "Low"
+    intent.status === "low" ? "low_only" : intent.status,
+    ["all", "in_stock", "low_only", "out", "reorder", "inactive"] as const,
+    "all",
   );
   const searchRef = useRef<HTMLInputElement>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");

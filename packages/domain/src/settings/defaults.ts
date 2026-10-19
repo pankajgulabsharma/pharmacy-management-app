@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
     billPrefix: DEFAULT_BILL_PREFIX,
     // A sensible start; the owner changes it in Settings → Billing
     defaultUdhaarLimitPaise: 5_000_00,
+    upiId: "",
   },
   inventory: {
     expiringSoonDays: 90,
@@ -58,6 +59,8 @@ export const DEMO_SETTINGS: Settings = {
     "Dr. Suresh Rao, MD",
   ],
   counters: ["Counter 1", "Counter 2", "Counter 3"],
+  // Demo only — a made-up UPI ID so the billing QR can be tried
+  billing: { ...DEFAULT_SETTINGS.billing, upiId: "shreesaimedical@okaxis" },
 };
 
 /** Shop details still missing that every bill needs (for a reminder) */

@@ -1,13 +1,13 @@
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { APP_NAME } from "@medicare/domain/settings/defaults";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useEffect } from "react";
 import { GlobalShortcuts } from "@/app/shortcuts/GlobalShortcuts";
 import { useServerStore } from "@/stores/useServerStore";
 import { tr } from "@/lib/i18n";
+import { AppLoader } from "@/components/common/AppLoader";
 import { KeepAliveOutlet } from "./KeepAliveOutlet";
 import { preloadPages } from "@/app/router/lazyPage";
 import { LicenseBanner } from "@/features/license/LicenseBanner";
@@ -61,10 +61,7 @@ export function AppLayout() {
                   </button>
                 </>
               ) : (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {tr("Loading shop data…")}
-                </>
+                <AppLoader />
               )}
             </div>
           )}

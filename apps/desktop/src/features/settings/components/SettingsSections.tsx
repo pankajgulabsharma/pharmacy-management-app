@@ -25,6 +25,7 @@ import {
   type ShopProfile,
 } from "@medicare/domain/settings/types";
 import {
+  UPI_ID_RE,
   validateInventory,
   validateShop,
 } from "@medicare/domain/settings/validation";
@@ -173,11 +174,16 @@ type BillingDraft = {
   receiptFooter: string;
   billPrefix: string;
   defaultUdhaarLimitPaise: number;
+  upiId: string;
 };
-const validateBilling = (d: BillingDraft) =>
-  DOC_PREFIX_RE.test(d.billPrefix)
+const validateBilling = (d: BillingDraft) => ({
+  ...(DOC_PREFIX_RE.test(d.billPrefix)
     ? {}
-    : { billPrefix: "1–5 letters or digits, starting with a letter" };
+    : { billPrefix: "1–5 letters or digits, starting with a letter" }),
+  ...(d.upiId.trim() === "" || UPI_ID_RE.test(d.upiId.trim())
+    ? {}
+    : { upiId: "Like shopname@okicici — see your UPI app" }),
+});
 
 export function BillingSection() {
   const id = useId();
@@ -295,6 +301,25 @@ export function BillingSection() {
               )
             }
             className={cn(fieldClass, "w-40 tabular-nums")}
+          />
+        </FormField>
+        <FormField
+          label="Shop's UPI ID"
+          htmlFor={`${id}-upi`}
+          error={f.errors.upiId}
+          hint="Billing shows a QR with the bill amount — customers scan and pay"
+          className="sm:col-span-2"
+        >
+          <input
+            id={`${id}-upi`}
+            value={f.draft.upiId}
+            onChange={(e) =>
+              f.set("upiId", e.target.value.trim().toLowerCase())
+            }
+            placeholder="e.g. sharmamedical@okicici"
+            autoComplete="off"
+            spellCheck={false}
+            className={cn(fieldClass, "font-mono sm:w-80")}
           />
         </FormField>
         <FormField

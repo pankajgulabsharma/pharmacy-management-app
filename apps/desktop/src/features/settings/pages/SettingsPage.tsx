@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ArrowRightLeft,
   BadgeCheck,
@@ -31,7 +30,7 @@ import { NetworkSection } from "../components/NetworkSection";
 import { PrintingSection } from "../components/PrintingSection";
 import { LicenseSection } from "../components/LicenseSection";
 import { SwitchSection } from "../components/SwitchSection";
-import { oneOf, useUrlIntent } from "@/hooks/useUrlIntent";
+import { useStickyChoice, useUrlIntent } from "@/hooks/useUrlIntent";
 import { tr } from "@/lib/i18n";
 
 type SectionId =
@@ -119,12 +118,11 @@ const SECTIONS: {
 export default function SettingsPage() {
   // ?section=license (e.g. from the licence banner) opens that section
   const intent = useUrlIntent();
-  const [active, setActive] = useState<SectionId>(
-    oneOf(
-      intent.section,
-      SECTIONS.map((s) => s.id),
-      "shop",
-    ),
+  const [active, setActive] = useStickyChoice<SectionId>(
+    "settings.section",
+    intent.section,
+    SECTIONS.map((s) => s.id),
+    "shop",
   );
   const section = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
 

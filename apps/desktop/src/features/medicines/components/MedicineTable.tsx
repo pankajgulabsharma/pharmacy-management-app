@@ -9,8 +9,9 @@ import {
 import { SELECTED_ROW } from "@/hooks/useListNavigation";
 import { stockLevel } from "@medicare/domain/medicines/stockLevel";
 import { useVirtualRows } from "@/hooks/useVirtualRows";
-import { SpacerRow } from "@/components/common/TableShell";
+import { SpacerRow, type TableColumn } from "@/components/common/TableShell";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
@@ -36,6 +37,21 @@ type Props = {
 };
 
 const getKey = (m: MedicineWithStock) => m.id;
+
+/** Every column but the name has a fixed width — the name takes the rest */
+const COLUMNS: readonly TableColumn[] = [
+  { key: "name", label: "Medicine" },
+  { key: "category", label: "Category", width: "w-[108px]" },
+  { key: "brand", label: "Brand / HSN", width: "w-[130px]" },
+  { key: "rack", label: "Rack", width: "w-[64px]" },
+  { key: "pack", label: "Pack", width: "w-[92px]" },
+  { key: "expiry", label: "Expiry", width: "w-[76px]" },
+  { key: "stock", label: "Stock", width: "w-[112px]" },
+  { key: "mrp", label: "MRP (₹)", width: "w-[76px]", align: "text-right" },
+  { key: "sale", label: "Sale (₹)", width: "w-[76px]", align: "text-right" },
+  { key: "status", label: "Status", width: "w-[92px]" },
+  { key: "actions", label: "", width: "w-[88px]", align: "text-right" },
+];
 
 export function MedicineTable({
   items,
@@ -77,30 +93,27 @@ export function MedicineTable({
   return (
     <div className="flex-1 min-h-0 rounded-lg border border-border bg-card overflow-hidden flex flex-col">
       <div ref={scrollRef} className="flex-1 overflow-auto">
-        <table className="w-full text-[11px] border-collapse">
+        {/*
+          Fixed layout: column widths never change while scrolling (an
+          auto table re-measures the rows on screen, so the header jumped)
+        */}
+        <table className="w-full min-w-[1060px] table-fixed text-[11px] border-collapse">
+          <colgroup>
+            {COLUMNS.map((c) => (
+              <col key={c.key} className={c.width ?? "w-full"} />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 z-10">
             <tr>
-              {[
-                ["Medicine", "text-left"],
-                ["Category", "text-left"],
-                ["Brand / HSN", "text-left"],
-                ["Rack", "text-left"],
-                ["Pack", "text-left"],
-                ["Expiry", "text-left"],
-                ["Stock", "text-left"],
-                ["MRP (₹)", "text-right"],
-                ["Sale (₹)", "text-right"],
-                ["Status", "text-left"],
-                ["", "text-right"],
-              ].map(([label, align]) => (
+              {COLUMNS.map((c) => (
                 <th
-                  key={label || "actions"}
+                  key={c.key}
                   className={cn(
-                    "px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground whitespace-nowrap",
-                    align,
+                    "h-9 px-3 text-[10px] font-semibold uppercase tracking-wide bg-primary text-primary-foreground whitespace-nowrap",
+                    c.align ?? "text-left",
                   )}
                 >
-                  {label}
+                  {tr(c.label)}
                 </th>
               ))}
             </tr>
