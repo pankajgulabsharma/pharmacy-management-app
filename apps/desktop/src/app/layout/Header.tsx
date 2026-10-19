@@ -3,6 +3,8 @@ import {
   Calendar,
   ChevronDown,
   KeyRound,
+  LifeBuoy,
+  RectangleEllipsis,
   LogOut,
   Users,
   PanelLeftClose,
@@ -22,6 +24,8 @@ import {
   useCurrentUser,
 } from "@/features/auth/store/useAuthStore";
 import { ChangePasswordDialog } from "@/features/auth/components/ChangePasswordDialog";
+import { MyPinDialog } from "@/features/auth/components/MyPinDialog";
+import { SupportDialog } from "@/features/support/SupportDialog";
 import { ROLE_LABELS } from "@medicare/domain/auth/types";
 import { initials } from "@medicare/domain/auth/users";
 import { tr } from "@/lib/i18n";
@@ -40,6 +44,8 @@ export function Header() {
   const logout = useAuthStore((st) => st.logout);
   const canAdmin = useCan("admin");
   const [pwOpen, setPwOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const navigate = useNavigate();
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -80,6 +86,15 @@ export function Header() {
         <ThemeLanguageSwitcher />
 
         {/* Notifications — same list as the Dashboard alerts */}
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          aria-label={tr("Help & support")}
+          title={tr("Help & support")}
+          className="h-9 w-9 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <LifeBuoy className="h-4 w-4" />
+        </button>
         <NotificationBell />
 
         {/* Date */}
@@ -123,6 +138,14 @@ export function Header() {
               <KeyRound className="h-3.5 w-3.5" />
               {tr("Change password")}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPinOpen(true)}>
+              <RectangleEllipsis className="h-3.5 w-3.5" />
+              {tr("My PIN")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setHelpOpen(true)}>
+              <LifeBuoy className="h-3.5 w-3.5" />
+              {tr("Help & support")}
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 void logout();
@@ -148,6 +171,8 @@ export function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
         <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
+        {pinOpen ? <MyPinDialog onClose={() => setPinOpen(false)} /> : null}
+        {helpOpen ? <SupportDialog onClose={() => setHelpOpen(false)} /> : null}
       </div>
     </header>
   );

@@ -10,7 +10,7 @@ import { ROLES } from "@medicare/domain/auth/types";
 import {
   PIN_LENGTH,
   USER_LIMITS,
-  canUsePin,
+  ownerSetsPin,
   checkPassword,
   checkPin,
   cleanNewUser,
@@ -58,6 +58,7 @@ const unlockInput = z
   .object({ userId: z.string().max(60), code: z.string().max(200), password })
   .strict();
 const pinInput = z.object({ pin: pinField.nullable() }).strict();
+const myPinInput = z.object({ password, pin: pinField.nullable() }).strict();
 const changePasswordInput = z
   .object({ current: password, next: password })
   .strict();
@@ -92,10 +93,7 @@ export function authRoutes(
         id: u.id,
         name: u.name,
         role: u.role,
-        method:
-          u.hasPin && canUsePin(u.role) && !u.mustChangePassword
-            ? "pin"
-            : "password",
+        method: u.hasPin && !u.mustChangePassword ? "pin" : "password",
       }))
       // Owners first, then pharmacists, then cashiers — A to Z
       .sort(
@@ -129,8 +127,7 @@ export function authRoutes(
       ? store.findUser(raw, "id", body.userId)
       : store.findUser(raw, "username", who);
     // Always check (even for unknown people) so timing reveals nothing
-    const pinAllowed =
-      found && canUsePin(found.user.role) && !found.user.mustChangePassword;
+    const pinAllowed = found && !found.user.mustChangePassword;
     const ok = byPin
       ? await verifyPassword(
           body.pin!,
@@ -258,6 +255,21 @@ export function authRoutes(
     return { user: store.toUser(store.findUser(raw, "id", me.id)!.user) };
   });
 
+  /** My own PIN (any role) — needs my password, so an open screen can't change it */
+  app.post("/api/auth/pin", async (req) => {
+    const body = parse(myPinInput, req.body);
+    const me = req.user!;
+    const found = store.findUser(raw, "id", me.id)!;
+    if (!(await verifyPassword(body.password, found.passwordHash)))
+      throw new RuleError("Password is wrong");
+    if (body.pin !== null) {
+      const bad = checkPin(body.pin);
+      if (bad) throw new RuleError(bad);
+    }
+    await store.setPin(raw, me.id, body.pin);
+    return { hasPin: body.pin !== null };
+  });
+
   /* ---- Owner only (see auth/guard.ts) ---- */
 
   app.get("/api/users", async () => ({ users: store.loadUsers(raw) }));
@@ -288,7 +300,9 @@ export function authRoutes(
       .run(next.name, next.role, next.active ? 1 : 0, current.id);
     if (!next.active) store.endUserSessions(raw, current.id);
     // Became an owner → password only from now on
-    if (!canUsePin(next.role)) await store.setPin(raw, current.id, null);
+    // Became an owner → a PIN someone else set is removed (owners set their own)
+    if (next.role === "owner" && current.role !== "owner")
+      await store.setPin(raw, current.id, null);
     return { user: store.findUser(raw, "id", current.id)!.user };
   });
 
@@ -298,8 +312,8 @@ export function authRoutes(
     if (!target) throw new NotFoundError("User not found");
     const { pin } = parse(pinInput, req.body);
     if (pin !== null) {
-      if (!canUsePin(target.role))
-        throw new RuleError("Owners sign in with their password");
+      if (!ownerSetsPin(target.role))
+        throw new RuleError("Owners set their own PIN (menu → My PIN)");
       const bad = checkPin(pin);
       if (bad) throw new RuleError(bad);
     }

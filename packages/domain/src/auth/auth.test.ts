@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { can, cleanRoleAccess } from "./permissions";
 import {
-  canUsePin,
+  ownerSetsPin,
   checkPassword,
   checkPin,
   cleanNewUser,
@@ -160,8 +160,8 @@ describe("PIN & recovery code", () => {
     expect(checkPin("1111")).toMatch(/easy/);
     expect(checkPin("1234")).toMatch(/easy/);
     expect(checkPin("9876")).toMatch(/easy/);
-    expect(canUsePin("owner")).toBe(false);
-    expect(canUsePin("cashier")).toBe(true);
+    expect(ownerSetsPin("owner")).toBe(false);
+    expect(ownerSetsPin("cashier")).toBe(true);
   });
   it("initials for the sign-in tiles", () => {
     expect(initials("Ravi Kumar Sharma")).toBe("RS");

@@ -135,6 +135,7 @@ request, within 24 hours; then the owner chooses a new password. Listed in
 39. ✅ Doctor referrals & staff commission (owner only): rates, paid / due, payouts with undo
 40. ✅ First start: one setup screen (shop + owner) and go
 41. ✅ Never locked out: print the recovery code; provider's unlock code as the last way in
+42. ✅ Help & support (call / WhatsApp / e-mail with the shop's details), plans (Single / Multi-counter), owner's own PIN, "Powered by" footer
 
 ## Windows installer
 
@@ -368,6 +369,24 @@ removes Windows' "unknown publisher" warning.
   D: partition) is warned about. The owner's bell warns when there is no
   second copy, or none for 3 days;
 - **year-end**: the first backup of every financial year is kept for ever.
+
+## Plans, support & branding
+
+- **Plans** (one-time + yearly AMC): _Single computer_ or _Multi-counter_
+  (several counters + staff commission). The plan is in the licence key:
+  `npm run license -- issue … --counters 3` (more than 1 computer = multi;
+  force with `--plan single|multi`). Trials and development copies show
+  everything. Settings → Licence shows both plans side by side; a locked
+  feature shows _Upgrade — contact …_.
+- **Your company & support details**: edit `packages/domain/src/vendor.ts`
+  (company, phone, WhatsApp, e-mail, website, hours) before building the
+  installer. They show in **Help & support** (header ⓘ button, user menu,
+  sign-in screen "Need help?") with the shop's machine code, plan, licence
+  and version — sent along on WhatsApp / e-mail by themselves — and in the
+  footer "© year Company · Powered by Company".
+- **My PIN** (user menu, any role incl. the owner, needs the password).
+  On the sign-in screen: _Forgot PIN? Use password_ → _Forgot password?_ →
+  recovery code → _Lost the code too?_ → your unlock code.
 
 ## Doctor referrals & staff commission
 

@@ -84,10 +84,13 @@ function RateList({
  * member. Names come from Settings (doctors), the user list and the bills.
  */
 export function RatesDialog({
+  staffOn,
   billDoctors,
   billStaff,
   onClose,
 }: {
+  /** Staff commission is in the shop's plan */
+  staffOn: boolean;
   billDoctors: string[];
   billStaff: string[];
   onClose: () => void;
@@ -139,7 +142,7 @@ export function RatesDialog({
     const next: CommissionRates = {
       basis,
       doctors: toRates(doctorNames, doctors),
-      staff: toRates(staffNames, staff),
+      staff: staffOn ? toRates(staffNames, staff) : {},
     };
     setSaving(true);
     try {
@@ -193,7 +196,7 @@ export function RatesDialog({
             )}
           </span>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className={staffOn ? "grid gap-4 md:grid-cols-2" : "grid gap-4"}>
           <RateList
             icon={Stethoscope}
             title="Doctors"
@@ -202,14 +205,16 @@ export function RatesDialog({
             onChange={(n, v) => setDoctors({ ...doctors, [personKey(n)]: v })}
             empty="No doctors yet — add them in Settings → Doctors & counters, or pick one on a bill."
           />
-          <RateList
-            icon={UserRound}
-            title="Staff"
-            names={staffNames}
-            values={staff}
-            onChange={(n, v) => setStaff({ ...staff, [personKey(n)]: v })}
-            empty="No staff yet"
-          />
+          {staffOn ? (
+            <RateList
+              icon={UserRound}
+              title="Staff"
+              names={staffNames}
+              values={staff}
+              onChange={(n, v) => setStaff({ ...staff, [personKey(n)]: v })}
+              empty="No staff yet"
+            />
+          ) : null}
         </div>
       </div>
       <div className="flex justify-end gap-2 border-t border-border px-4 py-3">

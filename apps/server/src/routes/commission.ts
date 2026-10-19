@@ -14,6 +14,8 @@ import { RuleError } from "@medicare/domain/lib/errors";
 import type { Database } from "../db/client";
 import { parse } from "../shop/schemas";
 import { NotFoundError } from "../shop/errors";
+import { hasFeature } from "@medicare/domain/license/plan";
+import { licenseState, type LicenseOptions } from "../license/state";
 
 const KEY = "commission";
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -56,7 +58,11 @@ const toPayout = (r: Row): CommissionPayout => ({
   note: r.note,
 });
 
-export function commissionRoutes(app: FastifyInstance, { raw }: Database) {
+export function commissionRoutes(
+  app: FastifyInstance,
+  { raw }: Database,
+  license: LicenseOptions,
+) {
   const rates = () => {
     const r = raw
       .prepare("SELECT value_json FROM settings WHERE key = ?")
@@ -81,6 +87,9 @@ export function commissionRoutes(app: FastifyInstance, { raw }: Database) {
 
   app.put("/api/commission/rates", async (req) => {
     const next = cleanRates(parse(ratesInput, req.body));
+    // Staff commission is part of the Multi-counter plan
+    if (!hasFeature(licenseState(raw, license).plan, "staffCommission"))
+      next.staff = {};
     raw
       .prepare(
         `INSERT INTO settings (key, value_json, updated_at) VALUES (?, ?, ?)

@@ -12,6 +12,8 @@
  *       Makes a key for one shop. The machine code is shown in the shop's
  *       app (Settings → Licence). --until 2027-03-31 instead of --days.
  *       Every key is also listed in ~/.medicare-vendor/issued.csv.
+ *       Plan: 1 computer = "single", more = "multi" (several counters + staff
+ *       commission). Force one with --plan single|multi.
  *
  *   npm run license -- issue --shop "Gupta Medical" --machine 7KQ2-M9XD-4TRA-PZ6E --trial --months 1.5
  *       A TRIAL of the length you choose (--days 15, --months 1.5 = 45
@@ -102,6 +104,9 @@ if (cmd === "keygen") {
     );
   if (!Number.isInteger(counters) || counters < 1 || counters > 50)
     fail("--counters must be 1–50");
+  const plan = arg("plan") ?? (counters > 1 ? "multi" : "single");
+  if (plan !== "single" && plan !== "multi")
+    fail("--plan must be single or multi");
   const today = new Date();
   let until = arg("until");
   const trial = rest.includes("--trial");
@@ -127,6 +132,7 @@ if (cmd === "keygen") {
     issuedAt: ymd(today),
     expiresAt: until,
     counters,
+    plan,
     ...(trial ? { trial: true } : {}),
   };
   const body = `MC1.${Buffer.from(JSON.stringify(data)).toString("base64url")}`;
@@ -144,7 +150,7 @@ if (cmd === "keygen") {
     `${data.id}${trial ? " (trial)" : ""},"${shop.replace(/"/g, '""')}",${machine},${data.issuedAt},${until},${counters},${key}\n`,
   );
   console.log(
-    `✓ ${data.id} for ${shop} — ${trial ? "TRIAL " : ""}works until ${until} (end of day), ${counters} computer(s)\n`,
+    `✓ ${data.id} for ${shop} — ${trial ? "TRIAL " : ""}${plan} plan, works until ${until} (end of day), ${counters} computer(s)\n`,
   );
   console.log(key);
   console.log(`\n(Saved in ${csv})`);

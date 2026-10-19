@@ -15,9 +15,13 @@ export const USER_LIMITS = {
   passwordMax: 200,
 } as const;
 
-/** Staff sign in at the counter with a PIN; owners always use a password */
+/**
+ * Anyone may sign in at the counter with a 4-digit PIN. The owner sets the
+ * staff's PINs; an owner's PIN is set only by that owner (with their
+ * password) — never by someone else.
+ */
 export const PIN_LENGTH = 4;
-export const canUsePin = (role: Role) => role !== "owner";
+export const ownerSetsPin = (role: Role) => role !== "owner";
 
 /** Returns a message, or null when the PIN is acceptable */
 export function checkPin(pin: string): string | null {

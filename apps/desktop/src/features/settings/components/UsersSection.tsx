@@ -26,7 +26,7 @@ import {
 } from "@medicare/domain/auth/types";
 import {
   PIN_LENGTH,
-  canUsePin,
+  ownerSetsPin,
   checkPassword,
   checkPin,
 } from "@medicare/domain/auth/users";
@@ -152,7 +152,7 @@ export function UsersSection() {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {canUsePin(u.role) ? (
+                        {ownerSetsPin(u.role) ? (
                           <button
                             type="button"
                             onClick={() => setPinFor(u)}
@@ -171,8 +171,20 @@ export function UsersSection() {
                             )}
                           </button>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground">
-                            {tr("Password")}
+                          // Owners set their own PIN (menu → My PIN)
+                          <span
+                            className="text-[11px] text-muted-foreground"
+                            title={tr(
+                              "Owners set their own PIN (menu → My PIN)",
+                            )}
+                          >
+                            {u.hasPin ? (
+                              <StatusBadge tone="success" shape="rounded">
+                                {"PIN"}
+                              </StatusBadge>
+                            ) : (
+                              tr("Password")
+                            )}
                           </span>
                         )}
                       </td>

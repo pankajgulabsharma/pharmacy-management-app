@@ -22,6 +22,8 @@ export type LicenseData = {
   counters: number;
   /** A trial of the length you chose (shown as "trial", no grace days) */
   trial?: boolean;
+  /** Plan sold (older keys: worked out from `counters`) */
+  plan?: "single" | "multi";
 };
 
 const b64 = (s: string) => Buffer.from(s, "base64url");

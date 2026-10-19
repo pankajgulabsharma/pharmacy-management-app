@@ -32,6 +32,8 @@ import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useCommissionStore } from "./useCommissionStore";
 import { RatesDialog } from "./RatesDialog";
+import { usePlan } from "@/features/license/useLicenseStore";
+import { LockedFeature } from "@/features/support/LockedFeature";
 
 const showError = (err: unknown) =>
   toast.error(err instanceof Error ? err.message : tr("Could not save"));
@@ -86,12 +88,14 @@ export function CommissionTab({
     [sales, batches, rates, range, payouts, period],
   );
   const [ratesOpen, setRatesOpen] = useState(false);
+  // Staff commission: Multi-counter plan
+  const staffOn = usePlan().has("staffCommission");
   const [paying, setPaying] = useState<CommissionRow | null>(null);
   const [undo, setUndo] = useState<string | null>(null);
 
   const doctorSales = r.doctors.reduce((a, x) => a + x.salesPaise, 0);
   const doctorBills = r.doctors.reduce((a, x) => a + x.bills, 0);
-  const earned = [...r.doctors, ...r.staff].reduce(
+  const earned = [...r.doctors, ...(staffOn ? r.staff : [])].reduce(
     (a, x) => a + x.commissionPaise,
     0,
   );
@@ -244,7 +248,14 @@ export function CommissionTab({
       </div>
 
       {table("doctor", r.doctors)}
-      {table("staff", r.staff)}
+      {staffOn ? (
+        table("staff", r.staff)
+      ) : (
+        <LockedFeature
+          title="Staff commission"
+          description="Pay counter staff a % of the bills they make — worked out by itself from who billed. Part of the Multi-counter plan."
+        />
+      )}
 
       {paidHere.length ? (
         <ReportTable
@@ -306,6 +317,7 @@ export function CommissionTab({
 
       {ratesOpen ? (
         <RatesDialog
+          staffOn={staffOn}
           billDoctors={r.doctors.map((x) => x.name)}
           billStaff={r.staff.map((x) => x.name)}
           onClose={() => setRatesOpen(false)}

@@ -11,6 +11,7 @@
  */
 import type { DatabaseSync } from "node:sqlite";
 import { checkKey, type LicenseData } from "./key";
+import { planOf, type Plan } from "@medicare/domain/license/plan";
 
 export const TRIAL_DAYS = 30;
 export const GRACE_DAYS = 7;
@@ -31,6 +32,8 @@ export type LicenseState = {
   license: LicenseData | null;
   /** Max computers billing at once (null = no limit) */
   counters: number | null;
+  /** What the shop bought (decides extra features) */
+  plan: Plan;
 };
 
 type Row = { value_json: string };
@@ -67,6 +70,14 @@ export function licenseState(
   raw: DatabaseSync,
   o: LicenseOptions,
 ): LicenseState {
+  const s = stateWithoutPlan(raw, o);
+  return { ...s, plan: planOf(s.status, s.counters, s.license?.plan) };
+}
+
+function stateWithoutPlan(
+  raw: DatabaseSync,
+  o: LicenseOptions,
+): Omit<LicenseState, "plan"> {
   const base = { machine: o.machine, license: null, counters: null };
   if (!o.enforce)
     return {

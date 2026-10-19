@@ -1441,4 +1441,48 @@ export const HI_UI: Record<string, string> = {
   Again: "दोबारा",
   "Unlock & set new password": "अनलॉक करें और नया पासवर्ड सेट करें",
   WhatsApp: "WhatsApp",
+  // Step 48: support, plans, my PIN
+  "Upgrade — contact {{company}}": "अपग्रेड — {{company}} से संपर्क करें",
+  "Powered by": "द्वारा संचालित",
+  "Help & support": "मदद और सपोर्ट",
+  "Support contact details are not filled in yet (packages/domain/src/vendor.ts).":
+    "सपोर्ट के संपर्क विवरण अभी भरे नहीं गए (packages/domain/src/vendor.ts)।",
+  "Your details for support": "सपोर्ट के लिए आपकी जानकारी",
+  "WhatsApp and e-mail send these along by themselves.":
+    "WhatsApp और ई-मेल में यह जानकारी अपने-आप जाती है।",
+  Call: "कॉल",
+  "E-mail": "ई-मेल",
+  Website: "वेबसाइट",
+  "My PIN": "मेरा PIN",
+  "Sign in faster: tap your name and type 4 digits. Your password keeps working too.":
+    "जल्दी साइन इन: अपने नाम पर टैप करें और 4 अंक डालें। पासवर्ड भी चलता रहेगा।",
+  "Remove my PIN": "मेरा PIN हटाएँ",
+  "Your password": "आपका पासवर्ड",
+  "Forgot PIN? Use password": "PIN भूल गए? पासवर्ड से आएँ",
+  "Use PIN": "PIN से आएँ",
+  "Need help? Contact support": "मदद चाहिए? सपोर्ट से संपर्क करें",
+  "AMC / renewal till": "AMC / रिन्यूअल तक",
+  "To buy, renew the AMC or upgrade: send the machine code to {{company}}. They send back a licence key — paste it below.":
+    "खरीदने, AMC रिन्यू करने या अपग्रेड के लिए: मशीन कोड {{company}} को भेजें। वे लाइसेंस की भेजेंगे — नीचे पेस्ट करें।",
+  "Contact support": "सपोर्ट से संपर्क करें",
+  "Pay counter staff a % of the bills they make — worked out by itself from who billed. Part of the Multi-counter plan.":
+    "काउंटर स्टाफ़ को उनके बनाए बिलों का % दें — किसने बिल बनाया उससे अपने-आप हिसाब। Multi-counter प्लान में शामिल।",
+  "Single computer": "सिंगल कंप्यूटर",
+  "Multi-counter": "मल्टी-काउंटर",
+  "Your plan": "आपका प्लान",
+  "Billing, stock & GST": "बिलिंग, स्टॉक और GST",
+  "Udhaar, reports, backups": "उधार, रिपोर्ट, बैकअप",
+  "1 billing computer": "1 बिलिंग कंप्यूटर",
+  "Several billing counters": "कई बिलिंग काउंटर",
+  "Owners set their own PIN (menu → My PIN)":
+    "मालिक अपना PIN खुद सेट करते हैं (मेन्यू → मेरा PIN)",
+  "Password is wrong": "पासवर्ड गलत है",
+  Shop: "दुकान",
+  Phone: "फ़ोन",
+  Plan: "प्लान",
+  "Valid till": "तक मान्य",
+  "App version": "ऐप वर्ज़न",
+  "Mon–Sat, 10 am – 7 pm": "सोम–शनि, सुबह 10 – शाम 7",
+  "Tap your name · type your PIN · Ctrl+L switches user":
+    "अपने नाम पर टैप करें · अपना PIN डालें · Ctrl+L से यूज़र बदलें",
 };

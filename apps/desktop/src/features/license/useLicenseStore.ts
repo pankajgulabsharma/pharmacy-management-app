@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { apiGet, apiRequest } from "@/lib/api";
+import {
+  hasFeature,
+  type Feature,
+  type Plan,
+} from "@medicare/domain/license/plan";
 
 /** Same shape as the server's licence state (apps/server/src/license/state.ts) */
 export type LicenseState = {
@@ -15,8 +20,10 @@ export type LicenseState = {
     issuedAt: string;
     expiresAt: string;
     counters: number;
+    plan?: Plan;
   } | null;
   counters: number | null;
+  plan: Plan;
 };
 
 type Store = {
@@ -43,3 +50,9 @@ export const useLicenseStore = create<Store>()((set) => ({
     return state;
   },
 }));
+
+/** The shop's plan (everything until the licence is known — no flicker) */
+export function usePlan() {
+  const plan = useLicenseStore((s) => s.state?.plan ?? "multi");
+  return { plan, has: (f: Feature) => hasFeature(plan, f) };
+}

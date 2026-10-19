@@ -89,7 +89,7 @@ export function buildApp({
   settingsRoutes(app, database);
   backupRoutes(app, database, bus, backupDir, license);
   systemRoutes(app, system, () => bus.connections());
-  commissionRoutes(app, database);
+  commissionRoutes(app, database, license);
   setupRoutes(app, database);
   catalogRoutes(app, database);
   libraryRoutes(app, library);

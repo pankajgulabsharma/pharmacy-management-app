@@ -97,11 +97,14 @@ export function PinPanel({
   person,
   onBack,
   onSubmit,
+  onUsePassword,
 }: {
   person: SignInPerson;
   onBack: () => void;
   /** Resolves to an error message, or null when signed in */
   onSubmit: (pin: string) => Promise<string | null>;
+  /** Forgot the PIN → sign in with the password */
+  onUsePassword: () => void;
 }) {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
@@ -142,6 +145,15 @@ export function PinPanel({
         disabled={busy}
         shake={shake}
       />
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={onUsePassword}
+          className="text-[12px] font-medium text-primary hover:underline"
+        >
+          {tr("Forgot PIN? Use password")}
+        </button>
+      </div>
     </div>
   );
 }
@@ -231,11 +243,14 @@ export function PasswordPanel({
   onBack,
   onSubmit,
   onForgot,
+  onUsePin,
 }: {
   person: SignInPerson;
   onBack: () => void;
   onSubmit: (password: string, remember: boolean) => Promise<string | null>;
   onForgot: () => void;
+  /** This person has a PIN → back to the number pad */
+  onUsePin?: () => void;
 }) {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -274,7 +289,7 @@ export function PasswordPanel({
       ) : null}
       <RememberBox checked={remember} onChange={setRemember} />
       <SubmitButton busy={busy}>Sign in</SubmitButton>
-      <div className="text-center">
+      <div className="flex items-center justify-center gap-4 text-center">
         <button
           type="button"
           onClick={() => (person.role === "owner" ? onForgot() : setHint(true))}
@@ -282,6 +297,17 @@ export function PasswordPanel({
         >
           {tr("Forgot password?")}
         </button>
+        {onUsePin ? (
+          <button
+            type="button"
+            onClick={onUsePin}
+            className="text-[12px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+          >
+            {tr("Use PIN")}
+          </button>
+        ) : null}
+      </div>
+      <div className="text-center">
         {hint ? (
           <p className="mt-1 text-[11px] text-muted-foreground">
             {tr("Ask the owner — Settings → Users & roles → Reset password.")}

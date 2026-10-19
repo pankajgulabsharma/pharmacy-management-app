@@ -9,6 +9,8 @@ import {
 import { formatPaise } from "@medicare/domain/lib/money";
 import { toCsv } from "@/lib/csv";
 import { useCommissionStore } from "./useCommissionStore";
+import { hasFeature } from "@medicare/domain/license/plan";
+import { useLicenseStore } from "@/features/license/useLicenseStore";
 
 /** Doctors + staff of the period as a CSV (the Reports "Export CSV") */
 export function commissionCsv(
@@ -25,8 +27,10 @@ export function commissionCsv(
     payouts,
     periodOf(range),
   );
+  const plan = useLicenseStore.getState().state?.plan ?? "multi";
+  const staff = hasFeature(plan, "staffCommission") ? r.staff : [];
   return toCsv(
-    [...r.doctors, ...r.staff],
+    [...r.doctors, ...staff],
     [
       {
         header: "Type",

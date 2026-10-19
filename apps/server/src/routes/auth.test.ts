@@ -381,7 +381,7 @@ describe("sign-in screen: tiles, PIN, recovery code", () => {
       call("POST", `/api/users/${id}/pin`, owner, { pin });
     expect((await set("u_pharmacist", "1234")).json().error).toMatch(/easy/);
     expect((await set("u_pharmacist", "12")).json().error).toMatch(/4 digits/);
-    expect((await set("u_admin", "4826")).json().error).toMatch(/password/);
+    expect((await set("u_admin", "4826")).json().error).toMatch(/own PIN/);
     const r = await set("u_pharmacist", "4826");
     expect(r.json().user.hasPin).toBe(true);
     expect((await pinLogin("u_pharmacist", "4826")).statusCode).toBe(200);
@@ -400,6 +400,21 @@ describe("sign-in screen: tiles, PIN, recovery code", () => {
     ).toBe(403);
     expect((await set("u_cashier", null)).json().user.hasPin).toBe(false);
     expect((await pinLogin("u_cashier", "2468")).statusCode).toBe(401);
+  });
+
+  it("anyone sets their OWN PIN with their password — the owner too", async () => {
+    const owner = await signIn(app);
+    const mine = (password: string, pin: string | null) =>
+      call("POST", "/api/auth/pin", owner, { password, pin });
+    expect((await mine("wrong", "4826")).json().error).toMatch(/wrong/);
+    expect((await mine("admin", "1111")).json().error).toMatch(/easy/);
+    expect((await mine("admin", "4826")).json()).toEqual({ hasPin: true });
+    const people = (await call("GET", "/api/auth/people")).json().people;
+    expect(people[0]).toMatchObject({ id: "u_admin", method: "pin" });
+    const r = await pinLogin("u_admin", "4826");
+    expect(r.json().user.role).toBe("owner");
+    expect((await mine("admin", null)).json()).toEqual({ hasPin: false });
+    expect((await pinLogin("u_admin", "4826")).statusCode).toBe(401);
   });
 
   it("owner forgot the password: recovery code (once) sets a new one", async () => {

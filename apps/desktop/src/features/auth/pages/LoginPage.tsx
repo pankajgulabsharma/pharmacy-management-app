@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Cross, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { Cross, LifeBuoy, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { SupportDialog } from "@/features/support/SupportDialog";
+import { PoweredBy } from "@/features/support/PoweredBy";
 import type { SignInPerson } from "@medicare/domain/auth/types";
 import { Button } from "@/components/ui/button";
 import { ThemeLanguageSwitcher } from "@/components/common/ThemeLanguageSwitcher";
@@ -89,7 +91,7 @@ function BrandPanel({ shop, setup }: { shop: string; setup?: boolean }) {
         {tr(
           setup
             ? "Bills, stock, udhaar and GST — ready in a minute."
-            : "Tap your name · staff type their PIN · Ctrl+L switches user",
+            : "Tap your name · type your PIN · Ctrl+L switches user",
         )}
       </p>
     </div>
@@ -111,6 +113,7 @@ export default function LoginPage() {
   const user = useCurrentUser();
   const people = usePeople();
   const [view, setView] = useState<View>({ kind: "people" });
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Esc: back to the tiles
   useEffect(() => {
@@ -204,6 +207,7 @@ export default function LoginPage() {
         person={view.person}
         onBack={back}
         onSubmit={async (pin) => finish(await loginAs(view.person.id, { pin }))}
+        onUsePassword={() => setView({ kind: "password", person: view.person })}
       />
     );
   else if (view.kind === "password")
@@ -215,6 +219,11 @@ export default function LoginPage() {
           finish(await loginAs(view.person.id, { password }, remember))
         }
         onForgot={() => setView({ kind: "recover", person: view.person })}
+        onUsePin={
+          view.person.method === "pin"
+            ? () => setView({ kind: "pin", person: view.person })
+            : undefined
+        }
       />
     );
   else if (view.kind === "unlock")
@@ -302,6 +311,18 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <div className="absolute inset-x-0 bottom-4 flex flex-col items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary"
+        >
+          <LifeBuoy className="h-3.5 w-3.5" />
+          {tr("Need help? Contact support")}
+        </button>
+        <PoweredBy />
+      </div>
+      {helpOpen ? <SupportDialog onClose={() => setHelpOpen(false)} /> : null}
     </div>
   );
 }
