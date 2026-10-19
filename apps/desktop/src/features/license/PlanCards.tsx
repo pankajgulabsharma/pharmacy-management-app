@@ -80,7 +80,7 @@ export function PlanCards({ plan }: { plan: Plan }) {
             ) : upgrade ? (
               <span className="absolute -top-2.5 left-4 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-0.5 text-[10px] font-semibold text-white shadow">
                 <Sparkles className="h-3 w-3" />
-                {tr("Recommended for 2+ counters")}
+                {tr("Recommended for more than 1 counter")}
               </span>
             ) : null}
 

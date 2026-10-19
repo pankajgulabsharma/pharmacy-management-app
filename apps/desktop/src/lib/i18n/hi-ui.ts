@@ -1488,7 +1488,7 @@ export const HI_UI: Record<string, string> = {
   "Upgrade opens Help & support — your provider sends a new licence key.":
     "अपग्रेड दबाने पर मदद और सपोर्ट खुलेगा — आपका प्रोवाइडर नई लाइसेंस की भेजेगा।",
   "Any 4 digits": "कोई भी 4 अंक",
-  "Recommended for 2+ counters": "2+ काउंटर के लिए सबसे अच्छा",
+  "Recommended for more than 1 counter": "1 से ज़्यादा काउंटर के लिए सबसे अच्छा",
   "One billing computer": "एक बिलिंग कंप्यूटर",
   "Main computer + extra counters": "मुख्य कंप्यूटर + और काउंटर",
   "Everything in Single computer, plus:":
@@ -1556,5 +1556,4 @@ export const HI_UI: Record<string, string> = {
     "AMC समय पर रिन्यू करें — आख़िरी दिन तक कुछ नहीं बदलेगा।",
   "Activate licence": "लाइसेंस एक्टिवेट करें",
   Hide: "छुपाएँ",
-  "Hide until the app is opened again": "ऐप दोबारा खुलने तक छुपाएँ",
 };

@@ -317,6 +317,22 @@ export default function BillingPage() {
     [setCart],
   );
 
+  // Nothing left on the bill → nothing typed in payment either (amounts
+  // cleared; the chosen method stays)
+  const paid = draft.payment;
+  const leftoverPayment =
+    cart.length === 0 &&
+    paid != null &&
+    (paid.received !== "" ||
+      paid.reference !== "" ||
+      Object.values(paid.split).some((v) => v !== ""));
+  useEffect(() => {
+    if (leftoverPayment && paid)
+      updateDraft(draft.id, {
+        payment: { ...EMPTY_PAYMENT, method: paid.method },
+      });
+  }, [leftoverPayment, paid, updateDraft, draft.id]);
+
   const removeLine = useCallback(
     (lineId: string) =>
       setCart((prev) => prev.filter((l) => l.lineId !== lineId)),

@@ -6,7 +6,6 @@ import {
   Lock,
   Sparkles,
   TriangleAlert,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,9 +16,8 @@ import { useLicenseStore, type LicenseState } from "./useLicenseStore";
 
 /** Built-in trial length (server: license/state.ts TRIAL_DAYS) */
 const TRIAL_DAYS = 30;
-/** From here on the trial bar turns amber and can't be hidden */
+/** From here on the trial bar turns amber */
 const TRIAL_URGENT_DAYS = 5;
-const HIDE_KEY = "medicare-trial-bar-hidden";
 
 type Look = {
   tone: "trial" | "warn" | "danger";
@@ -98,13 +96,6 @@ export function LicenseBanner() {
   const load = useLicenseStore((s) => s.loadFromServer);
   const owner = useCan("admin");
   const [help, setHelp] = useState(false);
-  const [hidden, setHidden] = useState(() => {
-    try {
-      return window.sessionStorage.getItem(HIDE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
 
   useEffect(() => {
     const t = setInterval(() => void load().catch(() => {}), 30 * 60_000);
@@ -113,8 +104,7 @@ export function LicenseBanner() {
 
   if (!state || state.status === "off" || !state.message) return null;
   const look = lookOf(state);
-  // Only a calm trial bar can be hidden (for this window)
-  if (hidden && look.tone === "trial") return null;
+  // Always shown until a licence is entered — it can't be closed
 
   const Icon = look.icon;
   const onDark = look.tone === "trial";
@@ -209,24 +199,6 @@ export function LicenseBanner() {
           </Link>
         ) : !state.canWork ? (
           <span className="text-[11px] font-medium">{tr("Ask the owner")}</span>
-        ) : null}
-        {look.tone === "trial" ? (
-          <button
-            type="button"
-            aria-label={tr("Hide")}
-            title={tr("Hide until the app is opened again")}
-            onClick={() => {
-              setHidden(true);
-              try {
-                window.sessionStorage.setItem(HIDE_KEY, "1");
-              } catch {
-                /* storage blocked — hidden until reload */
-              }
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/80 hover:bg-white/15 hover:text-white"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
         ) : null}
       </div>
       {help ? <SupportDialog onClose={() => setHelp(false)} /> : null}
