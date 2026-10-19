@@ -17,10 +17,10 @@ export type Vendor = {
 export const VENDOR: Vendor = {
   company: "Vyntez Solution",
   /** Support phone, e.g. "+91 98200 12345" */
-  phone: "",
+  phone: "7039413938",
   /** WhatsApp number with country code, digits only, e.g. "919820012345" */
-  whatsapp: "",
-  email: "",
+  whatsapp: "7039413938",
+  email: "pankajgs1997@gmail.com",
   website: "",
   /** When someone answers */
   hours: "Mon–Sat, 10 am – 7 pm",
