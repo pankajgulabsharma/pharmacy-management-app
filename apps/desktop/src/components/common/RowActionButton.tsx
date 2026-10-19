@@ -10,6 +10,8 @@ type Props = {
   /** Short tooltip */
   title?: string;
   tone?: "default" | "danger";
+  /** Not allowed now — shown faded; the reason goes in `title` */
+  disabled?: boolean;
   onClick: () => void;
 };
 
@@ -19,22 +21,27 @@ export const RowActionButton = memo(function RowActionButton({
   label,
   title,
   tone = "default",
+  disabled = false,
   onClick,
 }: Props) {
   const tr = useTr();
   return (
     <button
       type="button"
-      onClick={onClick}
+      // aria-disabled (not disabled): the tooltip with the reason still shows
+      aria-disabled={disabled || undefined}
+      onClick={disabled ? undefined : onClick}
       aria-label={tr(label)}
       title={tr(title ?? label)}
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent",
         "text-muted-foreground transition-colors",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-        tone === "danger"
-          ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-          : "hover:border-border hover:bg-background hover:text-foreground",
+        disabled
+          ? "cursor-not-allowed opacity-35"
+          : tone === "danger"
+            ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+            : "hover:border-border hover:bg-background hover:text-foreground",
       )}
     >
       <Icon className="h-3.5 w-3.5" />

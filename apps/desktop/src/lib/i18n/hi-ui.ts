@@ -525,6 +525,7 @@ export const HI_UI: Record<string, string> = {
   Server: "सर्वर",
   Offline: "बंद",
   Connecting: "जुड़ रहे",
+  "Offline · Retry": "बंद · फिर कोशिश करें",
   "Server not reachable": "सर्वर से कनेक्शन नहीं",
   "The server took too long to answer": "सर्वर ने जवाब देने में बहुत देर की",
   Retry: "फिर कोशिश करें",

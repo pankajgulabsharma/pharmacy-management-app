@@ -1,6 +1,6 @@
 import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import { memo, useMemo, useEffect } from "react";
-import { Eye, Truck } from "lucide-react";
+import { Eye, Pencil, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -27,6 +27,9 @@ type Props = {
   items: Purchase[];
   statusById: ReadonlyMap<string, PaymentStatus>;
   onView: (p: Purchase) => void;
+  onEdit: (p: Purchase) => void;
+  /** Why an invoice can't be edited now (null = it can) */
+  editBlockOf: (p: Purchase) => string | null;
   /** Keyboard / click selection */
   selectedId?: string | null;
   onSelect?: (x: Purchase) => void;
@@ -47,7 +50,7 @@ const COLUMNS: TableColumn[] = [
   { key: "total", label: "Total (₹)", width: "w-[108px]", align: "text-right" },
   { key: "due", label: "Balance (₹)", width: "w-[116px]", align: "text-right" },
   { key: "status", label: "Status", width: "w-[120px]" },
-  { key: "actions", label: "", width: "w-[52px]", align: "text-center" },
+  { key: "actions", label: "", width: "w-[84px]", align: "text-center" },
 ];
 
 /* Formatted strings per purchase — built once per (immutable) object */
@@ -87,11 +90,14 @@ export function PurchaseTable({
   items,
   statusById,
   onView,
+  onEdit,
+  editBlockOf,
   selectedId = null,
   onSelect,
 }: Props) {
   // Stable callback so memoized rows don't re-render on parent renders
   const handleView = useStableCallback(onView);
+  const handleEdit = useStableCallback(onEdit);
 
   const rows = useMemo(() => items.map(getRowView), [items]);
 
@@ -140,6 +146,8 @@ export function PurchaseTable({
             selected={p.id === selectedId}
             onSelect={handleSelect}
             onView={handleView}
+            onEdit={handleEdit}
+            editBlock={editBlockOf(p)}
           />
         );
       })}
@@ -156,6 +164,8 @@ type RowProps = {
   status: PaymentStatus;
   measureRef: (el: Element | null) => void;
   onView: (p: Purchase) => void;
+  onEdit: (p: Purchase) => void;
+  editBlock: string | null;
   selected: boolean;
   onSelect: (x: Purchase) => void;
 };
@@ -167,6 +177,8 @@ const PurchaseRow = memo(function PurchaseRow({
   status,
   measureRef,
   onView,
+  onEdit,
+  editBlock,
   selected,
   onSelect,
 }: RowProps) {
@@ -271,13 +283,22 @@ const PurchaseRow = memo(function PurchaseRow({
         <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
       </td>
 
-      <td className="px-2 py-2.5 align-middle text-center">
-        <RowActionButton
-          icon={Eye}
-          label={`View purchase ${p.invoiceNo}`}
-          title="View details"
-          onClick={() => onView(p)}
-        />
+      <td className="px-2 py-2.5 align-middle">
+        <div className="flex items-center justify-center gap-0.5">
+          <RowActionButton
+            icon={Eye}
+            label={`View purchase ${p.invoiceNo}`}
+            title="View details"
+            onClick={() => onView(p)}
+          />
+          <RowActionButton
+            icon={Pencil}
+            label={`Edit purchase ${p.invoiceNo}`}
+            title={editBlock ?? "Edit"}
+            disabled={editBlock !== null}
+            onClick={() => onEdit(p)}
+          />
+        </div>
       </td>
     </tr>
   );

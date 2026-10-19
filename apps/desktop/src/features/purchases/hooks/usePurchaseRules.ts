@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useInventoryStore } from "@/features/inventory/store/useInventoryStore";
 import { checkReversal } from "@medicare/domain/inventory/ledger";
 import { usePurchaseStore } from "../store/usePurchaseStore";
@@ -35,4 +35,21 @@ export function usePurchaseRules(purchase: Purchase | null) {
       returnCount: ctx.returnCount,
     };
   }, [purchase, batches, movements, returns]);
+}
+
+/** "Can this invoice be edited, and if not why?" — for the list's pencil */
+export function useEditRuleOf() {
+  const batches = useInventoryStore((s) => s.batches);
+  const movements = useInventoryStore((s) => s.movements);
+  const returns = usePurchaseStore((s) => s.returns);
+  return useCallback(
+    (purchase: Purchase) =>
+      canEditPurchase(purchase, {
+        returnCount: returns.filter((r) => r.purchaseId === purchase.id).length,
+        stockReversible:
+          !purchase.stockPosted ||
+          checkReversal(batches, movements, purchase.id).length === 0,
+      }),
+    [batches, movements, returns],
+  );
 }

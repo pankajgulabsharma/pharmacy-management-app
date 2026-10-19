@@ -62,6 +62,7 @@ import {
   purchaseSearch,
 } from "@medicare/domain/purchases/search";
 import { PurchaseTable } from "../components/PurchaseTable";
+import { useEditRuleOf } from "../hooks/usePurchaseRules";
 import { PurchaseFormDialog } from "../components/PurchaseFormDialog";
 import { PurchaseDetailsDialog } from "../components/PurchaseDetailsDialog";
 import { CancelPurchaseDialog } from "../components/CancelPurchaseDialog";
@@ -219,6 +220,14 @@ export default function PurchasesPage() {
     [],
   );
   const handleView = useCallback((p: Purchase) => setViewingId(p.id), []);
+  const editRuleOf = useEditRuleOf();
+  const editBlockOf = useCallback(
+    (p: Purchase) => {
+      const r = editRuleOf(p);
+      return r.allowed ? null : r.reason;
+    },
+    [editRuleOf],
+  );
   const closeView = useCallback(() => setViewingId(null), []);
   const openCancel = useCallback((p: Purchase) => setCancelId(p.id), []);
   const closeCancel = useCallback(() => setCancelId(null), []);
@@ -421,6 +430,8 @@ export default function PurchasesPage() {
           items={filteredPurchases}
           statusById={statusById}
           onView={handleView}
+          onEdit={openEdit}
+          editBlockOf={editBlockOf}
           selectedId={invoiceNav.selectedKey}
           onSelect={invoiceNav.select}
         />
