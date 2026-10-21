@@ -38,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
     purchaseShortExpiryMonths: 6,
   },
   doctors: [],
+  doctorInfo: {},
   counters: ["Counter 1"],
   roles: DEFAULT_ROLE_ACCESS,
 };
@@ -58,6 +59,18 @@ export const DEMO_SETTINGS: Settings = {
     "Dr. Anita Mehta, MBBS",
     "Dr. Suresh Rao, MD",
   ],
+  doctorInfo: {
+    "Dr. Prakash Iyer, MD (Cardiologist)": {
+      regNo: "MMC 2004/11/2231",
+      clinic: "Heart Care Hospital, Thane",
+      phone: "9820011223",
+    },
+    "Dr. Anita Mehta, MBBS": {
+      regNo: "MMC 2012/06/5528",
+      clinic: "Mehta Clinic, Naupada",
+      phone: "",
+    },
+  },
   counters: ["Counter 1", "Counter 2", "Counter 3"],
   // Demo only — a made-up UPI ID so the billing QR can be tried
   billing: { ...DEFAULT_SETTINGS.billing, upiId: "shreesaimedical@okaxis" },

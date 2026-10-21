@@ -822,7 +822,6 @@ export default function BillingPage() {
             canB2b={!!shopGstin}
             counter={counter}
             onCounterChange={setCounter}
-            doctors={doctors}
             counters={counters}
             customerRef={customerRef}
           />

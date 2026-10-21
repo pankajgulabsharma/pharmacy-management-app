@@ -4,6 +4,7 @@ import { cleanPrefix } from "../lib/docNo";
 import { checkGstin } from "../lib/gstin";
 import { RuleError } from "../lib/errors";
 import { cleanText } from "../lib/sanitize";
+import { cleanDoctorInfo, doctorName } from "../doctors/doctor";
 import {
   SETTINGS_LIMITS as L,
   type BillingPrefs,
@@ -128,6 +129,14 @@ export function sanitizeSettings(raw: unknown): Settings {
 
   const gstin = str(shop.gstin, 15, d.shop.gstin).toUpperCase();
 
+  // Every doctor written the same way: "Dr. Anita Mehta, MBBS"
+  const doctors = Array.isArray(r.doctors)
+    ? cleanList(
+        r.doctors.map((x) => (typeof x === "string" ? doctorName(x) : x)),
+        L.maxDoctors,
+        L.doctorMax,
+      )
+    : d.doctors;
   return {
     shop: {
       name: str(shop.name, L.shopNameMax, d.shop.name) || d.shop.name,
@@ -173,9 +182,8 @@ export function sanitizeSettings(raw: unknown): Settings {
         d.inventory.purchaseShortExpiryMonths,
       ),
     },
-    doctors: Array.isArray(r.doctors)
-      ? cleanList(r.doctors, L.maxDoctors, L.doctorMax)
-      : d.doctors,
+    doctors,
+    doctorInfo: cleanDoctorInfo(r.doctorInfo, doctors),
     counters: safeCounters,
     roles: cleanRoleAccess(r.roles),
   };

@@ -953,7 +953,20 @@ export function RegisterTab({
             </>
           ),
         },
-        { key: "doctor", label: "Doctor", render: (r) => r.doctor },
+        {
+          key: "doctor",
+          label: "Doctor",
+          render: (r) => (
+            <>
+              {r.doctor}
+              {r.doctorDetails ? (
+                <span className="block text-[10px] text-muted-foreground">
+                  {r.doctorDetails}
+                </span>
+              ) : null}
+            </>
+          ),
+        },
         {
           key: "medicine",
           label: "Medicine",

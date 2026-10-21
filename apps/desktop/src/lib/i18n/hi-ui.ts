@@ -1740,4 +1740,32 @@ export const HI_UI: Record<string, string> = {
   "Left yesterday — count and correct:": "कल छोड़े थे — गिनें और सुधारें:",
   "Count the change in the galla:": "गल्ले के छुट्टे गिनें:",
   "Not signed out": "साइन-आउट नहीं किया",
+  "{{name}} added to the doctors list": "{{name}} डॉक्टर सूची में जुड़ गए",
+  "Clear doctor": "डॉक्टर हटाएँ",
+  "Show doctors": "डॉक्टर दिखाएँ",
+  "No doctor matches — type the full name":
+    "कोई डॉक्टर नहीं मिला — पूरा नाम लिखें",
+  "No doctors yet — type a name, or add them in Settings → Doctors & counters":
+    "अभी कोई डॉक्टर नहीं — नाम लिखें, या सेटिंग्स → डॉक्टर और काउंटर में जोड़ें",
+  "No doctor (sale without prescription)":
+    "कोई डॉक्टर नहीं (बिना पर्चे की बिक्री)",
+  "Use “{{name}}” on this bill": "इस बिल पर “{{name}}” लगाएँ",
+  "Save “{{name}}” to the doctors list":
+    "“{{name}}” को डॉक्टर सूची में सेव करें",
+  "Doctor saved": "डॉक्टर सेव हुआ",
+  "{{name}} added": "{{name}} जुड़ गए",
+  "{{name}} removed": "{{name}} हटाए गए",
+  "No registration no. / clinic yet": "अभी रजिस्ट्रेशन नं. / क्लिनिक नहीं",
+  "Add doctor": "डॉक्टर जोड़ें",
+  "Type the doctor's name": "डॉक्टर का नाम लिखें",
+  "Already in the list": "पहले से सूची में है",
+  "Name & degree": "नाम और डिग्री",
+  "e.g. Anita Mehta, MBBS": "जैसे Anita Mehta, MBBS",
+  "Registration no. (optional)": "रजिस्ट्रेशन नं. (ज़रूरी नहीं)",
+  "e.g. MMC 2012/06/5528": "जैसे MMC 2012/06/5528",
+  "Clinic / hospital (optional)": "क्लिनिक / अस्पताल (ज़रूरी नहीं)",
+  "e.g. Mehta Clinic, Naupada": "जैसे Mehta Clinic, Naupada",
+  "Phone (optional)": "फ़ोन (ज़रूरी नहीं)",
+  "Saved as “{{name}}”": "“{{name}}” के रूप में सेव होगा",
+  "“Dr.” is added by itself": "“Dr.” अपने आप जुड़ जाता है",
 };

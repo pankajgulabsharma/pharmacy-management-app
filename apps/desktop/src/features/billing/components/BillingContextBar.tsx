@@ -1,6 +1,6 @@
-import { useId } from "react";
 import type { Customer } from "@medicare/domain/customers/types";
 import { CustomerNameInput } from "./CustomerNameInput";
+import { DoctorPicker } from "./DoctorPicker";
 import { useTranslation } from "react-i18next";
 import { toGstinInput } from "@medicare/domain/lib/gstin";
 import {
@@ -40,7 +40,6 @@ type Props = {
   onPrescribedByChange: (v: string) => void;
   counter: string;
   onCounterChange: (v: string) => void;
-  doctors: string[];
   counters: string[];
   /** B2B (GST) bill: buyer's GSTIN (null = normal bill, field closed) */
   gstin: string | null;
@@ -79,14 +78,12 @@ export function BillingContextBar({
   onPrescribedByChange,
   counter,
   onCounterChange,
-  doctors,
   counters,
   gstin,
   onGstinChange,
   canB2b,
 }: Props) {
   const { t } = useTranslation();
-  const doctorListId = useId();
   const showGstin = canB2b && gstin !== null;
   const offerSave = !linked && customerName.trim().length >= 2;
 
@@ -227,20 +224,13 @@ export function BillingContextBar({
         </label>
         {/* Pick a saved doctor, or type one not in the list (like a new
             prescription from another clinic) — saved lists in Settings */}
-        <Input
-          list={doctorListId}
+        <DoctorPicker
           value={prescribedBy}
-          onChange={(e) => onPrescribedByChange(e.target.value.slice(0, 80))}
+          onChange={onPrescribedByChange}
+          label={t("billing.prescribedBy")}
           placeholder={t("billing.selectDoctor")}
-          aria-label={t("billing.prescribedBy")}
-          className={cn(fieldStyle, "px-3 text-foreground")}
-          autoComplete="off"
+          className={fieldStyle}
         />
-        <datalist id={doctorListId}>
-          {doctors.map((d) => (
-            <option key={d} value={d} />
-          ))}
-        </datalist>
       </div>
 
       {/* Counter */}

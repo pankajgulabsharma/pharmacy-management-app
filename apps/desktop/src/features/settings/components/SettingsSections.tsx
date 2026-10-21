@@ -30,6 +30,7 @@ import {
   validateShop,
 } from "@medicare/domain/settings/validation";
 import { SettingsCard } from "./SettingsCard";
+import { DoctorsEditor } from "./DoctorsEditor";
 import { EditableList } from "./EditableList";
 
 /** Server refused / not reachable → its message */
@@ -434,9 +435,7 @@ export function InventorySection() {
 /* ------------------------------------------------------------------ */
 
 export function ListsSection() {
-  const doctors = useSettingsStore((s) => s.doctors);
   const counters = useSettingsStore((s) => s.counters);
-  const setDoctors = useSettingsStore((s) => s.setDoctors);
   const setCounters = useSettingsStore((s) => s.setCounters);
 
   return (
@@ -444,14 +443,7 @@ export function ListsSection() {
       title="Doctors & counters"
       description="Pick-lists on the billing screen. Changes are saved immediately."
     >
-      <EditableList
-        label="Doctors"
-        items={doctors}
-        onChange={(list) => void setDoctors(list).catch(showError)}
-        placeholder="e.g. Dr. Kavita Shah, MBBS"
-        maxItems={L.maxDoctors}
-        maxLength={L.doctorMax}
-      />
+      <DoctorsEditor />
       <div className="border-t border-border pt-3">
         <EditableList
           label="Billing counters"

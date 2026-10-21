@@ -1,3 +1,4 @@
+import type { DoctorInfo } from "../doctors/doctor";
 import type { PaymentMethod } from "../billing/types";
 import type { RoleAccess } from "../auth/permissions";
 
@@ -37,6 +38,8 @@ export type Settings = {
   billing: BillingPrefs;
   inventory: InventoryPrefs;
   doctors: string[];
+  /** Registration no., clinic, phone — by doctor name (optional) */
+  doctorInfo: Record<string, DoctorInfo>;
   counters: string[];
   /** What pharmacists and cashiers may do (the owner decides) */
   roles: RoleAccess;

@@ -93,6 +93,7 @@ export default function ReportsPage() {
   const medicines = useMedicineStore((s) => s.medicines);
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
   const shopGstin = useSettingsStore((s) => s.shop.gstin);
+  const doctorInfo = useSettingsStore((s) => s.doctorInfo);
 
   // Dashboard links like /reports?tab=sales&period=today
   const intent = useUrlIntent();
@@ -161,8 +162,9 @@ export default function ReportsPage() {
     [tab, batches, medicines, expiringDays],
   );
   const reg = useMemo(
-    () => (tab === "register" ? scheduleRegister(sales, range) : null),
-    [tab, sales, range],
+    () =>
+      tab === "register" ? scheduleRegister(sales, range, doctorInfo) : null,
+    [tab, sales, range, doctorInfo],
   );
 
   const exportCsv = () => {

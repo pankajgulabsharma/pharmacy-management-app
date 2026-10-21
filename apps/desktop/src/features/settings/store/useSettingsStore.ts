@@ -21,7 +21,11 @@ type SettingsState = Settings & {
   updateShop: (shop: ShopProfile) => Promise<void>;
   updateBilling: (billing: BillingPrefs) => Promise<void>;
   updateInventory: (inventory: InventoryPrefs) => Promise<void>;
-  setDoctors: (doctors: string[]) => Promise<void>;
+  /** The doctors list (+ their details when given) */
+  setDoctors: (
+    doctors: string[],
+    doctorInfo?: Settings["doctorInfo"],
+  ) => Promise<void>;
   setCounters: (counters: string[]) => Promise<void>;
   setRoles: (roles: RoleAccess) => Promise<void>;
   resetToDefaults: () => Promise<void>;
@@ -46,7 +50,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   updateShop: (shop) => save({ shop }),
   updateBilling: (billing) => save({ billing }),
   updateInventory: (inventory) => save({ inventory }),
-  setDoctors: (doctors) => save({ doctors }),
+  setDoctors: (doctors, doctorInfo) =>
+    save(doctorInfo ? { doctors, doctorInfo } : { doctors }),
   setCounters: (counters) => save({ counters }),
   setRoles: (roles) => save({ roles }),
   // The shop's own details (name, address, GSTIN, licence) are kept

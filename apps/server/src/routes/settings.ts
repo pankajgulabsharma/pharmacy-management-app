@@ -23,6 +23,7 @@ const settingsChange = z
     billing: section.optional(),
     inventory: section.optional(),
     doctors: list.optional(),
+    doctorInfo: section.optional(),
     counters: list.optional(),
     roles: section.optional(),
   })

@@ -13,6 +13,7 @@
  * Schedule G (a caution on the pack, sold without prescription) needs
  * nothing at the counter, so it is not a separate choice here.
  */
+import { doctorDetails, type DoctorInfo } from "../doctors/doctor";
 import type { Sale } from "../billing/types";
 import { toCsv } from "../lib/csv";
 import { inRange, type DateRange } from "../reports/period";
@@ -64,6 +65,8 @@ export type RegisterRow = {
   patient: string;
   patientAddress: string;
   doctor: string;
+  /** Registration no. · clinic (from Settings → Doctors) */
+  doctorDetails: string;
   medicine: string;
   schedule: DrugSchedule;
   batches: string;
@@ -74,6 +77,7 @@ export type RegisterRow = {
 export function scheduleRegister(
   sales: readonly Sale[],
   range: DateRange,
+  doctorInfo: Readonly<Record<string, DoctorInfo>> = {},
 ): RegisterRow[] {
   const rows: RegisterRow[] = [];
   for (const s of sales) {
@@ -86,6 +90,7 @@ export function scheduleRegister(
         patient: s.customerName,
         patientAddress: s.patientAddress ?? "",
         doctor: s.doctor,
+        doctorDetails: doctorDetails(doctorInfo[s.doctor]),
         medicine: l.medicineName,
         schedule: l.schedule!,
         batches: l.allocations
@@ -111,6 +116,7 @@ export const registerCsv = (rows: readonly RegisterRow[]) =>
     { header: "Patient", value: (r) => r.patient },
     { header: "Patient address", value: (r) => r.patientAddress },
     { header: "Prescribing doctor", value: (r) => r.doctor },
+    { header: "Doctor reg. no / clinic", value: (r) => r.doctorDetails },
     { header: "Medicine", value: (r) => r.medicine },
     { header: "Schedule", value: (r) => r.schedule },
     { header: "Batch (expiry)", value: (r) => r.batches },
