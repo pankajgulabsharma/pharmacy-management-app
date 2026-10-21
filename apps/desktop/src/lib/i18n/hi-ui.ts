@@ -1734,4 +1734,10 @@ export const HI_UI: Record<string, string> = {
   "Counter not set": "काउंटर चुना नहीं",
   now: "अभी",
   "1 sign-in": "1 साइन-इन",
+  "{{n}} cash bills": "{{n}} नकद बिल",
+  "Open since {{t}}": "{{t}} से खुला",
+  "Closed at {{t}}": "{{t}} पर बंद",
+  "Left yesterday — count and correct:": "कल छोड़े थे — गिनें और सुधारें:",
+  "Count the change in the galla:": "गल्ले के छुट्टे गिनें:",
+  "Not signed out": "साइन-आउट नहीं किया",
 };

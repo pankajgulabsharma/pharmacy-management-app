@@ -47,19 +47,6 @@ const dayTitle = (key: string) => {
       : label;
 };
 
-/** The shop day on the little time bar: 7 am – 11 pm */
-const BAR_FROM = 7;
-const BAR_TO = 23;
-const pos = (d: Date) =>
-  Math.min(
-    100,
-    Math.max(
-      0,
-      ((d.getHours() + d.getMinutes() / 60 - BAR_FROM) / (BAR_TO - BAR_FROM)) *
-        100,
-    ),
-  );
-
 const ROLE_TINT: Record<string, string> = {
   owner: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
   pharmacist: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
@@ -140,15 +127,15 @@ export function SignInHistory() {
   const totalMin = shown.reduce((a, r) => a + minutesOn(r), 0);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-border bg-card">
       {/* Title + filters */}
-      <div className="flex flex-wrap items-center gap-3 px-5 pb-4 pt-5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <History className="h-5 w-5" />
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <History className="h-4 w-4" />
         </span>
         <div className="mr-auto min-w-0">
-          <h2 className="text-[15px] font-semibold">{tr("Sign-in history")}</h2>
-          <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+          <h2 className="text-sm font-semibold">{tr("Sign-in history")}</h2>
+          <p className="text-[11px] text-muted-foreground">
             {tr(
               "Who signed in, on which counter, and when they left. Kept for a year.",
             )}
@@ -164,19 +151,19 @@ export function SignInHistory() {
           }}
           aria-label={tr("Refresh")}
           title={tr("Refresh")}
-          className="h-9 w-9 rounded-xl p-0"
+          className="h-8 w-8 rounded-lg p-0"
         >
-          <RefreshCw className={cn("h-4 w-4", busy && "animate-spin")} />
+          <RefreshCw className={cn("h-3.5 w-3.5", busy && "animate-spin")} />
         </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-y border-border bg-muted/25 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-y border-border bg-muted/25 px-4 py-2">
         <div className="flex items-center gap-1.5">
           <DateInput
             aria-label={tr("From")}
             value={from}
             max={to}
             onChange={(e) => e.target.value && setFrom(e.target.value)}
-            className={cn(fieldClass, "h-9 w-[140px]")}
+            className={cn(fieldClass, "h-8 w-[132px]")}
           />
           <span className="text-[12px] text-muted-foreground">→</span>
           <DateInput
@@ -185,14 +172,14 @@ export function SignInHistory() {
             min={from}
             max={today}
             onChange={(e) => e.target.value && setTo(e.target.value)}
-            className={cn(fieldClass, "h-9 w-[140px]")}
+            className={cn(fieldClass, "h-8 w-[132px]")}
           />
         </div>
         <select
           aria-label={tr("Person")}
           value={person}
           onChange={(e) => setPerson(e.target.value)}
-          className={cn(fieldClass, "h-9 w-40")}
+          className={cn(fieldClass, "h-8 w-36")}
         >
           <option value="">{tr("Everyone")}</option>
           {people.map((p) => (
@@ -204,7 +191,7 @@ export function SignInHistory() {
             aria-label={tr("Counter")}
             value={counter}
             onChange={(e) => setCounter(e.target.value)}
-            className={cn(fieldClass, "h-9 w-36")}
+            className={cn(fieldClass, "h-8 w-32")}
           >
             <option value="">{tr("All counters")}</option>
             {counters.map((c) => (
@@ -215,7 +202,7 @@ export function SignInHistory() {
       </div>
 
       {/* At a glance */}
-      <div className="grid grid-cols-2 gap-3 px-5 pt-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 px-4 pt-3 md:grid-cols-4">
         <Kpi
           icon={Wifi}
           label={tr("Signed in now")}
@@ -254,11 +241,11 @@ export function SignInHistory() {
           {tr("No sign-ins in these days.")}
         </p>
       ) : (
-        <div className="max-h-[520px] overflow-y-auto px-5 pb-5 pt-4">
+        <div className="max-h-[480px] overflow-y-auto px-4 pb-3 pt-3">
           {days.map(([key, rows]) => (
-            <div key={key} className="mb-4 last:mb-0">
+            <div key={key} className="mb-3 last:mb-0">
               <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-center gap-3 bg-card/95 px-1 py-1.5 backdrop-blur">
-                <p className="text-[12px] font-semibold">{dayTitle(key)}</p>
+                <p className="text-[11.5px] font-semibold">{dayTitle(key)}</p>
                 <span className="h-px flex-1 bg-border" />
                 <span className="text-[11px] text-muted-foreground">
                   {tr(rows.length === 1 ? "1 sign-in" : "{{n}} sign-ins", {
@@ -266,7 +253,7 @@ export function SignInHistory() {
                   })}
                 </span>
               </div>
-              <ul className="space-y-1.5">
+              <ul className="divide-y divide-border/60 rounded-lg border border-border">
                 {rows.map((r) => (
                   <Row key={r.id} r={r} />
                 ))}
@@ -291,40 +278,36 @@ function Kpi({
   live?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-background px-3.5 py-3">
-      <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+    <div className="rounded-lg border border-border bg-background px-3 py-2">
+      <p className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
         {label}
         {live ? (
           <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
         ) : null}
       </p>
-      <p className="mt-1 text-[18px] font-bold tabular-nums">{value}</p>
+      <p className="text-[14px] font-bold tabular-nums">{value}</p>
     </div>
   );
 }
 
 function Row({ r }: { r: SignInRecord }) {
-  const start = new Date(r.signedInAt);
-  const end = r.signedOutAt ? new Date(r.signedOutAt) : new Date();
-  const left = pos(start);
-  const width = Math.max(1.5, pos(end) - left);
   const open = !r.signedOutAt;
   return (
-    <li className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.6fr)_auto] items-center gap-4 rounded-xl border border-transparent px-3 py-2.5 transition hover:border-border hover:bg-muted/30">
+    <li className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-4 px-3 py-2 hover:bg-muted/30">
       {/* Who */}
       <div className="flex min-w-0 items-center gap-3">
         <span
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10.5px] font-bold",
             ROLE_TINT[r.role] ?? "bg-muted text-foreground",
           )}
         >
           {initials(r.userName)}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold">{r.userName}</p>
-          <p className="truncate text-[11px] text-muted-foreground">
+          <p className="truncate text-[12px] font-semibold">{r.userName}</p>
+          <p className="truncate text-[10.5px] text-muted-foreground">
             {tr(ROLE_LABELS[r.role as Role] ?? r.role)} ·{" "}
             {tr(
               r.method === "pin"
@@ -338,17 +321,17 @@ function Row({ r }: { r: SignInRecord }) {
       </div>
       {/* Where */}
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 truncate text-[12.5px] font-medium">
+        <p className="flex items-center gap-1.5 truncate text-[12px]">
           <Monitor className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           {r.counter || tr("Counter not set")}
         </p>
-        <p className="truncate pl-5 text-[11px] text-muted-foreground">
+        <p className="truncate pl-5 text-[10.5px] text-muted-foreground">
           {r.computer ? r.computer : tr("Main computer")}
         </p>
       </div>
-      {/* When: times + a bar across the shop day */}
+      {/* When */}
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-[12.5px] tabular-nums">
+        <p className="flex items-center gap-1.5 text-[12px] tabular-nums">
           <span className="font-medium">{clock(r.signedInAt)}</span>
           <span className="text-muted-foreground">→</span>
           {r.signedOutAt ? (
@@ -356,47 +339,31 @@ function Row({ r }: { r: SignInRecord }) {
           ) : (
             <span className="text-muted-foreground">{tr("now")}</span>
           )}
-          <span className="ml-auto text-[11px] text-muted-foreground">
+          <span className="ml-auto text-[10.5px] text-muted-foreground">
             {formatMinutes(minutesOn(r))}
           </span>
         </p>
-        <div
-          className="relative mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
-          title={`${clock(r.signedInAt)} – ${r.signedOutAt ? clock(r.signedOutAt) : tr("now")}`}
-        >
-          <div
-            className={cn(
-              "absolute inset-y-0 rounded-full",
-              r.appOpen
-                ? "bg-emerald-500"
-                : open
-                  ? "bg-slate-400"
-                  : "bg-gradient-to-r from-indigo-500 to-violet-500",
-            )}
-            style={{ left: `${left}%`, width: `${width}%` }}
-          />
-        </div>
       </div>
       {/* How it ended */}
-      <div className="w-[150px] text-right">
+      <div className="w-[124px] whitespace-nowrap text-right">
         {r.appOpen ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
             {tr("Signed in now")}
           </span>
         ) : open ? (
           <span
-            className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground"
             title={tr(
               "The app was closed without signing out — the session ends by itself",
             )}
           >
-            {tr("App closed, not signed out")}
+            {tr("Not signed out")}
           </span>
         ) : (
           <span
             className={cn(
-              "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium",
+              "inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium",
               r.reason === "signed_out"
                 ? "bg-slate-500/10 text-slate-600 dark:text-slate-300"
                 : r.reason === "removed"

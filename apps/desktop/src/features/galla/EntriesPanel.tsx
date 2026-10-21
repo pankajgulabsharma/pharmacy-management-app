@@ -67,12 +67,12 @@ export function EntriesPanel({
               variant="outline"
               onClick={() => setAdding(adding === "in" ? null : "in")}
               className={cn(
-                "h-9 gap-1.5 rounded-xl text-[12px]",
+                "h-7 gap-1 rounded-lg px-2.5 text-[11px]",
                 adding === "in" &&
                   "border-emerald-400 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
               )}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               {tr("Cash in")}
             </Button>
             <Button
@@ -81,12 +81,12 @@ export function EntriesPanel({
               variant="outline"
               onClick={() => setAdding(adding === "out" ? null : "out")}
               className={cn(
-                "h-9 gap-1.5 rounded-xl text-[12px]",
+                "h-7 gap-1 rounded-lg px-2.5 text-[11px]",
                 adding === "out" &&
                   "border-rose-400 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
               )}
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="h-3.5 w-3.5" />
               {tr("Cash out")}
             </Button>
           </div>
@@ -97,18 +97,15 @@ export function EntriesPanel({
         <AddEntry kind={adding} onDone={() => setAdding(null)} />
       ) : null}
       {view.entries.length === 0 ? (
-        <div className="mx-5 mb-5 flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-6 py-8 text-center">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <ArrowLeftRight className="h-5 w-5" />
-          </span>
-          <p className="max-w-sm text-[12px] text-muted-foreground">
+        <div className="px-4 py-5 text-center">
+          <p className="mx-auto max-w-sm text-[11.5px] text-muted-foreground">
             {tr(
               "No cash in or out yet. Tea, a supplier paid in cash, change added — note it here so the count matches.",
             )}
           </p>
         </div>
       ) : (
-        <ul className="max-h-[360px] overflow-y-auto px-3 pb-3">
+        <ul className="max-h-[300px] divide-y divide-border/60 overflow-y-auto">
           {view.entries.map((e) => {
             const mine = e.by === me && e.date === businessDate();
             const removable =
@@ -117,24 +114,24 @@ export function EntriesPanel({
             return (
               <li
                 key={e.id}
-                className="group flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-muted/40"
+                className="group flex items-center gap-3 px-4 py-2 hover:bg-muted/30"
               >
                 <span
                   className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
                     isIn
                       ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                       : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
                   )}
                 >
                   {isIn ? (
-                    <ArrowDownLeft className="h-4 w-4" />
+                    <ArrowDownLeft className="h-3.5 w-3.5" />
                   ) : (
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-3.5 w-3.5" />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium">
+                  <p className="truncate text-[12px] font-medium">
                     {tr(e.category)}
                     {e.note ? (
                       <span className="font-normal text-muted-foreground">
@@ -143,7 +140,7 @@ export function EntriesPanel({
                       </span>
                     ) : null}
                   </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
+                  <p className="flex items-center gap-1.5 truncate text-[10.5px] text-muted-foreground">
                     <span className="tabular-nums">{time(e.at)}</span>
                     <span>·</span>
                     <span>{e.by}</span>
@@ -156,7 +153,7 @@ export function EntriesPanel({
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 text-[13.5px] font-semibold tabular-nums",
+                    "shrink-0 text-[12px] font-semibold tabular-nums",
                     isIn
                       ? "text-emerald-700 dark:text-emerald-400"
                       : "text-rose-700 dark:text-rose-400",
@@ -178,12 +175,12 @@ export function EntriesPanel({
                         ),
                       )
                     }
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-rose-950/40"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-rose-950/40"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 ) : (
-                  <span className="w-8 shrink-0" />
+                  <span className="w-6 shrink-0" />
                 )}
               </li>
             );
@@ -225,29 +222,29 @@ function AddEntry({ kind, onDone }: { kind: CashKind; onDone: () => void }) {
         void save();
       }}
       className={cn(
-        "mx-5 mb-4 rounded-2xl border p-4",
+        "border-b px-4 py-3",
         isIn
-          ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/20"
-          : "border-rose-200 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20",
+          ? "border-border bg-emerald-50/50 dark:bg-emerald-950/15"
+          : "border-border bg-rose-50/50 dark:bg-rose-950/15",
       )}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-[12.5px] font-semibold">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[11.5px] font-semibold">
           {tr(isIn ? "Put cash in the galla" : "Take cash out of the galla")}
         </p>
         <button
           type="button"
           onClick={onDone}
           aria-label={tr("Close")}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-background"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-background"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
       <div
         role="radiogroup"
         aria-label={tr("Category")}
-        className="mb-3 flex flex-wrap gap-1.5"
+        className="mb-2.5 flex flex-wrap gap-1"
       >
         {list.map((c) => (
           <button
@@ -257,7 +254,7 @@ function AddEntry({ kind, onDone }: { kind: CashKind; onDone: () => void }) {
             aria-checked={category === c}
             onClick={() => setCategory(c)}
             className={cn(
-              "h-8 rounded-full border px-3 text-[11.5px] font-medium transition",
+              "h-6 rounded-full border px-2.5 text-[10.5px] font-medium transition",
               category === c
                 ? isIn
                   ? "border-emerald-500 bg-emerald-600 text-white"
@@ -269,7 +266,7 @@ function AddEntry({ kind, onDone }: { kind: CashKind; onDone: () => void }) {
           </button>
         ))}
       </div>
-      <div className="grid gap-2.5 sm:grid-cols-[140px_1fr_auto]">
+      <div className="grid gap-2 sm:grid-cols-[120px_1fr_auto]">
         <MoneyInput
           label={tr("Amount")}
           value={amount}
@@ -286,13 +283,13 @@ function AddEntry({ kind, onDone }: { kind: CashKind; onDone: () => void }) {
           value={note}
           maxLength={120}
           onChange={(e) => setNote(e.target.value)}
-          className={fieldClass}
+          className={cn(fieldClass, "h-8")}
         />
         <Button
           type="submit"
           disabled={busy}
           className={cn(
-            "h-9 rounded-xl px-5 text-[12.5px] text-white",
+            "h-8 rounded-lg px-4 text-[11.5px] text-white",
             isIn
               ? "bg-emerald-600 hover:bg-emerald-700"
               : "bg-rose-600 hover:bg-rose-700",
