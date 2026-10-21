@@ -3,23 +3,33 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowDownLeft,
-  ArrowUpRight,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   CalendarDays,
+  CreditCard,
+  HandCoins,
   Lock,
   Printer,
+  Receipt,
   RefreshCw,
+  RotateCcw,
+  Smartphone,
   Sunrise,
-  Banknote,
+  Truck,
+  Undo2,
   Wallet,
 } from "lucide-react";
-import { businessDate } from "@medicare/domain/cash/galla";
+import {
+  businessDate,
+  DIFF_TOLERANCE_PAISE,
+  differenceOf,
+} from "@medicare/domain/cash/galla";
 import { dayReportHtml } from "@medicare/domain/cash/dayReport";
 import {
   inrFromPaise,
   paiseToInput,
   parseRupees,
 } from "@medicare/domain/lib/money";
-import { PageHeader } from "@/components/common/PageHeader";
 import { DateInput } from "@/components/common/DateInput";
 import { fieldClass } from "@/components/common/formStyles";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -33,13 +43,21 @@ import { printHtml } from "@/lib/print";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useGallaStore, type GallaView } from "./useGallaStore";
-import { DiffBadge, Line, MoneyInput, Panel } from "./parts";
+import { FlowRow, MoneyInput, Panel } from "./parts";
 import { time } from "./format";
 import { EntriesPanel } from "./EntriesPanel";
 import { CountPanel } from "./CountPanel";
 
 const errMsg = (e: unknown) =>
   e instanceof Error ? e.message : tr("Could not save");
+
+const longDate = (date: string) =>
+  new Date(`${date}T00:00`).toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 /**
  * Galla / Day close: start the day with the opening cash, see what should
@@ -78,63 +96,92 @@ export default function GallaPage() {
   }, [load, salesTick, payTick]);
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-background p-3">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3">
-        <PageHeader
-          icon={Banknote}
-          title="Galla / Day close"
-          subtitle="Opening cash · cash in & out · count and close the day"
-          actions={
-            <>
-              {owner ? (
-                <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  <DateInput
-                    aria-label={tr("Day")}
-                    value={shown}
-                    max={today}
-                    onChange={(e) =>
-                      e.target.value &&
-                      void load({
-                        date: e.target.value === today ? "" : e.target.value,
-                      })
-                    }
-                    className={cn(fieldClass, "h-8 w-[140px]")}
-                  />
-                </label>
-              ) : null}
-              {owner && view?.perCounter && view.counters.length > 1 ? (
-                <select
-                  aria-label={tr("Counter")}
-                  value={view.counter}
-                  onChange={(e) => void load({ counter: e.target.value })}
-                  className={cn(fieldClass, "h-8 w-36")}
-                >
-                  {view.counters.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
+    <div className="h-full w-full overflow-y-auto bg-background">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 px-5 py-5">
+        {/* Title + the day / counter being looked at */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-[20px] font-bold tracking-tight">
+              {tr("Galla / Day close")}
+            </h1>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {longDate(shown)}
+              {view?.counter ? ` · ${view.counter}` : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {owner ? (
+              <label className="relative">
+                <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <DateInput
+                  aria-label={tr("Day")}
+                  value={shown}
+                  max={today}
+                  onChange={(e) =>
+                    e.target.value &&
+                    void load({
+                      date: e.target.value === today ? "" : e.target.value,
+                    })
+                  }
+                  className={cn(fieldClass, "h-9 w-[150px] pl-8")}
+                />
+              </label>
+            ) : null}
+            {owner && view?.perCounter && view.counters.length > 1 ? (
+              <div
+                role="radiogroup"
+                aria-label={tr("Counter")}
+                className="flex rounded-xl border border-border bg-card p-1"
+              >
+                {view.counters.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={view.counter === c}
+                    onClick={() => void load({ counter: c })}
+                    className={cn(
+                      "h-7 rounded-lg px-3 text-[11.5px] font-medium transition",
+                      view.counter === c
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {shown !== today && owner ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => void load()}
-                className="h-8 gap-1.5 rounded-lg text-[11px]"
-                aria-label={tr("Refresh")}
+                onClick={() => void load({ date: "" })}
+                className="h-9 rounded-xl text-[12px]"
               >
-                <RefreshCw
-                  className={cn("h-3.5 w-3.5", loading && "animate-spin")}
-                />
+                {tr("Today")}
               </Button>
-            </>
-          }
-        />
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void load()}
+              className="h-9 w-9 rounded-xl p-0"
+              aria-label={tr("Refresh")}
+              title={tr("Refresh")}
+            >
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            </Button>
+          </div>
+        </div>
+
         {view ? (
           <Body view={view} isToday={shown === today} owner={owner} />
-        ) : null}
+        ) : (
+          <div className="h-48 animate-pulse rounded-3xl bg-muted" />
+        )}
       </div>
     </div>
   );
@@ -169,178 +216,314 @@ function Body({
       printer,
     }).catch((e: Error) => toast.error(e.message));
 
+  const max = Math.max(
+    s.cashSalesPaise,
+    s.udhaarCollectedPaise,
+    s.otherInPaise,
+    s.refundsPaise,
+    s.supplierPaidPaise,
+    s.otherOutPaise,
+  );
+
   return (
     <>
-      <StatusStrip view={view} onPrint={print} />
+      <Hero view={view} onPrint={print} />
       {!day && isToday ? <StartDay view={view} /> : null}
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="flex flex-col gap-3">
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        <div className="flex flex-col gap-5">
           <Panel
             icon={Wallet}
-            title="Should be in galla"
+            title="Where the galla money came from"
             hint={
               closed
                 ? "As it was at closing"
                 : "Updates by itself with every bill"
             }
           >
-            <div className="px-4 py-2">
-              <Line
-                label={tr(
-                  day ? "Opening cash" : "Opening cash (not counted yet)",
-                )}
-                paise={s.openingPaise}
-              />
-              <Line
-                sign="+"
-                label={tr("Cash bills ({{n}})", { n: s.cashBills })}
+            <p className="px-5 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              {tr("Cash in")}
+            </p>
+            <ul>
+              <FlowRow
+                kind="in"
+                icon={Receipt}
+                label={tr("Cash bills")}
+                note={tr("{{n}} bills paid in cash (or part cash)", {
+                  n: s.cashBills,
+                })}
                 paise={s.cashSalesPaise}
+                max={max}
               />
-              <Line
-                sign="+"
+              <FlowRow
+                kind="in"
+                icon={HandCoins}
                 label={tr("Udhaar received in cash")}
                 paise={s.udhaarCollectedPaise}
+                max={max}
               />
-              <Line
-                sign="+"
+              <FlowRow
+                kind="in"
+                icon={ArrowDownToLine}
                 label={tr("Other cash in")}
+                note={tr("Change added, other income")}
                 paise={s.otherInPaise}
+                max={max}
               />
-              <Line
-                sign="−"
+            </ul>
+            <p className="mt-2 border-t border-border/70 px-5 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+              {tr("Cash out")}
+            </p>
+            <ul>
+              <FlowRow
+                kind="out"
+                icon={Undo2}
                 label={tr("Cash refunds")}
+                note={tr("Sales returns paid back in cash")}
                 paise={s.refundsPaise}
+                max={max}
               />
-              <Line
-                sign="−"
+              <FlowRow
+                kind="out"
+                icon={Truck}
                 label={tr("Suppliers paid in cash")}
                 paise={s.supplierPaidPaise}
+                max={max}
               />
-              <Line
-                sign="−"
+              <FlowRow
+                kind="out"
+                icon={ArrowUpFromLine}
                 label={tr("Expenses & other cash out")}
+                note={tr("Tea, salary advance, bank deposit…")}
                 paise={s.otherOutPaise}
+                max={max}
               />
-              <div className="mt-1 border-t border-dashed border-border pt-1.5">
-                <Line
-                  strong
-                  label={tr("Should be in galla")}
-                  paise={
-                    closed && day.expectedPaise !== null
-                      ? day.expectedPaise
-                      : s.expectedPaise
-                  }
-                />
-              </div>
-              {closed && view.afterClosePaise !== 0 ? (
-                <p className="mt-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                  {tr(
-                    "{{amt}} moved after closing (late bills or refunds) — the owner can reopen the day.",
-                    {
-                      amt: inrFromPaise(view.afterClosePaise),
-                    },
-                  )}
-                </p>
-              ) : null}
-            </div>
+            </ul>
+            {closed && view.afterClosePaise !== 0 ? (
+              <p className="mx-5 mb-4 mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11.5px] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                {tr(
+                  "{{amt}} moved after closing (late bills or refunds) — the owner can reopen the day.",
+                  { amt: inrFromPaise(view.afterClosePaise) },
+                )}
+              </p>
+            ) : (
+              <div className="h-3" />
+            )}
           </Panel>
+
           <Panel
-            icon={ArrowUpRight}
+            icon={Smartphone}
             title="Not in galla"
             hint="Today's other payments — for the day report"
           >
-            <div className="px-4 py-2">
-              <Line
-                label={tr("All sales ({{n}} bills)", { n: s.bills })}
+            <div className="grid grid-cols-2 gap-3 px-5 pb-5 sm:grid-cols-4">
+              <Mini
+                label={tr("All sales")}
+                sub={tr("{{n}} bills", { n: s.bills })}
                 paise={s.salesPaise}
+                strong
               />
-              <Line muted label="UPI" paise={s.upiPaise} />
-              <Line muted label={tr("Card")} paise={s.cardPaise} />
-              {s.walletPaise ? (
-                <Line muted label={tr("Wallet")} paise={s.walletPaise} />
-              ) : null}
-              <Line
-                muted
+              <Mini label="UPI" paise={s.upiPaise} icon={Smartphone} />
+              <Mini
+                label={tr("Card")}
+                paise={s.cardPaise + s.walletPaise}
+                icon={CreditCard}
+              />
+              <Mini
                 label={tr("Udhaar given")}
                 paise={s.udhaarGivenPaise}
+                icon={HandCoins}
               />
             </div>
           </Panel>
         </div>
-        <div className="flex flex-col gap-3">
-          <EntriesPanel view={view} owner={owner} isToday={isToday} />
+
+        <div className="flex flex-col gap-5">
           {closed ? (
             <ClosedPanel view={view} owner={owner} onPrint={print} />
           ) : day || !isToday ? (
             <CountPanel view={view} />
           ) : null}
+          <EntriesPanel view={view} owner={owner} isToday={isToday} />
         </div>
       </div>
     </>
   );
 }
 
-/** Not started / open since … / closed at … */
-function StatusStrip({
-  view,
-  onPrint,
+function Mini({
+  label,
+  sub,
+  paise,
+  icon: Icon,
+  strong,
 }: {
-  view: GallaView;
-  onPrint: () => void;
+  label: string;
+  sub?: string;
+  paise: number;
+  icon?: typeof Smartphone;
+  strong?: boolean;
 }) {
-  const d = view.day;
-  const label = !d
-    ? tr("Day not started")
-    : d.status === "open"
-      ? tr("Open since {{t}} · {{who}}", {
-          t: time(d.openedAt),
-          who: d.openedBy,
-        })
-      : tr("Closed at {{t}} · {{who}}", {
-          t: time(d.closedAt!),
-          who: d.closedBy,
-        });
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-xl border px-4 py-2.5",
-        !d
-          ? "border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/30"
-          : d.status === "open"
-            ? "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/30"
-            : "border-border bg-muted/40",
+        "rounded-xl border px-3 py-2.5",
+        strong
+          ? "border-primary/25 bg-primary/[0.05]"
+          : "border-border bg-muted/30",
       )}
     >
-      <span
-        className={cn(
-          "h-2.5 w-2.5 rounded-full",
-          !d
-            ? "bg-amber-500"
-            : d.status === "open"
-              ? "bg-emerald-500 animate-pulse"
-              : "bg-slate-400",
-        )}
-      />
-      <p className="text-[12.5px] font-semibold">{label}</p>
-      <p className="text-[11px] text-muted-foreground">
-        {new Date(`${view.date}T00:00`).toLocaleDateString("en-IN", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        })}
-        {view.counter ? ` · ${view.counter}` : ""}
+      <p className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+        {Icon ? <Icon className="h-3 w-3" /> : null}
+        {label}
+        {sub ? <span className="ml-auto">{sub}</span> : null}
       </p>
-      <span className="ml-auto" />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onPrint}
-        className="h-8 gap-1.5 rounded-lg text-[11px]"
-      >
-        <Printer className="h-3.5 w-3.5" />
-        {tr("Print day report")}
-      </Button>
+      <p className="mt-1 text-[15px] font-bold tabular-nums">
+        {inrFromPaise(paise)}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The big number: what should be in the drawer right now (or what was
+ * counted at closing), the day's status, and opening / in / out.
+ */
+function Hero({ view, onPrint }: { view: GallaView; onPrint: () => void }) {
+  const d = view.day;
+  const s = view.summary;
+  const closed = d?.status === "closed";
+  const diff = d ? differenceOf(d) : null;
+  const status = !d
+    ? { dot: "bg-amber-300", text: tr("Day not started") }
+    : d.status === "open"
+      ? {
+          dot: "bg-emerald-300 animate-pulse",
+          text: tr("Open since {{t}} · {{who}}", {
+            t: time(d.openedAt),
+            who: d.openedBy,
+          }),
+        }
+      : {
+          dot: "bg-slate-300",
+          text: tr("Closed at {{t}} · {{who}}", {
+            t: time(d.closedAt!),
+            who: d.closedBy,
+          }),
+        };
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 text-white shadow-lg shadow-indigo-900/20">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-24 right-40 h-56 w-56 rounded-full bg-white/[0.06]"
+      />
+      <div className="relative flex flex-wrap items-start justify-between gap-6">
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11.5px] font-medium backdrop-blur">
+            <span className={cn("h-2 w-2 rounded-full", status.dot)} />
+            {status.text}
+          </span>
+          <p className="mt-4 text-[12.5px] text-white/75">
+            {tr(closed ? "Counted at closing" : "Should be in galla now")}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <p className="text-[38px] font-bold leading-none tracking-tight tabular-nums">
+              {inrFromPaise(closed ? (d.countedPaise ?? 0) : s.expectedPaise)}
+            </p>
+            {diff !== null ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[12.5px] font-semibold tabular-nums shadow-sm",
+                  Math.abs(diff) <= DIFF_TOLERANCE_PAISE
+                    ? "text-emerald-700"
+                    : diff < 0
+                      ? "text-rose-700"
+                      : "text-sky-700",
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    Math.abs(diff) <= DIFF_TOLERANCE_PAISE
+                      ? "bg-emerald-500"
+                      : diff < 0
+                        ? "bg-rose-500"
+                        : "bg-sky-500",
+                  )}
+                />
+                {Math.abs(diff) <= DIFF_TOLERANCE_PAISE
+                  ? tr("Matches")
+                  : diff < 0
+                    ? tr("Short {{amt}}", { amt: inrFromPaise(-diff) })
+                    : tr("Excess {{amt}}", { amt: inrFromPaise(diff) })}
+              </span>
+            ) : null}
+          </div>
+          {closed && d.expectedPaise !== null ? (
+            <p className="mt-2 text-[12px] text-white/75">
+              {tr("Should have been {{amt}}", {
+                amt: inrFromPaise(d.expectedPaise),
+              })}
+            </p>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          onClick={onPrint}
+          className="h-9 gap-2 rounded-xl bg-white/15 text-[12px] text-white shadow-none ring-1 ring-white/25 backdrop-blur hover:bg-white/25"
+        >
+          <Printer className="h-4 w-4" />
+          {tr("Print day report")}
+        </Button>
+      </div>
+      <div className="relative mt-6 grid grid-cols-3 gap-3">
+        <HeroStat
+          label={tr("Opening cash")}
+          paise={s.openingPaise}
+          icon={Sunrise}
+        />
+        <HeroStat
+          label={tr("Cash in")}
+          paise={s.inPaise}
+          icon={ArrowDownLeft}
+          sign="+"
+        />
+        <HeroStat
+          label={tr("Cash out")}
+          paise={s.outPaise}
+          icon={RotateCcw}
+          sign="−"
+        />
+      </div>
+    </section>
+  );
+}
+
+function HeroStat({
+  label,
+  paise,
+  icon: Icon,
+  sign,
+}: {
+  label: string;
+  paise: number;
+  icon: typeof Sunrise;
+  sign?: "+" | "−";
+}) {
+  return (
+    <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15 backdrop-blur">
+      <p className="flex items-center gap-1.5 text-[11px] text-white/70">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </p>
+      <p className="mt-1 text-[17px] font-semibold tabular-nums">
+        {sign && paise ? `${sign} ` : ""}
+        {inrFromPaise(paise)}
+      </p>
     </div>
   );
 }
@@ -352,8 +535,8 @@ function StartDay({ view }: { view: GallaView }) {
     paiseToInput(view.suggestedOpeningPaise),
   );
   const [busy, setBusy] = useState(false);
-  const paise = parseRupees(amount || "0");
   const start = async () => {
+    const paise = parseRupees(amount || "0");
     if (paise === null)
       return toast.error(tr("Type the amount in rupees, e.g. 2000"));
     setBusy(true);
@@ -367,21 +550,25 @@ function StartDay({ view }: { view: GallaView }) {
     }
   };
   return (
-    <section className="flex flex-wrap items-center gap-4 rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.04] p-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void start();
+      }}
+      className="flex flex-wrap items-center gap-5 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-50 to-orange-50/40 p-5 shadow-sm dark:border-amber-900/60 dark:from-amber-950/30 dark:to-transparent"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
         <Sunrise className="h-6 w-6" />
       </span>
-      <div className="min-w-[220px] flex-1">
-        <p className="text-[14px] font-semibold">
+      <div className="min-w-[240px] flex-1">
+        <p className="text-[15px] font-semibold">
           {tr("Start the day: count the cash in the galla")}
         </p>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
           {view.suggestedOpeningPaise
             ? tr(
                 "Yesterday {{amt}} was left in the galla. Count it and correct if needed.",
-                {
-                  amt: inrFromPaise(view.suggestedOpeningPaise),
-                },
+                { amt: inrFromPaise(view.suggestedOpeningPaise) },
               )
             : tr(
                 "Change kept for the day (notes and coins). Billing works even before this.",
@@ -392,20 +579,20 @@ function StartDay({ view }: { view: GallaView }) {
         label={tr("Opening cash")}
         value={amount}
         onChange={setAmount}
-        className="w-40"
+        className="w-44"
+        size="lg"
         autoFocus
       />
       <Button
-        type="button"
+        type="submit"
         data-primary
         disabled={busy}
-        onClick={() => void start()}
-        className="h-9 gap-1.5 rounded-lg text-[12px]"
+        className="h-11 gap-2 rounded-xl px-5 text-[13px]"
       >
-        <ArrowDownLeft className="h-4 w-4" />
+        <Sunrise className="h-4 w-4" />
         {tr("Start day")}
       </Button>
-    </section>
+    </form>
   );
 }
 
@@ -422,40 +609,45 @@ function ClosedPanel({
   const d = view.day!;
   const reopen = useGallaStore((s) => s.reopen);
   const [ask, setAsk] = useState(false);
-  const diff = (d.countedPaise ?? 0) - (d.expectedPaise ?? 0);
+  const counted = d.countedPaise ?? 0;
+  const kept = d.keptPaise ?? 0;
   return (
     <Panel
       icon={Lock}
+      tone="emerald"
       title="Day closed"
-      hint={d.note ? `“${d.note}”` : undefined}
-      actions={<DiffBadge paise={diff} />}
+      hint={tr("Counted by {{who}} at {{t}}", {
+        who: d.closedBy,
+        t: time(d.closedAt!),
+      })}
     >
-      <div className="grid grid-cols-2 gap-x-6 px-4 py-3 sm:grid-cols-4">
-        {[
-          ["Should be", d.expectedPaise ?? 0],
-          ["Counted", d.countedPaise ?? 0],
-          ["Left for tomorrow", d.keptPaise ?? 0],
-          ["Taken out", (d.countedPaise ?? 0) - (d.keptPaise ?? 0)],
-        ].map(([k, v]) => (
-          <div key={k as string}>
-            <p className="text-[10.5px] text-muted-foreground">
-              {tr(k as string)}
-            </p>
-            <p className="text-[15px] font-bold tabular-nums">
-              {inrFromPaise(v as number)}
-            </p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-3 px-5 pb-4">
+        <Fact
+          label={tr("Should be")}
+          value={inrFromPaise(d.expectedPaise ?? 0)}
+        />
+        <Fact label={tr("Counted")} value={inrFromPaise(counted)} strong />
+        <Fact label={tr("Left for tomorrow")} value={inrFromPaise(kept)} />
+        <Fact
+          label={tr("Taken out (owner / bank)")}
+          value={inrFromPaise(counted - kept)}
+        />
       </div>
-      <div className="flex justify-end gap-2 border-t border-border px-4 py-2.5">
+      {d.note ? (
+        <p className="mx-5 mb-4 rounded-xl bg-muted/50 px-3 py-2 text-[12px]">
+          <span className="text-muted-foreground">{tr("Note")}: </span>
+          {d.note}
+        </p>
+      ) : null}
+      <div className="flex justify-end gap-2 border-t border-border bg-muted/20 px-5 py-3">
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={onPrint}
-          className="h-8 gap-1.5 rounded-lg text-[11px]"
+          className="h-9 gap-1.5 rounded-xl text-[12px]"
         >
-          <Printer className="h-3.5 w-3.5" />
+          <Printer className="h-4 w-4" />
           {tr("Print")}
         </Button>
         {owner ? (
@@ -464,8 +656,9 @@ function ClosedPanel({
             variant="outline"
             size="sm"
             onClick={() => setAsk(true)}
-            className="h-8 rounded-lg text-[11px]"
+            className="h-9 gap-1.5 rounded-xl text-[12px]"
           >
+            <RotateCcw className="h-4 w-4" />
             {tr("Reopen day")}
           </Button>
         ) : null}
@@ -489,5 +682,27 @@ function ClosedPanel({
         }}
       />
     </Panel>
+  );
+}
+
+function Fact({
+  label,
+  value,
+  strong,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border px-3.5 py-3",
+        strong ? "border-primary/25 bg-primary/[0.05]" : "border-border",
+      )}
+    >
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-[17px] font-bold tabular-nums">{value}</p>
+    </div>
   );
 }
