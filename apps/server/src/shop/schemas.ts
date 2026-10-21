@@ -124,7 +124,11 @@ export const purchaseEdit = z
   .strict();
 export const cancelInput = z.object({ reason: str(400) }).strict();
 export const supplierPayment = z
-  .object({ amountPaise: z.number().int().positive().max(10_000_000_00) })
+  .object({
+    amountPaise: z.number().int().positive().max(10_000_000_00),
+    /** Paid in cash from the galla (written there as cash out) */
+    fromGalla: z.boolean().optional(),
+  })
   .strict();
 
 export const purchaseReturnInput = z

@@ -28,6 +28,7 @@ const PurchasesPage = lazyPage(
 const InventoryPage = lazyPage(
   () => import("@/features/inventory/pages/InventoryPage"),
 );
+const GallaPage = lazyPage(() => import("@/features/galla/GallaPage"));
 const MedicinesPage = lazyPage(
   () => import("@/features/medicines/pages/MedicinesPage"),
 );
@@ -49,6 +50,14 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "billing", element: <BillingPage /> },
+      {
+        path: "galla",
+        element: (
+          <Allowed perm="sell">
+            <GallaPage />
+          </Allowed>
+        ),
+      },
       { path: "customers", element: <CustomersPage /> },
       { path: "medicines", element: <MedicinesPage /> },
       { path: "inventory", element: <InventoryPage /> },

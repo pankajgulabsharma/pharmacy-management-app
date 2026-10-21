@@ -13,6 +13,7 @@ import {
   Landmark,
   Package,
   Stethoscope,
+  Banknote,
   Truck,
 } from "lucide-react";
 import { can } from "@medicare/domain/auth/permissions";
@@ -36,6 +37,8 @@ import { useInventoryStore } from "@/features/inventory/store/useInventoryStore"
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { downloadText } from "@/lib/csv";
+import { GallaHistoryTab } from "@/features/galla/GallaHistoryTab";
+import { gallaCsv } from "@/features/galla/gallaHistory";
 import {
   gstCsv,
   purchasesCsv,
@@ -66,7 +69,8 @@ import {
   stockReport,
 } from "@medicare/domain/reports/reports";
 
-type Tab = "sales" | "purchases" | "gst" | "stock" | "register" | "commission";
+type Tab =
+  "sales" | "purchases" | "gst" | "stock" | "register" | "galla" | "commission";
 
 const ALL_TABS: SegmentedTab<Tab>[] = [
   { id: "sales", label: "Sales", icon: IndianRupee },
@@ -74,6 +78,7 @@ const ALL_TABS: SegmentedTab<Tab>[] = [
   { id: "gst", label: "GST", icon: Landmark },
   { id: "stock", label: "Stock", icon: Package },
   { id: "register", label: "Schedule register", icon: ClipboardList },
+  { id: "galla", label: "Galla", icon: Banknote },
   // Owner only: doctor referrals & staff commission
   { id: "commission", label: "Doctors & staff", icon: Stethoscope },
 ];
@@ -168,15 +173,17 @@ export default function ReportsPage() {
     const csv =
       tab === "commission"
         ? commissionCsv(sales, batches, range)
-        : tab === "sales"
-          ? salesCsv(sales, range)
-          : pr
-            ? purchasesCsv(pr)
-            : gr
-              ? gstCsv(gr)
-              : reg
-                ? registerCsv(reg)
-                : stockCsv(batches, medicines);
+        : tab === "galla"
+          ? gallaCsv()
+          : tab === "sales"
+            ? salesCsv(sales, range)
+            : pr
+              ? purchasesCsv(pr)
+              : gr
+                ? gstCsv(gr)
+                : reg
+                  ? registerCsv(reg)
+                  : stockCsv(batches, medicines);
     downloadText(`${tab}-report_${stamp}.csv`, csv);
     toast.success("Report exported", {
       description: "Opens in Excel / Google Sheets",
@@ -302,6 +309,9 @@ export default function ReportsPage() {
           </div>
         ) : null}
         {reg ? <RegisterTab rows={reg} periodLabel={periodLabel} /> : null}
+        {tab === "galla" ? (
+          <GallaHistoryTab range={range} periodLabel={periodLabel} />
+        ) : null}
         {tab === "commission" && owner ? (
           <CommissionTab
             sales={sales}

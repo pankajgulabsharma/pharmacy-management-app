@@ -3,6 +3,7 @@ import {
   scheduleRule,
 } from "@medicare/domain/medicines/schedule";
 import { ApiError } from "@/lib/api";
+import { counterFor } from "@/lib/thisCounter";
 import {
   useCallback,
   useDeferredValue,
@@ -90,7 +91,9 @@ export default function BillingPage() {
   // Doctors, counters and defaults come from Settings
   const doctors = useSettingsStore((s) => s.doctors);
   const counters = useSettingsStore((s) => s.counters);
-  const defaultCounter = useSettingsStore((s) => s.billing.defaultCounter);
+  const shopDefaultCounter = useSettingsStore((s) => s.billing.defaultCounter);
+  // New bills start on THIS computer's counter (Settings → This computer)
+  const defaultCounter = counterFor(counters, shopDefaultCounter);
   const defaultMethod = useSettingsStore((s) => s.billing.defaultPaymentMethod);
   const freshPayment = useMemo<PaymentDraft>(
     () => ({ ...EMPTY_PAYMENT, method: defaultMethod }),

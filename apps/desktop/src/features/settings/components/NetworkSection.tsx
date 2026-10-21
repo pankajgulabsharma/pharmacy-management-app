@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ROLE_LABELS, type Role } from "@medicare/domain/auth/types";
 import { Button } from "@/components/ui/button";
+import { ThisCounterCard } from "./ThisCounterCard";
 import { apiGet, apiRequest } from "@/lib/api";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,7 @@ export function NetworkSection() {
 
   return (
     <div className="space-y-3">
+      <ThisCounterCard />
       <Card title="This computer & shop network">
         <div className="flex items-start gap-3">
           <span

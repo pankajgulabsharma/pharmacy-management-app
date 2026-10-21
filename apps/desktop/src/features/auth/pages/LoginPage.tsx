@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Cross, LifeBuoy, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { LifeBuoy, Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { AppLogo } from "@/components/brand/AppLogo";
 import { SupportDialog } from "@/features/support/SupportDialog";
 import { PoweredBy } from "@/features/support/PoweredBy";
 import type { SignInPerson } from "@medicare/domain/auth/types";
@@ -56,9 +57,7 @@ function BrandPanel({ shop, setup }: { shop: string; setup?: boolean }) {
         className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/5"
       />
       <div className="relative flex items-center gap-2.5">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-          <Cross className="h-6 w-6" strokeWidth={2.5} />
-        </span>
+        <AppLogo className="h-10 w-10 rounded-xl ring-1 ring-white/25 shadow-lg shadow-indigo-950/40" />
         <span className="leading-tight">
           <span className="block text-[14px] font-semibold">
             MediCare Pharmacy

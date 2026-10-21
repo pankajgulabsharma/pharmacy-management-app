@@ -6,6 +6,9 @@
 import { COUNTER_MOVEMENT_TYPES } from "@medicare/domain/shop/history";
 import type { FastifyInstance } from "fastify";
 import type { ShopPatch } from "@medicare/domain/shop/patch";
+import * as galla from "../shop/galla";
+import { counterOf } from "../auth/signIns";
+import type { LicenseOptions } from "../license/state";
 import type { Database } from "../db/client";
 import * as m from "../db/mappers";
 import type { EventBus } from "../events";
@@ -28,8 +31,15 @@ export function shopRoutes(
   app: FastifyInstance,
   { raw }: Database,
   bus: EventBus,
+  license?: LicenseOptions,
 ) {
   /** Run a write, tell every counter what changed, answer with result + patch */
+  /** The counter a bill was made on (a return's cash leaves that galla) */
+  const saleCounter = (saleId: string) =>
+    (
+      raw.prepare("SELECT counter FROM sales WHERE id = ?").get(saleId) as
+        { counter: string } | undefined
+    )?.counter ?? "";
   const write = <R extends { patch: ShopPatch }>(fn: () => R) => {
     const out = fn();
     bus.publish(out.patch);
@@ -204,13 +214,27 @@ export function shopRoutes(
     ),
   );
   app.post<Params>("/api/purchases/:id/payments", async (req) =>
-    write(() =>
-      purchases.recordSupplierPayment(
+    write(() => {
+      const b = s.parse(s.supplierPayment, req.body);
+      const out = purchases.recordSupplierPayment(
         raw,
         req.params.id,
-        s.parse(s.supplierPayment, req.body).amountPaise,
-      ),
-    ),
+        b.amountPaise,
+      );
+      // Paid in cash from the drawer → it leaves the galla
+      if (license && b.fromGalla)
+        galla.addEntry(raw, {
+          counter: galla.gallaOf(raw, license, req),
+          kind: "out",
+          category: "Supplier payment",
+          amountPaise: b.amountPaise,
+          note: `${out.purchase.supplierName} · ${out.purchase.invoiceNo}`,
+          by: req.user?.name ?? "",
+          source: "supplier",
+          ref: out.purchase.id,
+        });
+      return out;
+    }),
   );
   app.post("/api/purchase-returns", async (req, reply) =>
     reply
@@ -240,17 +264,33 @@ export function shopRoutes(
       ),
   );
   app.post("/api/sale-returns", async (req, reply) =>
-    reply
-      .code(201)
-      .send(
-        write(() =>
-          sales.createSaleReturn(
-            raw,
-            s.parse(s.saleReturnInput, req.body),
-            req.user!.name,
-          ),
-        ),
-      ),
+    reply.code(201).send(
+      write(() => {
+        const out = sales.createSaleReturn(
+          raw,
+          s.parse(s.saleReturnInput, req.body),
+          req.user!.name,
+        );
+        // Cash given back comes out of the galla
+        if (license && out.ret.refundMode === "cash" && out.ret.refundPaise > 0)
+          galla.addEntry(raw, {
+            counter: galla.gallaOf(
+              raw,
+              license,
+              req,
+              counterOf(req) || saleCounter(out.ret.saleId),
+            ),
+            kind: "out",
+            category: "Cash refund",
+            amountPaise: out.ret.refundPaise,
+            note: `${out.ret.returnNo} · ${out.ret.billNo}`,
+            by: req.user!.name,
+            source: "refund",
+            ref: out.ret.id,
+          });
+        return out;
+      }),
+    ),
   );
   app.post("/api/held", async (req, reply) =>
     reply
@@ -325,15 +365,27 @@ export function shopRoutes(
       ),
   );
   app.post("/api/customer-payments", async (req, reply) =>
-    reply
-      .code(201)
-      .send(
-        write(() =>
-          customers.recordCustomerPayment(
-            raw,
-            s.parse(s.customerPayment, req.body),
-          ),
-        ),
-      ),
+    reply.code(201).send(
+      write(() => {
+        const out = customers.recordCustomerPayment(
+          raw,
+          s.parse(s.customerPayment, req.body),
+        );
+        // Udhaar paid back in cash goes into this counter's galla
+        const p = out.payment;
+        if (license && p.method === "cash")
+          galla.addEntry(raw, {
+            counter: galla.gallaOf(raw, license, req),
+            kind: "in",
+            category: "Udhaar received",
+            amountPaise: p.amountPaise,
+            note: `${p.receiptNo} · ${customers.customerById(raw, p.customerId)?.name ?? ""}`,
+            by: req.user?.name ?? "",
+            source: "udhaar",
+            ref: p.id,
+          });
+        return out;
+      }),
+    ),
   );
 }

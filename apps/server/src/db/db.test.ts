@@ -18,7 +18,7 @@ describe("database setup", () => {
     const n = q<{ n: number }>(
       "SELECT count(*) n FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '\\_\\_%' ESCAPE '\\'",
     ).n;
-    expect(n).toBe(23); // + medicine_imports, party_imports (undo an import), commission_payouts
+    expect(n).toBe(26); // + medicine_imports, party_imports (undo an import), commission_payouts, sign_ins, cash_days, cash_entries
   });
 
   it("stores the whole demo shop", async () => {

@@ -20,6 +20,7 @@ const BASICS = [
   "Purchases, suppliers & returns",
   "Customers, udhaar & refill reminders",
   "Reports, GST returns & doctor referrals",
+  "Galla / day close: opening cash, count, short / excess",
   "Daily backups + Google Drive / pen drive copy",
   "WhatsApp bills & orders, Hindi / English",
 ];
@@ -37,6 +38,14 @@ const MULTI_EXTRAS: [title: string, detail: string][] = [
   [
     "Who is connected now",
     "See which computers are open and who is signed in on each.",
+  ],
+  [
+    "Sign-in history",
+    "Who signed in on which counter, and when they left — for a year.",
+  ],
+  [
+    "A galla for every counter",
+    "Each counter counts and closes its own cash drawer.",
   ],
   [
     "New counters connect by themselves",

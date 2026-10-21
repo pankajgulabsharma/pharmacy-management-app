@@ -3,6 +3,7 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { Ban, FileText, Lock, Pencil, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
 import { ModalShell } from "@/components/common/ModalShell";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CodeChip } from "@/components/common/CodeChip";
@@ -37,7 +38,7 @@ import { validatePayment } from "@medicare/domain/purchases/validation";
 
 type Actions = {
   onClose: () => void;
-  onRecordPayment: (id: string, amountPaise: Paise) => void;
+  onRecordPayment: (id: string, amountPaise: Paise, fromGalla: boolean) => void;
   onEdit: (p: Purchase) => void;
   onCancel: (p: Purchase) => void;
   onReturn: (p: Purchase) => void;
@@ -81,6 +82,8 @@ function Details({
   const amountRef = useRef<HTMLInputElement>(null);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Paid in cash out of the drawer → written in the galla as cash out
+  const [fromGalla, setFromGalla] = useState(false);
 
   const duePaise = getDuePaise(p);
   const meta = PAYMENT_STATUS_META[status];
@@ -93,8 +96,9 @@ function Details({
       setError(err);
       return;
     }
-    onRecordPayment(p.id, parseRupees(amount) ?? 0);
+    onRecordPayment(p.id, parseRupees(amount) ?? 0, fromGalla);
     setAmount("");
+    setFromGalla(false);
     setError(null);
   };
 
@@ -343,6 +347,18 @@ function Details({
                     Record
                   </Button>
                 </div>
+                <label className="flex items-center gap-2 text-[11px] text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={fromGalla}
+                    onChange={(e) => setFromGalla(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  {tr("Paid in cash from the galla")}
+                  <span className="text-muted-foreground">
+                    {tr("(shows as cash out in today's galla)")}
+                  </span>
+                </label>
                 {error ? (
                   <p className="text-[10px] text-red-500" role="alert">
                     {error}

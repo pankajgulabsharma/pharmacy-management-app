@@ -10,7 +10,7 @@
  * development copies show everything.
  */
 export type Plan = "single" | "multi";
-export type Feature = "staffCommission";
+export type Feature = "staffCommission" | "signInLog" | "counterGalla";
 
 export const PLAN_LABEL: Record<Plan, string> = {
   single: "Single computer",
@@ -20,11 +20,13 @@ export const PLAN_LABEL: Record<Plan, string> = {
 /** What each plan includes beyond the basics (billing, stock, GST, …) */
 export const PLAN_FEATURES: Record<Plan, readonly Feature[]> = {
   single: [],
-  multi: ["staffCommission"],
+  multi: ["staffCommission", "signInLog", "counterGalla"],
 };
 
 export const FEATURE_LABEL: Record<Feature, string> = {
   staffCommission: "Staff commission",
+  signInLog: "Sign-in history",
+  counterGalla: "Galla per counter",
 };
 
 export function planOf(

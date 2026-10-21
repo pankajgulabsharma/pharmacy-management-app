@@ -19,6 +19,7 @@ import {
 import { hashPassword } from "../auth/password";
 import type { Database } from "./client";
 import * as t from "./schema";
+import { seedDemoGalla } from "./seedGalla";
 import { insertRows, writeTx } from "./sync";
 import {
   batchToRow,
@@ -104,6 +105,7 @@ export async function seedDemoData({
       })),
     );
   });
+  seedDemoGalla(raw);
   const count = (table: string) =>
     (raw.prepare(`SELECT count(*) n FROM ${table}`).get() as { n: number }).n;
   return Object.fromEntries(

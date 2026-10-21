@@ -19,6 +19,8 @@ import { parse } from "../shop/schemas";
 import * as store from "../auth/store";
 import { newRecoveryCode } from "../auth/recovery";
 import { loadSettings, saveSettings } from "./settings";
+import { recordSignIn } from "../auth/signIns";
+import type { LicenseOptions } from "../license/state";
 
 const KEY = "setup_done";
 
@@ -52,7 +54,11 @@ const setupInput = z
   })
   .strict();
 
-export function setupRoutes(app: FastifyInstance, { raw }: Database) {
+export function setupRoutes(
+  app: FastifyInstance,
+  { raw }: Database,
+  license: LicenseOptions,
+) {
   app.post("/api/setup", async (req, reply) => {
     if (!needsSetup(raw)) throw new RuleError("This shop is already set up");
     const body = parse(setupInput, req.body);
@@ -86,6 +92,14 @@ export function setupRoutes(app: FastifyInstance, { raw }: Database) {
     // Forgot-password safety from day one; shown once on the next screen
     const recovery = await newRecoveryCode(raw);
     const s = store.createSession(raw, owner.id, false, req.ip);
+    recordSignIn(
+      raw,
+      license,
+      req,
+      { id: owner.id, name, role: "owner" },
+      s.token,
+      "setup",
+    );
     return reply.code(201).send({
       token: s.token,
       expiresAt: s.expiresAt,

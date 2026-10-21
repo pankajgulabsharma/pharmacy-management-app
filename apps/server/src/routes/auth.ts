@@ -31,6 +31,7 @@ import {
 import { loadSettings } from "./settings";
 import { unlockRequest, useUnlockCode } from "../auth/unlock";
 import { needsSetup } from "./setup";
+import { recordSignIn } from "../auth/signIns";
 import { parse } from "../shop/schemas";
 import { licenseState, type LicenseOptions } from "../license/state";
 import { NotFoundError } from "../shop/errors";
@@ -157,6 +158,14 @@ export function authRoutes(
       found.user.id,
       body.remember === true && !byPin,
       req.ip,
+    );
+    recordSignIn(
+      raw,
+      license,
+      req,
+      found.user,
+      s.token,
+      byPin ? "pin" : "password",
     );
     return {
       token: s.token,

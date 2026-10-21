@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { allowedOrigins } from "./cors";
+import { sessionHash } from "./auth/store";
 
 /** What changed — every open app reloads just that part */
 /** "all" = everything changed (a backup was restored) — reload it all */
@@ -10,6 +11,7 @@ export type Topic =
   | "users"
   | "license"
   | "commission"
+  | "galla"
   | "all";
 
 const TOPICS: readonly Topic[] = [
@@ -19,6 +21,7 @@ const TOPICS: readonly Topic[] = [
   "users",
   "license",
   "commission",
+  "galla",
 ];
 
 /** "/api/medicines/import" → "medicines" */
@@ -35,6 +38,8 @@ export function topicOf(url: string): Topic | null {
 /** One open app (a screen on a computer) */
 export type Connection = {
   ip: string;
+  /** Stored form of the session (sign-in history: "signed in now") */
+  session?: string;
   name: string;
   role: string;
   since: string;
@@ -94,6 +99,7 @@ export class EventBus {
       this.clients.add(reply.raw);
       this.who.set(reply.raw, {
         ip: req.ip,
+        session: req.token ? sessionHash(req.token) : "",
         name: req.user?.name ?? "",
         role: req.user?.role ?? "",
         since: new Date().toISOString(),

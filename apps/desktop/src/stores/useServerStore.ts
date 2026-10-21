@@ -4,6 +4,8 @@ import { useAuthStore } from "@/features/auth/store/useAuthStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUserStore } from "@/features/settings/store/useUserStore";
 import { useCommissionStore } from "@/features/commission/useCommissionStore";
+import { useGallaStore } from "@/features/galla/useGallaStore";
+import { useGallaStatusStore } from "@/features/galla/useGallaStatus";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
 import { useMedicineStore } from "@/features/medicines/store/useMedicineStore";
 import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
@@ -30,7 +32,13 @@ import { can } from "@medicare/domain/auth/permissions";
  */
 type ServerStatus = "checking" | "online" | "offline";
 type Topic =
-  "medicines" | "suppliers" | "settings" | "users" | "license" | "commission";
+  | "medicines"
+  | "suppliers"
+  | "settings"
+  | "users"
+  | "license"
+  | "commission"
+  | "galla";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
@@ -43,6 +51,13 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
     const c = useCommissionStore.getState();
     const role = useAuthStore.getState().session?.user.role;
     if (c.loaded && can(role, "admin")) await c.load();
+  },
+  // Galla screen open → its numbers follow the other counters
+  galla: async () => {
+    const g = useGallaStore.getState();
+    if (g.view) await g.load();
+    const st = useGallaStatusStore.getState();
+    if (st.today) await st.refresh();
   },
   // My role may have changed; the owner's Users screen refreshes too
   // (only an owner may read the user list — anyone else would get "no")

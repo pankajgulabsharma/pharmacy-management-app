@@ -1,3 +1,4 @@
+import { GallaTile } from "@/features/galla/GallaTile";
 import { Store } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useTranslation } from "react-i18next";
@@ -77,6 +78,9 @@ export default function DashboardPage() {
         <div className="xl:col-span-3 xl:h-full flex flex-col gap-2 min-h-0 min-w-0 justify-start">
           <div className="shrink-0 max-h-[50%] overflow-y-auto">
             <AlertsPanel />
+          </div>
+          <div className="shrink-0">
+            <GallaTile />
           </div>
           <div className="shrink-0">
             <QuickActions />

@@ -613,3 +613,77 @@ export const commissionPayouts = sqliteTable(
     check("commission_payouts_amount_ok", sql`${t.amountPaise} > 0`),
   ],
 );
+
+/**
+ * Sign-in history (Multi-counter plan): who signed in where and when.
+ * `session_hash` ties a row to its session so sign-out closes it.
+ */
+export const signIns = sqliteTable(
+  "sign_ins",
+  {
+    id: id(),
+    sessionHash: text("session_hash").notNull().default(""),
+    userId: text("user_id").notNull(),
+    userName: text("user_name").notNull(),
+    role: text("role").notNull(),
+    counter: text("counter").notNull().default(""),
+    computer: text("computer").notNull().default(""),
+    method: text("method", { enum: ["pin", "password", "setup"] }).notNull(),
+    signedInAt: text("signed_in_at").notNull(),
+    signedOutAt: text("signed_out_at"),
+    reason: text("reason").notNull().default(""),
+  },
+  (t) => [
+    index("sign_ins_at_idx").on(t.signedInAt),
+    index("sign_ins_session_idx").on(t.sessionHash),
+  ],
+);
+
+/** Galla: one row per drawer per business day (opened → closed) */
+export const cashDays = sqliteTable(
+  "cash_days",
+  {
+    id: id(),
+    date: text("date").notNull(),
+    counter: text("counter").notNull().default(""),
+    status: text("status", { enum: ["open", "closed"] }).notNull(),
+    openingPaise: paise("opening_paise"),
+    openedAt: text("opened_at").notNull(),
+    openedBy: text("opened_by").notNull().default(""),
+    countedPaise: integer("counted_paise"),
+    expectedPaise: integer("expected_paise"),
+    keptPaise: integer("kept_paise"),
+    denominationsJson: text("denominations_json").notNull().default("{}"),
+    closedAt: text("closed_at"),
+    closedBy: text("closed_by").notNull().default(""),
+    note: text("note").notNull().default(""),
+  },
+  (t) => [
+    uniqueIndex("cash_days_date_counter_idx").on(t.date, t.counter),
+    check("cash_days_opening_ok", sql`${t.openingPaise} >= 0`),
+  ],
+);
+
+/** Galla: cash put in / taken out (typed, or written when money moves) */
+export const cashEntries = sqliteTable(
+  "cash_entries",
+  {
+    id: id(),
+    date: text("date").notNull(),
+    counter: text("counter").notNull().default(""),
+    at: text("at").notNull(),
+    kind: text("kind", { enum: ["in", "out"] }).notNull(),
+    category: text("category").notNull(),
+    amountPaise: paise("amount_paise"),
+    note: text("note").notNull().default(""),
+    by: text("by").notNull().default(""),
+    source: text("source", {
+      enum: ["manual", "refund", "udhaar", "supplier"],
+    }).notNull(),
+    ref: text("ref").notNull().default(""),
+  },
+  (t) => [
+    index("cash_entries_day_idx").on(t.date, t.counter),
+    check("cash_entries_amount_ok", sql`${t.amountPaise} > 0`),
+  ],
+);

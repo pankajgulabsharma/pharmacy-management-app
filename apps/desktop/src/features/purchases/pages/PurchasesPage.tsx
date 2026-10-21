@@ -299,9 +299,9 @@ export default function PurchasesPage() {
   );
 
   const handleRecordPayment = useCallback(
-    async (id: string, amountPaise: Paise) => {
+    async (id: string, amountPaise: Paise, fromGalla: boolean) => {
       try {
-        await recordPayment(id, amountPaise);
+        await recordPayment(id, amountPaise, fromGalla);
         toast.success(`Payment of ₹${formatPaise(amountPaise)} recorded`);
       } catch (err) {
         toast.error(errorMessage(err, "Could not record payment"));

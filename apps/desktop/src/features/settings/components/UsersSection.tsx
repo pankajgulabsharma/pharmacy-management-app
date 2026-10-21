@@ -36,6 +36,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormField } from "@/components/common/FormField";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { cellInputClass, fieldClass } from "@/components/common/formStyles";
+import { SignInHistory } from "./SignInHistory";
 import { cn } from "@/lib/utils";
 import { tr } from "@/lib/i18n";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
@@ -241,6 +242,7 @@ export function UsersSection() {
           onClose={() => setResetFor(null)}
         />
       ) : null}
+      <SignInHistory />
     </div>
   );
 }

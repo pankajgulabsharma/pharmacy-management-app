@@ -11,6 +11,7 @@ import {
   Repeat,
   ShieldAlert,
   TriangleAlert,
+  Banknote,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -31,11 +32,18 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { missingShopDetails } from "@medicare/domain/settings/defaults";
 import { tr } from "@/lib/i18n";
 import { useLicenseStore } from "@/features/license/useLicenseStore";
+import { useGallaStatus } from "@/features/galla/useGallaStatus";
 import { useRefills } from "@/features/customers/refills/useRefills";
 import {
   backupProblem,
   useBackupHealth,
 } from "@/features/settings/backup/useBackupHealth";
+
+const shortDate = (date: string) =>
+  new Date(`${date}T00:00`).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
 
 export type ShopAlert = {
   key: string;
@@ -73,6 +81,7 @@ export function useShopAlerts(): ShopAlert[] {
   const licence = useLicenseStore((s) => s.state);
   const isOwner = can(role, "admin", access);
   const backupHealth = useBackupHealth((s) => s.health);
+  const galla = useGallaStatus();
   // Only the owner can see (and fix) backups
   useEffect(() => {
     if (isOwner) useBackupHealth.getState().watch();
@@ -143,6 +152,38 @@ export function useShopAlerts(): ShopAlert[] {
         icon: LifeBuoy,
         level: "amber",
         to: "/settings?section=users",
+      });
+
+    // Galla: a day never closed; (owner) a recent closing that came out short
+    for (const d of galla.open.slice(0, 3))
+      list.push({
+        key: `galla-open-${d.date}-${d.counter}`,
+        title: tr("Galla of {{date}} not closed", { date: shortDate(d.date) }),
+        desc: tr(
+          "{{c}}Count the cash and close that day — the next opening starts from it.",
+          {
+            c: d.counter ? `${d.counter}: ` : "",
+          },
+        ),
+        icon: Banknote,
+        level: "orange",
+        to: `/galla?date=${d.date}${d.counter ? `&counter=${encodeURIComponent(d.counter)}` : ""}`,
+      });
+    for (const d of galla.short.slice(0, 3))
+      list.push({
+        key: `galla-short-${d.date}-${d.counter}`,
+        title: tr("Galla short {{amt}}", {
+          amt: inrRounded((d.expectedPaise ?? 0) - (d.countedPaise ?? 0)),
+        }),
+        desc: tr("{{date}}{{c}} · closed by {{who}}{{note}}", {
+          date: shortDate(d.date),
+          c: d.counter ? ` · ${d.counter}` : "",
+          who: d.closedBy,
+          note: d.note ? ` — “${d.note}”` : "",
+        }),
+        icon: Banknote,
+        level: "red",
+        to: `/galla?date=${d.date}${d.counter ? `&counter=${encodeURIComponent(d.counter)}` : ""}`,
       });
 
     const stock = stockReport(batches, medicines, expiringDays);
@@ -274,6 +315,8 @@ export function useShopAlerts(): ShopAlert[] {
     return list;
   }, [
     role,
+    galla.open,
+    galla.short,
     access,
     shop,
     batches,

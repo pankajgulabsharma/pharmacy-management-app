@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Truck,
   Users,
+  Banknote,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -44,6 +45,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Sales & Billing",
     icon: ShoppingCart,
     keys: "Alt+2",
+  },
+  {
+    to: "/galla",
+    label: "Galla / Day close",
+    icon: Banknote,
+    keys: "Alt+0",
+    perm: "sell",
   },
   {
     to: "/medicines",
@@ -169,7 +177,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     rows: [
       {
         keys: "Alt+1",
-        label: "Switch screens: Alt+1 … Alt+9 (sidebar order)",
+        label: "Switch screens: Alt+1 … Alt+9, Alt+0 = Galla",
       },
       { keys: KEYS.newBill, label: "New bill" },
       { keys: KEYS.globalSearch, label: "Search everything" },

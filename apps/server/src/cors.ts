@@ -27,7 +27,10 @@ export function cors(app: FastifyInstance, origins = allowedOrigins()) {
       // Browser's "may I?" check before a real request
       reply
         .header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
-        .header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        .header(
+          "Access-Control-Allow-Headers",
+          "Content-Type, Authorization, X-Counter",
+        )
         .header("Access-Control-Max-Age", "600")
         .code(204)
         .send();

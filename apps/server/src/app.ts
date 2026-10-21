@@ -10,6 +10,8 @@ import { authRoutes } from "./routes/auth";
 import { settingsRoutes } from "./routes/settings";
 import { backupRoutes } from "./routes/backups";
 import { commissionRoutes } from "./routes/commission";
+import { gallaRoutes } from "./routes/galla";
+import { signInRoutes } from "./routes/signins";
 import { setupRoutes } from "./routes/setup";
 import { serveApp } from "./static";
 import { systemRoutes, type SystemHooks } from "./routes/system";
@@ -90,11 +92,18 @@ export function buildApp({
   backupRoutes(app, database, bus, backupDir, license);
   systemRoutes(app, system, () => bus.connections());
   commissionRoutes(app, database, license);
-  setupRoutes(app, database);
+  setupRoutes(app, database, license);
   catalogRoutes(app, database);
   libraryRoutes(app, library);
   supplierRoutes(app, database);
-  shopRoutes(app, database, bus);
+  shopRoutes(app, database, bus, license);
+  gallaRoutes(app, database, license);
+  signInRoutes(
+    app,
+    database,
+    license,
+    () => new Set(bus.connections().map((c) => c.session ?? "")),
+  );
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof AuthError)

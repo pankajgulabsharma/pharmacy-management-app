@@ -123,6 +123,22 @@ export async function setPin(
 }
 
 const sha = (token: string) => createHash("sha256").update(token).digest("hex");
+/** How a session is stored (and how the sign-in history points at it) */
+export const sessionHash = sha;
+
+/** Sign-in history: close the row of a session that ended */
+function closeSignIn(
+  raw: DatabaseSync,
+  hash: string,
+  reason: "signed_out" | "timed_out" | "removed",
+  at: string,
+) {
+  raw
+    .prepare(
+      "UPDATE sign_ins SET signed_out_at = ?, reason = ? WHERE session_hash = ? AND signed_out_at IS NULL",
+    )
+    .run(at, reason, hash);
+}
 
 export function createSession(
   raw: DatabaseSync,
@@ -135,6 +151,18 @@ export function createSession(
   const expiresAt =
     now + (remember ? REMEMBER_DAYS * 24 : SESSION_HOURS) * 3_600_000;
   // Old, expired sessions are cleaned up on every sign-in
+  const expired = raw
+    .prepare(
+      "SELECT token_hash, expires_at FROM sessions WHERE expires_at <= ?",
+    )
+    .all(now) as { token_hash: string; expires_at: number }[];
+  for (const e of expired)
+    closeSignIn(
+      raw,
+      e.token_hash,
+      "timed_out",
+      new Date(e.expires_at).toISOString(),
+    );
   raw.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
   raw
     .prepare(
@@ -178,6 +206,7 @@ export function activeCounterIps(
 }
 
 export function endSession(raw: DatabaseSync, token: string) {
+  closeSignIn(raw, sha(token), "signed_out", new Date().toISOString());
   raw.prepare("DELETE FROM sessions WHERE token_hash = ?").run(sha(token));
 }
 
@@ -187,9 +216,17 @@ export function endUserSessions(
   userId: string,
   keepToken?: string,
 ) {
+  const keep = keepToken ? sha(keepToken) : "";
+  const ended = raw
+    .prepare(
+      "SELECT token_hash FROM sessions WHERE user_id = ? AND token_hash <> ?",
+    )
+    .all(userId, keep) as { token_hash: string }[];
+  const at = new Date().toISOString();
+  for (const e of ended) closeSignIn(raw, e.token_hash, "removed", at);
   raw
     .prepare("DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?")
-    .run(userId, keepToken ? sha(keepToken) : "");
+    .run(userId, keep);
 }
 
 /**

@@ -34,7 +34,7 @@ export class AuthError extends Error {
 
 const WRITE_RULES: [RegExp, Permission][] = [
   [
-    /^\/api\/(sales|sale-returns|held|customers|customer-payments)(\/|$)/,
+    /^\/api\/(sales|sale-returns|held|customers|customer-payments|galla)(\/|$)/,
     "sell",
   ],
   [/^\/api\/(medicines|stock)(\/|$)/, "stock"],
@@ -49,10 +49,14 @@ export function requiredPermission(
 ): Permission | null {
   if (path.startsWith("/api/auth/")) return null;
   if (method === "GET") {
-    if (/^\/api\/(users|backups|commission|system\/counters)(\/|$)/.test(path))
+    if (
+      /^\/api\/(users|backups|commission|signins|system\/counters)(\/|$)/.test(
+        path,
+      )
+    )
       return "admin";
     // Sales speed, profit… — what the Reports screen shows
-    if (/^\/api\/reports(\/|$)/.test(path)) return "reports";
+    if (/^\/api\/(reports|galla\/history)(\/|$)/.test(path)) return "reports";
     return null;
   }
   return WRITE_RULES.find(([re]) => re.test(path))?.[1] ?? "admin";

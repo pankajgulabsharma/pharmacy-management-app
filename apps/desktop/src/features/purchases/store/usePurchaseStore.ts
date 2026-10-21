@@ -36,7 +36,12 @@ type PurchaseState = {
   ) => Promise<Purchase>;
   cancelPurchase: (id: string, reason: string) => Promise<void>;
   createReturn: (input: PurchaseReturnInput) => Promise<PurchaseReturn>;
-  recordPayment: (id: string, amountPaise: Paise) => Promise<void>;
+  /** fromGalla: paid in cash from the drawer (cash out in the galla) */
+  recordPayment: (
+    id: string,
+    amountPaise: Paise,
+    fromGalla?: boolean,
+  ) => Promise<void>;
   /** Old dues to a supplier from before MediCare (an "Old balance") */
   addOpeningDue: (supplierId: string, input: OpeningDueInput) => Promise<void>;
 };
@@ -107,9 +112,10 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
         input,
       )
     ).ret,
-  recordPayment: async (id, amountPaise) => {
+  recordPayment: async (id, amountPaise, fromGalla) => {
     await send("POST", `/api/purchases/${encodeURIComponent(id)}/payments`, {
       amountPaise,
+      ...(fromGalla ? { fromGalla: true } : {}),
     });
   },
   addOpeningDue: async (supplierId, input) => {

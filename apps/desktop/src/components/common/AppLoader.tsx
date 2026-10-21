@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { AppLogo } from "@/components/brand/AppLogo";
 import { tr } from "@/lib/i18n";
 
 /**
@@ -26,18 +27,7 @@ export function AppLoader({
         aria-label={tr(message)}
       >
         <div className="mc-orb">
-          <div className="mc-logo">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#fff"
-              strokeWidth={2.6}
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </div>
+          <AppLogo className="mc-logo" />
         </div>
         {size === "page" ? (
           <>

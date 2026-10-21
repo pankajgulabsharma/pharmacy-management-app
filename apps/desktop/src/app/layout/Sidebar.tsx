@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { Keyboard, MapPin, Phone, Store } from "lucide-react";
 import { APP_NAME } from "@medicare/domain/settings/defaults";
+import { AppLogo } from "@/components/brand/AppLogo";
 import { cn } from "@/lib/utils";
 import { formatCombo, preferredCombo } from "@/lib/hotkeys";
 import { useUIStore } from "@/stores/useUIStore";
@@ -41,12 +42,7 @@ export function Sidebar() {
           open ? "px-4 gap-3" : "justify-center",
         )}
       >
-        <div
-          aria-hidden="true"
-          className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md shadow-indigo-950/50 flex items-center justify-center text-white font-bold text-base select-none shrink-0"
-        >
-          +
-        </div>
+        <AppLogo className="h-8 w-8 drop-shadow-md" />
         {open ? (
           <div className="min-w-0">
             {/* The software's name — fixed; the shop's is in the card below */}

@@ -1,3 +1,4 @@
+import { thisCounter } from "./thisCounter";
 import { saveBlob } from "./csv";
 /**
  * The ONE way the app talks to the server: a base URL, a timeout, and
@@ -71,6 +72,10 @@ async function send(
                 : "application/json",
             }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // Which counter this computer is (galla, sign-in history)
+        ...(thisCounter()
+          ? { "X-Counter": encodeURIComponent(thisCounter()) }
+          : {}),
       },
       body:
         body === undefined
