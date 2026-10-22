@@ -1,3 +1,4 @@
+import { useOrderStore } from "@/features/purchases/orders/useOrderStore";
 import { useStockCountStore } from "@/features/stockCount/useStockCountStore";
 import { create } from "zustand";
 import { API_URL, ApiError, apiToken } from "@/lib/api";
@@ -40,7 +41,8 @@ type Topic =
   | "license"
   | "commission"
   | "galla"
-  | "stock-counts";
+  | "stock-counts"
+  | "purchase-orders";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
@@ -65,6 +67,11 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
   "stock-counts": async () => {
     const sc = useStockCountStore.getState();
     if (sc.loaded) await sc.loadList();
+  },
+  // Orders open somewhere → bills and other counters keep them current
+  "purchase-orders": async () => {
+    const o = useOrderStore.getState();
+    if (o.loaded) await o.load();
   },
   // My role may have changed; the owner's Users screen refreshes too
   // (only an owner may read the user list — anyone else would get "no")

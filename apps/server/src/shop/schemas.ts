@@ -116,6 +116,8 @@ export const purchaseDraft = z
     notes: str(PURCHASE_LIMITS.notesMax * 2),
     paid: str(16),
     lines: z.array(purchaseLineDraft).max(PURCHASE_LIMITS.maxLines),
+    /** Entered against a purchase order */
+    orderId: id.optional(),
   })
   .strict();
 

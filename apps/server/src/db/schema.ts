@@ -723,3 +723,31 @@ export const stockCountLines = sqliteTable(
   },
   (t) => [uniqueIndex("stock_count_lines_pk").on(t.countId, t.batchId)],
 );
+
+/** Purchase orders (Purchases → Orders); lines and receipts as JSON */
+export const purchaseOrders = sqliteTable(
+  "purchase_orders",
+  {
+    id: id(),
+    orderNo: text("order_no").notNull().unique(),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => suppliers.id),
+    supplierName: text("supplier_name").notNull(),
+    status: text("status", {
+      enum: ["open", "sent", "partial", "received", "closed", "cancelled"],
+    }).notNull(),
+    date: text("date").notNull(),
+    notes: text("notes").notNull().default(""),
+    linesJson: text("lines_json").notNull().default("[]"),
+    receiptsJson: text("receipts_json").notNull().default("[]"),
+    createdAt: createdAt(),
+    createdBy: text("created_by").notNull().default(""),
+    sentAt: text("sent_at"),
+    closedAt: text("closed_at"),
+  },
+  (t) => [
+    index("purchase_orders_status_idx").on(t.status),
+    index("purchase_orders_supplier_idx").on(t.supplierId),
+  ],
+);

@@ -13,6 +13,7 @@ export type Topic =
   | "commission"
   | "galla"
   | "stock-counts"
+  | "purchase-orders"
   | "all";
 
 const TOPICS: readonly Topic[] = [
@@ -24,6 +25,7 @@ const TOPICS: readonly Topic[] = [
   "commission",
   "galla",
   "stock-counts",
+  "purchase-orders",
 ];
 
 /** "/api/medicines/import" → "medicines" */

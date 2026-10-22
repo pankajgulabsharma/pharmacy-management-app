@@ -189,15 +189,14 @@ export function shopRoutes(
   );
 
   // Purchases
-  app.post("/api/purchases", async (req, reply) =>
-    reply
-      .code(201)
-      .send(
-        write(() =>
-          purchases.addPurchase(raw, s.parse(s.purchaseDraft, req.body)),
-        ),
-      ),
-  );
+  app.post("/api/purchases", async (req, reply) => {
+    const out = write(() =>
+      purchases.addPurchase(raw, s.parse(s.purchaseDraft, req.body)),
+    );
+    // The order's screen follows on every counter
+    if (out.order) bus.emit("purchase-orders");
+    return reply.code(201).send(out);
+  });
   app.put<Params>("/api/purchases/:id", async (req) => {
     const b = s.parse(s.purchaseEdit, req.body);
     return write(() =>

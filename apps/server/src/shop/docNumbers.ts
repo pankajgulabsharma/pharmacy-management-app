@@ -7,8 +7,8 @@ import { financialYear } from "@medicare/domain/lib/docNo";
  */
 export function usedNumbers(
   raw: DatabaseSync,
-  table: "sales" | "sale_returns" | "purchase_returns",
-  column: "bill_no" | "return_no",
+  table: "sales" | "sale_returns" | "purchase_returns" | "purchase_orders",
+  column: "bill_no" | "return_no" | "order_no",
   now: Date,
 ): { no: string; at: string }[] {
   return raw

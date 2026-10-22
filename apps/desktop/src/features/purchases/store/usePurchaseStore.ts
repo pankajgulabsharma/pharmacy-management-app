@@ -1,3 +1,4 @@
+import type { PurchaseOrder } from "@medicare/domain/purchases/orders";
 import type { ExpiryReturnInput } from "@medicare/domain/purchases/expiryReturns";
 import type { OpeningDueInput } from "@medicare/domain/purchases/opening";
 import { create } from "zustand";
@@ -27,9 +28,12 @@ type PurchaseState = {
   source: "none" | "server";
   loadFromServer: () => Promise<void>;
   /** Send the form as typed; the server builds and checks the invoice. Resolves packs added. */
-  addPurchase: (
-    draft: PurchaseDraft,
-  ) => Promise<{ purchase: Purchase; packs: number }>;
+  addPurchase: (draft: PurchaseDraft) => Promise<{
+    purchase: Purchase;
+    packs: number;
+    /** The order it was entered against, as ticked off */
+    order: PurchaseOrder | null;
+  }>;
   updatePurchase: (
     id: string,
     draft: PurchaseDraft,
@@ -89,11 +93,12 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
   },
 
   addPurchase: (draft) =>
-    send<{ purchase: Purchase; packs: number; patch: ShopPatch }>(
-      "POST",
-      "/api/purchases",
-      draft,
-    ),
+    send<{
+      purchase: Purchase;
+      packs: number;
+      order: PurchaseOrder | null;
+      patch: ShopPatch;
+    }>("POST", "/api/purchases", draft),
   updatePurchase: async (id, draft, revision) =>
     (
       await send<{ purchase: Purchase; patch: ShopPatch }>(

@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, MessageCircle } from "lucide-react";
+import { ClipboardList, Copy, Download, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { lastRates } from "@medicare/domain/purchases/orders";
+import { useCan } from "@/features/auth/store/useAuthStore";
+import { useOrderStore } from "@/features/purchases/orders/useOrderStore";
+import { useSupplierStore } from "@/features/suppliers/store/useSupplierStore";
 import {
   deadStock,
   orderList,
@@ -14,7 +20,7 @@ import { usePurchaseStore } from "@/features/purchases/store/usePurchaseStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { Segmented } from "@/components/common/Segmented";
 import { downloadText, toCsv } from "@/lib/csv";
-import { tr } from "@/lib/i18n";
+import { tr, trn } from "@/lib/i18n";
 import { useVelocity } from "../hooks/useVelocity";
 import { ReportTable } from "./ReportTable";
 import { OrderSendDialog } from "./OrderSendDialog";
@@ -220,6 +226,60 @@ export function OrderListCard() {
 
   // Preview → send to the supplier on WhatsApp, or copy
   const [sending, setSending] = useState(false);
+
+  // One purchase order per supplier (who sent it last); the rest by hand
+  const canOrder = useCan("purchases");
+  const navigate = useNavigate();
+  const [making, setMaking] = useState(false);
+  const makeOrders = async () => {
+    if (!r) return;
+    const rates = lastRates(purchases);
+    // Only suppliers still in use; the rest are added by hand
+    const active = new Set(
+      useSupplierStore
+        .getState()
+        .suppliers.filter((s) => s.status === "active")
+        .map((s) => s.id),
+    );
+    const by = new Map<string, OrderRow[]>();
+    for (const x of r.rows)
+      if (active.has(x.lastSupplierId))
+        by.set(x.lastSupplierId, [...(by.get(x.lastSupplierId) ?? []), x]);
+    setMaking(true);
+    try {
+      const made = [];
+      for (const [supplierId, rows] of by)
+        made.push(
+          await useOrderStore.getState().create({
+            supplierId,
+            notes: "",
+            lines: rows.map((x) => ({
+              medicineId: x.medicineId,
+              qty: x.orderPacks,
+              ratePaise: rates.get(x.medicineId)?.ratePaise ?? 0,
+            })),
+          }),
+        );
+      const left = r.rows.filter((x) => !active.has(x.lastSupplierId)).length;
+      toast.success(
+        trn(made.length, "1 purchase order made", "{{n}} purchase orders made"),
+        {
+          description: left
+            ? trn(
+                left,
+                "1 medicine has no active supplier — add it to an order by hand",
+                "{{n}} medicines have no active supplier — add them to an order by hand",
+              )
+            : tr("Send each one to its supplier from Orders"),
+        },
+      );
+      navigate("/purchases/orders");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : tr("Could not save"));
+    } finally {
+      setMaking(false);
+    }
+  };
   const exportCsv = () =>
     r &&
     downloadText(
@@ -289,6 +349,15 @@ export function OrderListCard() {
             >
               Send on WhatsApp
             </ActionButton>
+            {canOrder ? (
+              <ActionButton
+                icon={ClipboardList}
+                onClick={() => void makeOrders()}
+                disabled={!r?.rows.some((x) => x.lastSupplierId) || making}
+              >
+                Make purchase orders
+              </ActionButton>
+            ) : null}
             <ActionButton
               icon={Download}
               onClick={exportCsv}

@@ -50,19 +50,17 @@ export function stockCountRoutes(
   );
   app.post("/api/stock-counts", async (req, reply) => {
     const b = parse(startInput, req.body);
-    return reply
-      .code(201)
-      .send(
-        sc.startCount(
-          raw,
-          {
-            racks: b.racks,
-            includeEmpty: b.includeEmpty ?? false,
-            note: b.note ?? "",
-          },
-          req.user!.name,
-        ),
-      );
+    return reply.code(201).send(
+      sc.startCount(
+        raw,
+        {
+          racks: b.racks,
+          includeEmpty: b.includeEmpty ?? false,
+          note: b.note ?? "",
+        },
+        req.user!.name,
+      ),
+    );
   });
   app.put<Params>("/api/stock-counts/:id/lines", async (req) =>
     sc.saveCounts(

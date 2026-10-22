@@ -59,6 +59,7 @@ import {
 import * as t from "../db/schema";
 import { updateRow, writeTx } from "../db/sync";
 import { usedNumbers } from "./docNumbers";
+import { receiveAgainstOrder } from "./orders";
 import { NotFoundError } from "./errors";
 
 const enforce = (r: RuleResult) => {
@@ -154,10 +155,15 @@ export function addPurchase(
     const r = applyReceipt(before, receipt, knownIds);
     const saved = saveStock(raw, before, r.batches, r.movements);
     insertPurchase(raw, purchase);
+    // Against a purchase order: tick off what came (same transaction)
+    const order = input.orderId
+      ? receiveAgainstOrder(raw, input.orderId, purchase, now)
+      : null;
     const packs = receipt.lines.reduce((a, l) => a + l.packs, 0);
     return {
       purchase,
       packs,
+      order,
       patch: { purchases: [purchase], ...saved } satisfies ShopPatch,
     };
   });

@@ -49,7 +49,8 @@ export function supplierRoutes(app: FastifyInstance, { db }: Database) {
         return reply.code(404).send({ error: "Supplier not found" });
       if (r === "has_invoices") {
         return reply.code(409).send({
-          error: "This supplier has invoices — set it Inactive instead",
+          error:
+            "This supplier has invoices or orders — set it Inactive instead",
         });
       }
       return reply.code(204).send();

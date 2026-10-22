@@ -231,6 +231,11 @@ export type PurchaseDraft = {
   notes: string;
   paid: string;
   lines: PurchaseLineDraft[];
+  /** Entered against this purchase order (what came is ticked off on it) */
+  orderId?: string;
 };
 
-export type PurchaseHeaderField = Exclude<keyof PurchaseDraft, "lines">;
+export type PurchaseHeaderField = Exclude<
+  keyof PurchaseDraft,
+  "lines" | "orderId"
+>;

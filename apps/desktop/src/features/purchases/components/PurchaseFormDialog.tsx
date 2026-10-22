@@ -72,6 +72,10 @@ type Props = {
   existingPurchases: readonly Purchase[];
   /** When set, the form edits this invoice instead of creating a new one */
   editing?: Purchase | null;
+  /** A new invoice that starts filled in (from a purchase order) */
+  initialDraft?: PurchaseDraft | null;
+  /** "PO/26-27/0004" — shown while entering a bill from an order */
+  orderNo?: string;
   onClose: () => void;
   /** Return false if saving failed, so the form can be submitted again */
   /** The typed form; for an edit also which invoice/revision it changes. Resolves true when saved. */
@@ -97,6 +101,8 @@ function PurchaseForm({
   medicines,
   existingPurchases,
   editing = null,
+  initialDraft = null,
+  orderNo,
   onClose,
   onSave,
 }: Omit<Props, "open">) {
@@ -108,7 +114,9 @@ function PurchaseForm({
   const [today] = useState(() => new Date());
   // Snapshot of the starting point — used to detect unsaved changes
   const [initial] = useState<PurchaseDraft>(() =>
-    editing ? purchaseToDraft(editing) : createEmptyDraft(today),
+    editing
+      ? purchaseToDraft(editing)
+      : (initialDraft ?? createEmptyDraft(today)),
   );
   const [draft, setDraft] = useState<PurchaseDraft>(initial);
   const isEdit = editing !== null;
@@ -328,12 +336,18 @@ function PurchaseForm({
               <h2 id={titleId} className="text-sm font-semibold">
                 {editing
                   ? `Edit purchase · ${editing.invoiceNo}`
-                  : "New purchase"}
+                  : orderNo
+                    ? tr("New purchase · against {{no}}", { no: orderNo })
+                    : "New purchase"}
               </h2>
               <p className="text-[10px] text-muted-foreground truncate">
                 {editing
                   ? `Revision ${editing.revision} → ${editing.revision + 1} · stock will be re-posted · Ctrl + S to save`
-                  : "Enter the supplier's invoice · Ctrl + S to save"}
+                  : orderNo
+                    ? tr(
+                        "Filled from the order: type the bill's batch, expiry and rate · change quantities to what came · remove what didn't",
+                      )
+                    : "Enter the supplier's invoice · Ctrl + S to save"}
               </p>
             </div>
           </div>

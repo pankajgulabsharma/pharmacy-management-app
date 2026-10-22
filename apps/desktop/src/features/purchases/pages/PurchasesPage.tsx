@@ -1,5 +1,11 @@
+import {
+  isOrderOpen,
+  ORDER_STATUS_META,
+} from "@medicare/domain/purchases/orders";
+import { useReceiveOrder } from "../orders/useReceiveOrder";
+import { useOrderStore } from "../orders/useOrderStore";
 import { useNavigate } from "react-router-dom";
-import { CalendarX } from "lucide-react";
+import { CalendarX, ClipboardList } from "lucide-react";
 import { tr } from "@/lib/i18n";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useExpiryItems } from "../expiry/useExpiryItems";
@@ -7,6 +13,7 @@ import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import {
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useState,
   useRef,
@@ -99,6 +106,18 @@ export default function PurchasesPage() {
   // Suppliers with expired / short-dated stock to send back
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
   const expiryCount = useExpiryItems(expiringDays).groups.length;
+  // Orders still waiting for goods (loaded with the screen)
+  const openOrders = useOrderStore(
+    (s) => s.orders.filter((o) => isOrderOpen(o)).length,
+  );
+  const ordersLoaded = useOrderStore((s) => s.loaded);
+  useEffect(() => {
+    if (!ordersLoaded)
+      useOrderStore
+        .getState()
+        .load()
+        .catch(() => {});
+  }, [ordersLoaded]);
 
   // Dashboard links like /purchases?status=overdue or ?new=1
   const intent = useUrlIntent();
@@ -121,6 +140,10 @@ export default function PurchasesPage() {
   // Dialogs — ids, not objects, so dialogs always show the latest version
   const [form, setForm] = useState<{ open: boolean; editingId: string | null }>(
     { open: intent.new === "1", editingId: null },
+  );
+  // Orders → "Receive goods": /purchases?receive=<order id>
+  const fromOrder = useReceiveOrder(intent.receive, () =>
+    setForm({ open: true, editingId: null }),
   );
   // Supplier → "Recent invoices" opens one here: /purchases?view=<id>
   const [viewingId, setViewingId] = useState<string | null>(
@@ -224,10 +247,10 @@ export default function PurchasesPage() {
     (p: Purchase) => setForm({ open: true, editingId: p.id }),
     [],
   );
-  const closeForm = useCallback(
-    () => setForm({ open: false, editingId: null }),
-    [],
-  );
+  const closeForm = useCallback(() => {
+    setForm({ open: false, editingId: null });
+    fromOrder.clear();
+  }, [fromOrder]);
   const handleView = useCallback((p: Purchase) => setViewingId(p.id), []);
   const editRuleOf = useEditRuleOf();
   const editBlockOf = useCallback(
@@ -260,10 +283,24 @@ export default function PurchasesPage() {
             description: "Stock was re-posted to match the corrected invoice",
           });
         } else {
-          const { purchase: p, packs } = await addPurchase(draft);
+          const { purchase: p, packs, order } = await addPurchase(draft);
           toast.success(`Purchase ${p.invoiceNo} saved`, {
-            description: `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
+            description: order
+              ? tr(
+                  "₹{{amount}} · {{packs}} packs added · order {{no}}: {{status}}",
+                  {
+                    amount: formatPaise(p.totals.netPaise),
+                    packs,
+                    no: order.orderNo,
+                    status: tr(ORDER_STATUS_META[order.status].label),
+                  },
+                )
+              : `₹${formatPaise(p.totals.netPaise)} · ${packs} packs added to Inventory`,
           });
+          if (order) {
+            useOrderStore.getState().put(order);
+            fromOrder.clear();
+          }
         }
         setForm({ open: false, editingId: null });
         return true;
@@ -272,7 +309,7 @@ export default function PurchasesPage() {
         return false;
       }
     },
-    [addPurchase, updatePurchase],
+    [addPurchase, updatePurchase, fromOrder],
   );
 
   const handleCancel = useCallback(
@@ -353,6 +390,20 @@ export default function PurchasesPage() {
         subtitle="Supplier invoices · returns · payments"
         actions={
           <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/purchases/orders")}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              {tr("Orders")}
+              {openOrders ? (
+                <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">
+                  {openOrders}
+                </span>
+              ) : null}
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -484,6 +535,8 @@ export default function PurchasesPage() {
       <PurchaseFormDialog
         open={form.open}
         editing={editing}
+        initialDraft={editing ? null : fromOrder.draft}
+        orderNo={editing ? undefined : fromOrder.order?.orderNo}
         suppliers={suppliers}
         medicines={medicines}
         existingPurchases={purchases}

@@ -4,7 +4,12 @@ import { newId } from "@medicare/domain/lib/id";
 import { assertUniqueSupplier } from "@medicare/domain/suppliers/clean";
 import type { Supplier, SupplierInput } from "@medicare/domain/suppliers/types";
 import type { Db } from "../db/client";
-import { purchaseReturns, purchases, suppliers } from "../db/schema";
+import {
+  purchaseOrders,
+  purchaseReturns,
+  purchases,
+  suppliers,
+} from "../db/schema";
 
 export async function listSuppliers(db: Db): Promise<Supplier[]> {
   return db.select().from(suppliers).orderBy(asc(suppliers.name));
@@ -62,7 +67,7 @@ export async function deleteSupplier(
   if (!(await getSupplier(db, id))) return "not_found";
   const used = await db
     .select({
-      n: sql<number>`(SELECT count(*) FROM ${purchases} WHERE ${purchases.supplierId} = ${id}) + (SELECT count(*) FROM ${purchaseReturns} WHERE ${purchaseReturns.supplierId} = ${id})`,
+      n: sql<number>`(SELECT count(*) FROM ${purchases} WHERE ${purchases.supplierId} = ${id}) + (SELECT count(*) FROM ${purchaseReturns} WHERE ${purchaseReturns.supplierId} = ${id}) + (SELECT count(*) FROM ${purchaseOrders} WHERE ${purchaseOrders.supplierId} = ${id})`,
     })
     .from(suppliers)
     .where(eq(suppliers.id, id))
