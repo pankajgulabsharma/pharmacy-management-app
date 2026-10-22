@@ -1,3 +1,4 @@
+import { useStockCountStore } from "@/features/stockCount/useStockCountStore";
 import { create } from "zustand";
 import { API_URL, ApiError, apiToken } from "@/lib/api";
 import { useAuthStore } from "@/features/auth/store/useAuthStore";
@@ -38,7 +39,8 @@ type Topic =
   | "users"
   | "license"
   | "commission"
-  | "galla";
+  | "galla"
+  | "stock-counts";
 
 /** Who reloads for each topic the server announces */
 const LOADERS: Record<Topic, () => Promise<void>> = {
@@ -58,6 +60,11 @@ const LOADERS: Record<Topic, () => Promise<void>> = {
     if (g.view) await g.load();
     const st = useGallaStatusStore.getState();
     if (st.today) await st.refresh();
+  },
+  // Stock count screen open → the other counters' counts show up
+  "stock-counts": async () => {
+    const sc = useStockCountStore.getState();
+    if (sc.loaded) await sc.loadList();
   },
   // My role may have changed; the owner's Users screen refreshes too
   // (only an owner may read the user list — anyone else would get "no")

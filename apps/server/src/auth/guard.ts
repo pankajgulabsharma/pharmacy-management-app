@@ -37,7 +37,7 @@ const WRITE_RULES: [RegExp, Permission][] = [
     /^\/api\/(sales|sale-returns|held|customers|customer-payments|galla)(\/|$)/,
     "sell",
   ],
-  [/^\/api\/(medicines|stock)(\/|$)/, "stock"],
+  [/^\/api\/(medicines|stock|stock-counts)(\/|$)/, "stock"],
   [/^\/api\/(suppliers|purchases|purchase-returns)(\/|$)/, "purchases"],
   [/^\/api\/(settings|users|backups|license)(\/|$)/, "admin"],
 ];

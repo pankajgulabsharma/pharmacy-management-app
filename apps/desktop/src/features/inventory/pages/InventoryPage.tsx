@@ -10,11 +10,15 @@ import {
   AlertTriangle,
   CalendarClock,
   CalendarX,
+  ClipboardCheck,
   Package,
   PackageX,
   Warehouse,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { tr } from "@/lib/i18n";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SearchInput } from "@/components/common/SearchInput";
@@ -58,6 +62,7 @@ const FILTER_STATUS: Record<
 export default function InventoryPage() {
   // Batches joined with the medicine master (single source of truth)
   const items = useInventoryRows();
+  const navigate = useNavigate();
   const adjustStock = useInventoryStore((s) => s.adjust);
   // Dashboard links like /inventory?status=low&q=dolo
   const intent = useUrlIntent();
@@ -175,6 +180,17 @@ export default function InventoryPage() {
         icon={Warehouse}
         title="Inventory"
         subtitle="Batch-wise stock · expiry · rack"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/inventory/count")}
+            className="h-8 gap-1 text-[11px]"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            {tr("Stock count")}
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 shrink-0">

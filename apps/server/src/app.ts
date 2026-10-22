@@ -11,6 +11,7 @@ import { settingsRoutes } from "./routes/settings";
 import { backupRoutes } from "./routes/backups";
 import { commissionRoutes } from "./routes/commission";
 import { gallaRoutes } from "./routes/galla";
+import { stockCountRoutes } from "./routes/stockCounts";
 import { signInRoutes } from "./routes/signins";
 import { setupRoutes } from "./routes/setup";
 import { serveApp } from "./static";
@@ -98,6 +99,7 @@ export function buildApp({
   supplierRoutes(app, database);
   shopRoutes(app, database, bus, license);
   gallaRoutes(app, database, license);
+  stockCountRoutes(app, database, bus);
   signInRoutes(
     app,
     database,

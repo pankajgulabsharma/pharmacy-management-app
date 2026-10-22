@@ -28,6 +28,9 @@ const PurchasesPage = lazyPage(
 const InventoryPage = lazyPage(
   () => import("@/features/inventory/pages/InventoryPage"),
 );
+const StockCountPage = lazyPage(
+  () => import("@/features/stockCount/StockCountPage"),
+);
 const GallaPage = lazyPage(() => import("@/features/galla/GallaPage"));
 const MedicinesPage = lazyPage(
   () => import("@/features/medicines/pages/MedicinesPage"),
@@ -61,6 +64,7 @@ export const router = createBrowserRouter([
       { path: "customers", element: <CustomersPage /> },
       { path: "medicines", element: <MedicinesPage /> },
       { path: "inventory", element: <InventoryPage /> },
+      { path: "inventory/count", element: <StockCountPage /> },
       {
         path: "purchases",
         element: (

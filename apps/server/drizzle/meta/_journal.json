@@ -120,6 +120,13 @@
       "when": 1792577509243,
       "tag": "0016_galla_signins",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1792673685004,
+      "tag": "0017_stock_counts",
+      "breakpoints": true
     }
   ]
 }

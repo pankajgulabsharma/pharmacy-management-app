@@ -687,3 +687,39 @@ export const cashEntries = sqliteTable(
     check("cash_entries_amount_ok", sql`${t.amountPaise} > 0`),
   ],
 );
+
+/** Stock count (physical stock taking) — see @medicare/domain/inventory/stockCount */
+export const stockCounts = sqliteTable(
+  "stock_counts",
+  {
+    id: id(),
+    countNo: text("count_no").notNull().unique(),
+    racksJson: text("racks_json").notNull().default("[]"),
+    status: text("status", { enum: ["open", "posted", "cancelled"] }).notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: createdAt(),
+    createdBy: text("created_by").notNull().default(""),
+    postedAt: text("posted_at"),
+    postedBy: text("posted_by").notNull().default(""),
+    summaryJson: text("summary_json"),
+  },
+  (t) => [index("stock_counts_status_idx").on(t.status)],
+);
+
+export const stockCountLines = sqliteTable(
+  "stock_count_lines",
+  {
+    countId: text("count_id")
+      .notNull()
+      .references(() => stockCounts.id, { onDelete: "cascade" }),
+    batchId: text("batch_id").notNull(),
+    medicineId: text("medicine_id").notNull(),
+    systemStrip: integer("system_strip").notNull().default(0),
+    systemLoose: integer("system_loose").notNull().default(0),
+    countedStrip: integer("counted_strip"),
+    countedLoose: integer("counted_loose"),
+    countedBy: text("counted_by").notNull().default(""),
+    countedAt: text("counted_at"),
+  },
+  (t) => [uniqueIndex("stock_count_lines_pk").on(t.countId, t.batchId)],
+);
