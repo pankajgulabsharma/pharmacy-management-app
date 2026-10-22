@@ -20,6 +20,10 @@ import {
 } from "@medicare/domain/purchases/draft";
 import { purchaseToStockReceipt } from "@medicare/domain/purchases/receipt";
 import {
+  byInvoice,
+  type ExpiryReturnInput,
+} from "@medicare/domain/purchases/expiryReturns";
+import {
   buildPurchaseReturn,
   getReturnableLines,
   nextReturnNo,
@@ -269,7 +273,59 @@ export function createPurchaseReturn(
   input: PurchaseReturnInput,
   now = new Date(),
 ) {
+  return writeTx(raw, () => returnOne(raw, input, now));
+}
+
+/**
+ * Expiry return: one supplier, many invoices — one debit note per
+ * invoice, all or nothing.
+ */
+export function createExpiryReturn(
+  raw: DatabaseSync,
+  input: ExpiryReturnInput,
+  now = new Date(),
+) {
   return writeTx(raw, () => {
+    const groups = byInvoice(input.items);
+    if (!groups.size) throw new RuleError("Pick at least one item to return");
+    const rets: PurchaseReturn[] = [];
+    const patch: Required<
+      Pick<ShopPatch, "purchaseReturns" | "purchases" | "batches" | "movements">
+    > = { purchaseReturns: [], purchases: [], batches: [], movements: [] };
+    for (const [purchaseId, lines] of groups) {
+      const p = getPurchase(raw, purchaseId);
+      if (p.supplierId !== input.supplierId)
+        throw new RuleError(
+          `Invoice ${p.invoiceNo} is from ${p.supplierName} — return one supplier at a time`,
+        );
+      const out = returnOne(
+        raw,
+        {
+          purchaseId,
+          date: input.date,
+          reason: input.reason,
+          notes: input.notes,
+          lines,
+        },
+        now,
+      );
+      rets.push(out.ret);
+      patch.purchaseReturns.push(...(out.patch.purchaseReturns ?? []));
+      patch.purchases.push(...(out.patch.purchases ?? []));
+      // A batch on two invoices: keep its last state only
+      for (const b of out.patch.batches ?? []) {
+        const i = patch.batches.findIndex((x) => x.id === b.id);
+        if (i >= 0) patch.batches[i] = b;
+        else patch.batches.push(b);
+      }
+      patch.movements.push(...(out.patch.movements ?? []));
+    }
+    return { returns: rets, patch: patch satisfies ShopPatch };
+  });
+}
+
+function returnOne(raw: DatabaseSync, input: PurchaseReturnInput, now: Date) {
+  {
     const purchase = getPurchase(raw, input.purchaseId);
     enforce(canReturnPurchase(purchase));
     const returns = loadPurchaseReturns(raw, "purchase_id = ?", [purchase.id]);
@@ -314,5 +370,5 @@ export function createPurchaseReturn(
         ...saved,
       } satisfies ShopPatch,
     };
-  });
+  }
 }

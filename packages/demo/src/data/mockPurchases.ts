@@ -219,7 +219,33 @@ function generate(): Purchase[] {
   return out;
 }
 
-export const mockPurchases: Purchase[] = generate();
+/**
+ * A few short-dated lines on the oldest invoices in stock, so the
+ * Expiry return screen has something to send back (supplier by supplier).
+ * Done after generating, so every other demo value stays the same.
+ */
+function shortDated(list: Purchase[]): Purchase[] {
+  const today = new Date();
+  const mmyy = (ahead: number) => {
+    const d = new Date(today.getFullYear(), today.getMonth() + ahead, 1);
+    return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getFullYear() % 100).padStart(2, "0")}`;
+  };
+  const posted = list.filter((p) => p.stockPosted);
+  const plan: [number, number, number][] = [
+    // [posted invoice (newest = 0), line, months ahead]
+    [STOCK_POSTED_COUNT - 1, 0, 1],
+    [STOCK_POSTED_COUNT - 1, 1, 2],
+    [STOCK_POSTED_COUNT - 2, 0, 2],
+    [STOCK_POSTED_COUNT - 4, 0, 1],
+  ];
+  for (const [pi, li, ahead] of plan) {
+    const line = posted[pi]?.lines[li];
+    if (line) line.expiry = mmyy(ahead);
+  }
+  return list;
+}
+
+export const mockPurchases: Purchase[] = shortDated(generate());
 
 /** "2026-10-17T03:39:00" in the computer's own time (like the planned ones) */
 function localStamp(d: Date) {

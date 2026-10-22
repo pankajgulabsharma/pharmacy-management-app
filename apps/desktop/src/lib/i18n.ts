@@ -324,4 +324,17 @@ export function tr(
   return i18n.t(text, { ns: "ui", defaultValue: text, ...vars });
 }
 
+/**
+ * A count with the right word: trn(1, "1 item", "{{n}} items") → "1 item".
+ * Both forms are UI texts of their own (Hindi needs only the second).
+ */
+export function trn(
+  n: number,
+  one: string,
+  many: string,
+  vars?: Record<string, string | number>,
+): string {
+  return n === 1 ? tr(one, vars) : tr(many, { ...vars, n });
+}
+
 export default i18n;

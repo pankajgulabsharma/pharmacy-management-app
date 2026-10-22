@@ -249,6 +249,19 @@ export function shopRoutes(
       ),
   );
 
+  app.post("/api/purchase-returns/expiry", async (req, reply) =>
+    reply
+      .code(201)
+      .send(
+        write(() =>
+          purchases.createExpiryReturn(
+            raw,
+            s.parse(s.expiryReturnInput, req.body),
+          ),
+        ),
+      ),
+  );
+
   // Billing
   app.post("/api/sales", async (req, reply) =>
     reply

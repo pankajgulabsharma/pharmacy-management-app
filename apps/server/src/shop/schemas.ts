@@ -155,6 +155,28 @@ export const purchaseReturnInput = z
   })
   .strict();
 
+/** Expiry return: one supplier, lines from several invoices */
+export const expiryReturnInput = z
+  .object({
+    supplierId: id,
+    date: str(10),
+    reason: z.enum(["expired", "near_expiry"]),
+    notes: str(400),
+    items: z
+      .array(
+        z
+          .object({
+            purchaseId: id,
+            purchaseLineId: id,
+            qty: z.number().int().positive().max(100_000),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(500),
+  })
+  .strict();
+
 /** Import from a file (Excel / Marg / Tally): medicines + opening stock */
 export const importInput = z
   .object({

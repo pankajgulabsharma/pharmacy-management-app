@@ -1,3 +1,4 @@
+import type { ExpiryReturnInput } from "@medicare/domain/purchases/expiryReturns";
 import type { OpeningDueInput } from "@medicare/domain/purchases/opening";
 import { create } from "zustand";
 import { checkReversal } from "@medicare/domain/inventory/ledger";
@@ -36,6 +37,8 @@ type PurchaseState = {
   ) => Promise<Purchase>;
   cancelPurchase: (id: string, reason: string) => Promise<void>;
   createReturn: (input: PurchaseReturnInput) => Promise<PurchaseReturn>;
+  /** Expiry return: one supplier, a debit note per invoice */
+  createExpiryReturn: (input: ExpiryReturnInput) => Promise<PurchaseReturn[]>;
   /** fromGalla: paid in cash from the drawer (cash out in the galla) */
   recordPayment: (
     id: string,
@@ -112,6 +115,14 @@ export const usePurchaseStore = create<PurchaseState>()((set) => ({
         input,
       )
     ).ret,
+  createExpiryReturn: async (input) =>
+    (
+      await send<{ returns: PurchaseReturn[]; patch: ShopPatch }>(
+        "POST",
+        "/api/purchase-returns/expiry",
+        input,
+      )
+    ).returns,
   recordPayment: async (id, amountPaise, fromGalla) => {
     await send("POST", `/api/purchases/${encodeURIComponent(id)}/payments`, {
       amountPaise,

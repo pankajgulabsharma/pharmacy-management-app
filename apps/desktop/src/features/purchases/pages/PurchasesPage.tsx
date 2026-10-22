@@ -1,3 +1,8 @@
+import { useNavigate } from "react-router-dom";
+import { CalendarX } from "lucide-react";
+import { tr } from "@/lib/i18n";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { useExpiryItems } from "../expiry/useExpiryItems";
 import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import {
   useCallback,
@@ -90,6 +95,10 @@ export default function PurchasesPage() {
   const recordPayment = usePurchaseStore((s) => s.recordPayment);
   const suppliers = useSupplierStore((s) => s.suppliers);
   const medicines = useMedicinesWithStock();
+  const navigate = useNavigate();
+  // Suppliers with expired / short-dated stock to send back
+  const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
+  const expiryCount = useExpiryItems(expiringDays).groups.length;
 
   // Dashboard links like /purchases?status=overdue or ?new=1
   const intent = useUrlIntent();
@@ -343,14 +352,30 @@ export default function PurchasesPage() {
         title="Purchases"
         subtitle="Supplier invoices · returns · payments"
         actions={
-          <Button
-            type="button"
-            onClick={openNew}
-            className="h-9 rounded-lg text-[12px] gap-1.5"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New purchase
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/purchases/expiry")}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <CalendarX className="h-3.5 w-3.5" />
+              {tr("Expiry return")}
+              {expiryCount ? (
+                <span className="rounded-full bg-rose-500/15 px-1.5 text-[10px] font-semibold text-rose-600">
+                  {expiryCount}
+                </span>
+              ) : null}
+            </Button>
+            <Button
+              type="button"
+              onClick={openNew}
+              className="h-9 rounded-lg text-[12px] gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New purchase
+            </Button>
+          </>
         }
       />
 

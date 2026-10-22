@@ -1,5 +1,7 @@
 import { useId } from "react";
-import { FileMinus, X } from "lucide-react";
+import { FileMinus, Printer, X } from "lucide-react";
+import { tr } from "@/lib/i18n";
+import { printDebitNote } from "../expiry/printDebitNote";
 import { ModalShell } from "@/components/common/ModalShell";
 import { CodeChip } from "@/components/common/CodeChip";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -46,14 +48,24 @@ export function ReturnDetailsDialog({ ret, onClose }: Props) {
             {RETURN_REASONS[ret.reason]}
           </StatusBadge>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => printDebitNote([ret])}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-[11px] font-medium hover:bg-muted"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            {tr("Print")}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto p-4 space-y-3">

@@ -28,6 +28,9 @@ const PurchasesPage = lazyPage(
 const InventoryPage = lazyPage(
   () => import("@/features/inventory/pages/InventoryPage"),
 );
+const ExpiryReturnPage = lazyPage(
+  () => import("@/features/purchases/expiry/ExpiryReturnPage"),
+);
 const StockCountPage = lazyPage(
   () => import("@/features/stockCount/StockCountPage"),
 );
@@ -70,6 +73,14 @@ export const router = createBrowserRouter([
         element: (
           <Allowed perm="purchases">
             <PurchasesPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: "purchases/expiry",
+        element: (
+          <Allowed perm="purchases">
+            <ExpiryReturnPage />
           </Allowed>
         ),
       },

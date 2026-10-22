@@ -35,7 +35,6 @@ import { Button } from "@/components/ui/button";
 import { useCan } from "@/features/auth/store/useAuthStore";
 import { useInventoryRows } from "@/features/inventory/hooks/useInventoryRows";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { usePrintPrefs } from "@/features/printing/usePrintPrefs";
 import { printHtml } from "@/lib/print";
 import { tr } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -55,7 +54,6 @@ export function CountView() {
   const close = useStockCountStore((s) => s.close);
   const canEdit = useCan("stock");
   const shop = useSettingsStore((s) => s.shop);
-  const printer = usePrintPrefs((p) => p.printer);
   const inventory = useInventoryRows();
   const { count, lines } = current;
   const editable = canEdit && count.status === "open";
@@ -138,7 +136,7 @@ export function CountView() {
         blind,
         summary,
       }),
-      printer,
+      // A4 sheet: the print dialog asks which printer
     }).catch((e: Error) => toast.error(e.message));
 
   const act = async () => {
