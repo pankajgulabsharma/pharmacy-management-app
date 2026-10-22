@@ -16,11 +16,7 @@ import { BatchExpiry } from "./BatchExpiry";
 import { BillPickList, ReturnsDoneList } from "./ReturnLists";
 import { tr } from "@/lib/i18n";
 import { fieldClass } from "@/components/common/formStyles";
-import {
-  inrFromPaise,
-  roundToRupee,
-  signedInrFromPaise,
-} from "@medicare/domain/lib/money";
+import { inrFromPaise, signedInrFromPaise } from "@medicare/domain/lib/money";
 import { useSalesStore } from "../store/useSalesStore";
 import { saleSearch } from "@medicare/domain/billing/search";
 import { upsertById } from "@medicare/domain/shop/patch";
@@ -35,6 +31,7 @@ import {
 } from "@medicare/domain/billing/types";
 import {
   getReturnableSaleLines,
+  refundFor,
   returnAmount,
 } from "@medicare/domain/billing/saleReturn";
 
@@ -209,9 +206,8 @@ export function SalesReturnPanel({ onClose, initialSaleId = null }: Props) {
       any = true;
       raw += returnAmount(r.line, q.strip, q.loose);
     }
-    const { rounded, roundOff } = roundToRupee(raw);
-    const remaining = sale ? sale.totals.netPaise - sale.returnedPaise : 0;
-    return { any, roundOff, refund: Math.min(rounded, remaining) };
+    if (!sale) return { any, roundOff: 0, refund: 0 };
+    return { any, ...refundFor(sale, raw) };
   }, [rows, qty, sale]);
 
   const pickSale = (s: Sale) => {

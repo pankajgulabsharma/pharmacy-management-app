@@ -1,6 +1,7 @@
 import type { DoctorInfo } from "../doctors/doctor";
 import type { PaymentMethod } from "../billing/types";
 import type { RoleAccess } from "../auth/permissions";
+import type { LoyaltySettings } from "../customers/loyalty";
 
 export type ShopProfile = {
   name: string;
@@ -50,6 +51,8 @@ export type Settings = {
   counters: string[];
   /** What pharmacists and cashiers may do (the owner decides) */
   roles: RoleAccess;
+  /** Points for saved customers (off by default) */
+  loyalty: LoyaltySettings;
 };
 
 export const SETTINGS_LIMITS = {

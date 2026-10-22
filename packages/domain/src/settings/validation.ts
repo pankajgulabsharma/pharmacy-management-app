@@ -1,3 +1,4 @@
+import { cleanLoyalty } from "../customers/loyalty";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../billing/types";
 import { cleanRoleAccess } from "../auth/permissions";
 import { cleanPrefix } from "../lib/docNo";
@@ -189,6 +190,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     doctorInfo: cleanDoctorInfo(r.doctorInfo, doctors),
     counters: safeCounters,
     roles: cleanRoleAccess(r.roles),
+    loyalty: cleanLoyalty(r.loyalty),
   };
 }
 

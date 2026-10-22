@@ -2,6 +2,11 @@
  * Building and validating a sale — pure, re-checked on save even though
  * the screen validates too (never trust the caller).
  */
+import {
+  checkRedeem,
+  earnedPoints,
+  type LoyaltySettings,
+} from "../customers/loyalty";
 import { scheduleRule } from "../medicines/schedule";
 import type { StockBatch, StockChangeLine } from "../inventory/types";
 import type { Medicine } from "../medicines/types";
@@ -20,6 +25,7 @@ import {
   type SaleInput,
   type SaleLine,
   type SalePayment,
+  type SaleTotals,
 } from "./types";
 import {
   allocateFefo,
@@ -202,6 +208,59 @@ function toSalePayment(p: PaymentDraft, netPaise: Paise): SalePayment {
 }
 
 /**
+ * Loyalty on a bill (shared by the billing screen and the server):
+ * points used come off the total (GST on the lines is unchanged), points
+ * are earned on what is left to pay. Saved customers only.
+ */
+export function applyLoyalty(
+  lineTotals: SaleTotals,
+  customerId: string | null,
+  redeemPoints: number,
+  loyalty?: { settings: LoyaltySettings; balance: number },
+): {
+  totals: SaleTotals;
+  earned: number;
+  redeemed: number;
+  balanceAfter: number;
+  error: string | null;
+} {
+  const none = { totals: lineTotals, earned: 0, redeemed: 0, balanceAfter: 0 };
+  if (!loyalty?.settings.enabled || !customerId)
+    return {
+      ...none,
+      error: !redeemPoints
+        ? null
+        : loyalty?.settings.enabled
+          ? "Pick the customer's account to use points"
+          : "Loyalty points are switched off",
+    };
+  const s = loyalty.settings;
+  const error = checkRedeem(
+    redeemPoints,
+    loyalty.balance,
+    lineTotals.netPaise,
+    s,
+  );
+  if (error) return { ...none, error };
+  const pointsPaise = redeemPoints * s.pointValuePaise;
+  const totals: SaleTotals = pointsPaise
+    ? {
+        ...lineTotals,
+        pointsPaise,
+        netPaise: lineTotals.netPaise - pointsPaise,
+      }
+    : lineTotals;
+  const earned = earnedPoints(totals.netPaise, s);
+  return {
+    totals,
+    earned,
+    redeemed: redeemPoints,
+    balanceAfter: loyalty.balance - redeemPoints + earned,
+    error: null,
+  };
+}
+
+/**
  * Validates everything and builds the Sale plus the exact stock change.
  * The caller applies the stock change first and stores the sale after.
  */
@@ -215,6 +274,8 @@ export function buildSale(
   shopGstin = "",
   /** Composition scheme: a Bill of Supply, no GST */
   composition = false,
+  /** Loyalty settings and the customer's points before this bill */
+  loyalty?: { settings: LoyaltySettings; balance: number },
 ): { sale: Sale; change: StockChangeLine[] } {
   if (input.cart.length === 0) throw new SaleError("Add at least one medicine");
   if (input.cart.length > BILLING_LIMITS.maxLines) {
@@ -247,12 +308,20 @@ export function buildSale(
     throw new SaleError(
       "A composition shop can't bill a buyer from another state",
     );
-  const totals = calcSaleTotals(lines);
+  const lineTotals = calcSaleTotals(lines);
   // Another state: the whole GST is IGST (shown as such on the bill)
   if (b2b.interstate) {
-    totals.cgstPaise = 0;
-    totals.sgstPaise = 0;
+    lineTotals.cgstPaise = 0;
+    lineTotals.sgstPaise = 0;
   }
+  const points = applyLoyalty(
+    lineTotals,
+    input.customerId ?? null,
+    input.redeemPoints ?? 0,
+    loyalty,
+  );
+  if (points.error) throw new SaleError(points.error);
+  const { totals } = points;
   const payErr = validatePayment(
     input.payment,
     totals.netPaise,
@@ -280,6 +349,13 @@ export function buildSale(
       returnedPaise: 0,
       ...b2b,
       ...(composition ? { billOfSupply: true } : {}),
+      ...(points.earned || points.redeemed
+        ? {
+            pointsEarned: points.earned,
+            pointsRedeemed: points.redeemed,
+            pointsBalance: points.balanceAfter,
+          }
+        : {}),
       ...(input.patientAddress?.trim()
         ? { patientAddress: cleanText(input.patientAddress, 160) }
         : {}),

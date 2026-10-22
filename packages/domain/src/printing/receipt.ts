@@ -130,6 +130,19 @@ const schMark = (l: { schedule?: string }) =>
 export const COMPOSITION_NOTE =
   "Composition taxable person, not eligible to collect tax on supplies";
 
+/** "Points: +12 earned · 140 balance" (loyalty bills only) */
+export function pointsLine(sale: Sale): string {
+  if (!sale.pointsEarned && !sale.pointsRedeemed) return "";
+  return [
+    sale.pointsEarned ? `Points earned +${sale.pointsEarned}` : "",
+    sale.pointsBalance !== undefined
+      ? `Points balance ${sale.pointsBalance}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 export function receiptHtml(input: ReceiptInput): string {
   return isThermal(input.format) ? thermal(input) : sheet(input);
 }
@@ -183,11 +196,13 @@ ${kv("Items", String(sale.lines.length))}${kv("Subtotal", money(t.grossPaise))}
 ${t.discountPaise ? kv("Discount", `-${money(t.discountPaise)}`) : ""}
 ${bos ? "" : `${kv("Taxable value", money(t.taxablePaise))}${sale.interstate ? kv("IGST", money(t.gstPaise)) : `${kv("CGST", money(t.cgstPaise))}${kv("SGST", money(t.sgstPaise))}`}`}
 ${t.roundOffPaise ? kv("Round off", `${t.roundOffPaise > 0 ? "+" : "-"}${money(Math.abs(t.roundOffPaise))}`) : ""}
+${t.pointsPaise ? kv(`Points used (${sale.pointsRedeemed ?? 0})`, `-${money(t.pointsPaise)}`) : ""}
 ${kv("TOTAL", `Rs ${money(t.netPaise)}`, "total")}
 ${bos ? "" : `<div class="small">(Prices include GST)</div>`}
 <div class="rule"></div>${paymentRows(sale)
     .map(([k, v]) => kv(k, v))
     .join("")}
+${pointsLine(sale) ? `<div class="rule"></div><div class="c">${esc(pointsLine(sale))}</div>` : ""}
 <div class="rule"></div>${footer ? `<div class="foot">${esc(footer)}</div>` : ""}`;
   return page(`Bill ${sale.billNo}`, css, body);
 }
@@ -248,6 +263,14 @@ ${bos ? "" : `<td class="r">${l.gstPercent}%</td>`}
           ],
         ] as [string, string][])
       : []),
+    ...(t.pointsPaise
+      ? ([
+          [
+            `Points used (${sale.pointsRedeemed ?? 0})`,
+            `-${money(t.pointsPaise)}`,
+          ],
+        ] as [string, string][])
+      : []),
   ];
   const css = `
 @page { size: ${a5 ? "A5" : "A4"}; margin: ${a5 ? 8 : 12}mm; }
@@ -286,7 +309,9 @@ tr { page-break-inside: avoid; }`;
 ${bos ? `<div class="mut"><b>${COMPOSITION_NOTE}</b></div>` : `<table class="gst"><thead><tr><th>GST</th><th>Taxable</th>${igst ? "<th>IGST</th>" : "<th>CGST</th><th>SGST</th>"}<th>Total GST</th></tr></thead><tbody>${gst}</tbody></table>`}
 <div style="margin-top:6px">${paymentRows(sale)
     .map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`)
-    .join(" · ")}</div></div>
+    .join(
+      " · ",
+    )}</div>${pointsLine(sale) ? `<div style="margin-top:4px">${esc(pointsLine(sale))}</div>` : ""}</div>
 <table class="tot">${totals.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="r">${v}</td></tr>`).join("")}
 <tr class="net"><td>Net amount</td><td class="r">Rs ${money(t.netPaise)}</td></tr></table></div>
 <div class="words">${esc(rupeesInWords(t.netPaise))}</div>

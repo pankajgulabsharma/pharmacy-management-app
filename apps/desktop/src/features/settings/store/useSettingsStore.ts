@@ -8,6 +8,7 @@ import type {
   ShopProfile,
 } from "@medicare/domain/settings/types";
 import type { RoleAccess } from "@medicare/domain/auth/permissions";
+import type { LoyaltySettings } from "@medicare/domain/customers/loyalty";
 import { apiGet, apiRequest } from "@/lib/api";
 
 /**
@@ -28,6 +29,7 @@ type SettingsState = Settings & {
   ) => Promise<void>;
   setCounters: (counters: string[]) => Promise<void>;
   setRoles: (roles: RoleAccess) => Promise<void>;
+  updateLoyalty: (loyalty: LoyaltySettings) => Promise<void>;
   resetToDefaults: () => Promise<void>;
 };
 
@@ -54,9 +56,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     save(doctorInfo ? { doctors, doctorInfo } : { doctors }),
   setCounters: (counters) => save({ counters }),
   setRoles: (roles) => save({ roles }),
+  updateLoyalty: (loyalty) => save({ loyalty }),
   // The shop's own details (name, address, GSTIN, licence) are kept
-  resetToDefaults: () =>
-    save({ ...DEFAULT_SETTINGS, shop: get().shop }),
+  resetToDefaults: () => save({ ...DEFAULT_SETTINGS, shop: get().shop }),
 }));
 
 /* Read-outside-React helpers (pure utils use these as defaults) */

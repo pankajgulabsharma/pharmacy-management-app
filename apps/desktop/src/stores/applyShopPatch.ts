@@ -47,4 +47,8 @@ export function applyShopPatch(p: ShopPatch) {
       payments: upsertById(s.payments, p.customerPayments),
     }));
   }
+  if (p.points)
+    useCustomerStore.setState((s) => ({
+      points: { ...s.points, ...p.points },
+    }));
 }

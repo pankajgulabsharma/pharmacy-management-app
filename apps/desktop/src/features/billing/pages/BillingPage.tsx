@@ -47,6 +47,7 @@ import {
 } from "../store/useBillTabsStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useSalesStore } from "../store/useSalesStore";
+import { useBillPoints } from "../hooks/useBillPoints";
 import {
   useBillView,
   useBarcodeLookup,
@@ -187,6 +188,15 @@ export default function BillingPage() {
   const results = useSellableSearch(deferredQuery);
   const byBarcode = useBarcodeLookup();
   const bill = useBillView(cart);
+  // Loyalty: the account the bill goes on (udhaar → the udhaar account)
+  const pointsAccount =
+    payment.method === "udhaar" ? udhaarCustomerId : customerId;
+  const billPoints = useBillPoints(
+    pointsAccount,
+    bill.totals,
+    draft.usePoints === true,
+  );
+  const totals = billPoints.totals;
   const billPrefix = useSettingsStore((s) => s.billing.billPrefix);
   const billNo = useMemo(
     () => nextBillNo(sales, billPrefix),
@@ -223,13 +233,14 @@ export default function BillingPage() {
     if (billCustomer.error) return billCustomer.error;
     return validatePayment(
       payment,
-      bill.totals.netPaise,
+      totals.netPaise,
       customerName,
       udhaarCustomerId,
     );
   }, [
     cart.length,
     bill,
+    totals,
     payment,
     customerName,
     doctor,
@@ -362,7 +373,7 @@ export default function BillingPage() {
   /* ---------------- bill tabs ---------------- */
 
   // The tab label shows each bill's total
-  const netPaise = bill.totals.netPaise;
+  const netPaise = totals.netPaise;
   useEffect(() => {
     if (draft.netPaise !== netPaise) updateDraft(draft.id, { netPaise });
   }, [draft.id, draft.netPaise, netPaise, updateDraft]);
@@ -412,6 +423,7 @@ export default function BillingPage() {
           ...(needsAddress && billCustomer.address.trim()
             ? { patientAddress: billCustomer.address }
             : {}),
+          ...(billPoints.redeem ? { redeemPoints: billPoints.redeem } : {}),
         });
         // Mobile / address changed on the bill → the customer's account too
         const notUpdated = await billCustomer.saveBack();
@@ -453,6 +465,7 @@ export default function BillingPage() {
       customerId,
       needsAddress,
       billCustomer,
+      billPoints.redeem,
     ],
   );
 
@@ -917,7 +930,9 @@ export default function BillingPage() {
               customerGstin.slice(0, 2) !== shopGstin.slice(0, 2)
             }
             lines={bill.lines}
-            totals={bill.totals}
+            totals={totals}
+            points={billPoints.points}
+            onUsePoints={(use) => updateDraft(draft.id, { usePoints: use })}
             payment={payment}
             onPaymentChange={setPayment}
             blockReason={blockReason}
@@ -927,7 +942,7 @@ export default function BillingPage() {
             udhaarSlot={
               <CustomerAccountPicker
                 customerId={udhaarCustomerId}
-                netPaise={bill.totals.netPaise}
+                netPaise={totals.netPaise}
                 initialQuery={customerName}
                 onChange={(c) =>
                   updateDraft(

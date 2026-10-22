@@ -37,7 +37,7 @@ import {
 import * as t from "../db/schema";
 import { insertRows, updateRow, writeTx } from "../db/sync";
 import { loadSettings } from "../routes/settings";
-import { customerById, owedBy } from "./customers";
+import { customerById, owedBy, pointsBalanceOf } from "./customers";
 import { usedNumbers } from "./docNumbers";
 import { NotFoundError } from "./errors";
 
@@ -82,6 +82,12 @@ export function completeSale(
       now,
       settings.shop.gstin,
       settings.shop.gstScheme === "composition",
+      linked
+        ? {
+            settings: settings.loyalty,
+            balance: pointsBalanceOf(raw, linked.id),
+          }
+        : undefined,
     );
     const { change } = built;
     const sale: Sale = billedBy ? { ...built.sale, billedBy } : built.sale;
@@ -107,7 +113,18 @@ export function completeSale(
     });
     const saved = saveStock(raw, before, r.batches, r.movements);
     insertSale(raw, sale);
-    return { sale, patch: { sales: [sale], ...saved } satisfies ShopPatch };
+    const points =
+      sale.customerId && (sale.pointsEarned || sale.pointsRedeemed)
+        ? {
+            points: {
+              [sale.customerId]: pointsBalanceOf(raw, sale.customerId),
+            },
+          }
+        : {};
+    return {
+      sale,
+      patch: { sales: [sale], ...saved, ...points } satisfies ShopPatch,
+    };
   });
 }
 
@@ -155,6 +172,13 @@ export function createSaleReturn(
         saleReturns: [ret],
         sales: [updated],
         ...saved,
+        ...(sale.customerId && (ret.pointsReversed || ret.pointsRestored)
+          ? {
+              points: {
+                [sale.customerId]: pointsBalanceOf(raw, sale.customerId),
+              },
+            }
+          : {}),
       } satisfies ShopPatch,
     };
   });

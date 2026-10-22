@@ -93,8 +93,16 @@ export function billMessage(
     ...(t.discountPaise > 0
       ? [`🏷️ You saved: ₹${formatPaise(t.discountPaise)}`]
       : []),
+    ...(t.pointsPaise
+      ? [`⭐ Points used: ₹${formatPaise(t.pointsPaise)}`]
+      : []),
     `💰 *TOTAL: ₹${formatPaise(t.netPaise)}*`,
     ...(sale.payment?.method ? [PAYMENT[sale.payment.method] ?? ""] : []),
+    ...(sale.pointsEarned || sale.pointsRedeemed
+      ? [
+          `⭐ Points: ${sale.pointsEarned ? `+${sale.pointsEarned} earned · ` : ""}${sale.pointsBalance ?? 0} balance`,
+        ]
+      : []),
     WA_LINE,
     // The shop's own note (Settings → Billing), else a friendly line
     footer.trim() ? `💊 _${footer.trim()}_ 🙏` : "💊 _Get well soon!_ 🙏",

@@ -141,6 +141,13 @@
       "when": 1792678533700,
       "tag": "0019_bill_of_supply",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792701561934,
+      "tag": "0020_loyalty_points",
+      "breakpoints": true
     }
   ]
 }

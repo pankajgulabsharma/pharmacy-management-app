@@ -149,6 +149,7 @@ function ActionButton({
 const rowKey = (r: { id: string }) => r.id;
 
 export default function CustomersPage() {
+  const points = useCustomerStore((s) => s.points);
   const customers = useCustomerStore((s) => s.customers);
   const payments = useCustomerStore((s) => s.payments);
   const sums = useCustomerSummaries();
@@ -426,8 +427,18 @@ export default function CustomersPage() {
                     )}
                   >
                     <td className="px-4 py-2.5">
-                      <p className="font-medium truncate" title={r.name}>
-                        {r.name}
+                      <p className="flex items-center gap-1.5 font-medium min-w-0">
+                        <span className="truncate" title={r.name}>
+                          {r.name}
+                        </span>
+                        {points[r.id] ? (
+                          <span
+                            title={tr("Loyalty points")}
+                            className="shrink-0 rounded bg-amber-500/10 px-1 text-[10px] font-medium tabular-nums text-amber-700 dark:text-amber-400"
+                          >
+                            ★ {points[r.id]}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="text-[10.5px] text-muted-foreground tabular-nums truncate">
                         {r.phone || tr("No mobile")}

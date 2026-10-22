@@ -2,10 +2,11 @@
  * Sales returns — goods come back to the SAME batches they were sold
  * from, and never more than was sold (minus earlier returns).
  */
+import { returnPoints } from "../customers/loyalty";
 import type { StockChangeLine } from "../inventory/types";
 import { newId } from "../lib/id";
 import { nextDocNo } from "../lib/docNo";
-import { roundToRupee } from "../lib/money";
+import { roundToRupee, type Paise } from "../lib/money";
 import { cleanText } from "../lib/sanitize";
 import {
   BILLING_LIMITS,
@@ -130,6 +131,27 @@ function backToBatches(
   return out;
 }
 
+/**
+ * Money back for items worth `itemsPaise` on this bill. Part of the bill
+ * paid with loyalty points → only the share paid in money comes back as
+ * money (the points are given back instead). Never more than is left.
+ */
+export function refundFor(
+  sale: Pick<Sale, "totals" | "returnedPaise">,
+  itemsPaise: Paise,
+): { roundOff: Paise; refund: Paise } {
+  const pointsPaise = sale.totals.pointsPaise ?? 0;
+  const raw = pointsPaise
+    ? Math.round(
+        (itemsPaise * sale.totals.netPaise) /
+          (sale.totals.netPaise + pointsPaise),
+      )
+    : itemsPaise;
+  const { rounded, roundOff } = roundToRupee(raw);
+  const remaining = sale.totals.netPaise - sale.returnedPaise;
+  return { roundOff, refund: Math.min(rounded, remaining) };
+}
+
 export function buildSaleReturn(
   sale: Sale,
   input: SaleReturnInput,
@@ -206,10 +228,14 @@ export function buildSaleReturn(
   if (lines.length === 0)
     throw new SaleReturnError("Enter a quantity for at least one item");
 
-  const raw = lines.reduce((s, l) => s + l.amountPaise, 0);
-  const { rounded, roundOff } = roundToRupee(raw);
-  const remaining = sale.totals.netPaise - sale.returnedPaise;
-  const refundPaise = Math.min(rounded, remaining);
+  const { roundOff, refund: refundPaise } = refundFor(
+    sale,
+    lines.reduce((s, l) => s + l.amountPaise, 0),
+  );
+  const points = returnPoints(
+    { ...sale, netPaise: sale.totals.netPaise },
+    refundPaise,
+  );
 
   return {
     ret: {
@@ -225,6 +251,7 @@ export function buildSaleReturn(
       lines,
       roundOffPaise: roundOff,
       refundPaise,
+      ...(points.pointsReversed || points.pointsRestored ? points : {}),
     },
     change,
   };

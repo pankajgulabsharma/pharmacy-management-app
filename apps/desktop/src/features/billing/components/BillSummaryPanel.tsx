@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { FileText } from "lucide-react";
+import { FileText, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { inrFromPaise, signedInrFromPaise } from "@medicare/domain/lib/money";
@@ -16,6 +16,7 @@ import type { BillLineView } from "../hooks/useBillingData";
 import { PaymentPanel } from "../payment/PaymentPanel";
 import { tr } from "@/lib/i18n";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import type { BillPoints } from "../hooks/useBillPoints";
 
 type Props = {
   /** Shown when paying by udhaar: the customer account picker */
@@ -25,6 +26,9 @@ type Props = {
   interstate?: boolean;
   lines: BillLineView[];
   totals: SaleTotals;
+  /** Loyalty for the customer on the bill (null = none / switched off) */
+  points?: BillPoints | null;
+  onUsePoints?: (use: boolean) => void;
   payment: PaymentDraft;
   onPaymentChange: (p: PaymentDraft) => void;
   /** Why saving is blocked right now, or null */
@@ -42,6 +46,8 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
   interstate = false,
   lines,
   totals,
+  points,
+  onUsePoints,
   payment,
   onPaymentChange,
   blockReason,
@@ -157,10 +163,22 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                 label="Round off"
                 value={signedInrFromPaise(totals.roundOffPaise)}
               />
+              {totals.pointsPaise ? (
+                <Row
+                  label={tr("Points used ({{n}})", {
+                    n: points?.using ?? 0,
+                  })}
+                  value={inrFromPaise(-totals.pointsPaise)}
+                  valueClass="text-amber-600 dark:text-amber-400"
+                />
+              ) : null}
               <div className="flex justify-between text-[12px] font-bold text-primary pt-0.5">
                 <span>Total</span>
                 <span className="tabular-nums">{inrFromPaise(net)}</span>
               </div>
+              {points ? (
+                <PointsStrip points={points} onUse={onUsePoints} />
+              ) : null}
             </div>
           </div>
         )}
@@ -244,6 +262,58 @@ function Row({
     <div className="flex justify-between gap-2">
       <span className="text-muted-foreground">{tr(label)}</span>
       <span className={cn("tabular-nums", valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+/** Customer's points: balance, what this bill earns, use / don't use */
+function PointsStrip({
+  points: p,
+  onUse,
+}: {
+  points: BillPoints;
+  onUse?: (use: boolean) => void;
+}) {
+  return (
+    <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-500/25 bg-amber-500/[0.06] px-1.5 py-1 text-[10px]">
+      <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-500" />
+      <span className="min-w-0 flex-1 truncate">
+        <span className="font-medium tabular-nums">
+          {tr("{{n}} points", { n: p.balance - p.using })}
+        </span>
+        {p.earn ? (
+          <span
+            className="text-muted-foreground"
+            title={tr("+{{n}} on this bill", { n: p.earn })}
+          >
+            {` · +${p.earn}`}
+          </span>
+        ) : null}
+      </span>
+      {p.using ? (
+        <button
+          type="button"
+          onClick={() => onUse?.(false)}
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          {tr("Don't use")}
+        </button>
+      ) : p.max ? (
+        <button
+          type="button"
+          onClick={() => onUse?.(true)}
+          className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-500/25 dark:text-amber-300"
+        >
+          {tr("Use {{n}} (−{{rs}})", {
+            n: p.max,
+            rs: inrFromPaise(p.max * p.pointValuePaise),
+          })}
+        </button>
+      ) : p.balance > 0 && p.balance < p.minRedeem ? (
+        <span className="shrink-0 text-[9px] text-muted-foreground">
+          {tr("usable from {{n}}", { n: p.minRedeem })}
+        </span>
+      ) : null}
     </div>
   );
 }

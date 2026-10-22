@@ -1,3 +1,4 @@
+import { trn } from "@/lib/i18n";
 import { isOpeningDue } from "@medicare/domain/purchases/opening";
 import { memo, useMemo, useEffect } from "react";
 import { Eye, Pencil, Truck } from "lucide-react";
@@ -236,7 +237,9 @@ const PurchaseRow = memo(function PurchaseRow({
           </p>
         ) : (
           <>
-            <p className="text-foreground">{p.totals.lineCount} items</p>
+            <p className="text-foreground">
+              {trn(p.totals.lineCount, "1 item", "{{n}} items")}
+            </p>
             <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
               {p.totals.totalQty}
               {p.totals.totalFreeQty > 0

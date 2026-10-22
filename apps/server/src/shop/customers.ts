@@ -32,6 +32,39 @@ export function customerById(raw: DatabaseSync, id: string): Customer | null {
 }
 
 /** What a customer owes right now — same ledger the Customers screen shows */
+/** Loyalty points left on a customer's account (bills − returns) */
+export function pointsBalanceOf(raw: DatabaseSync, customerId: string): number {
+  const s = raw
+    .prepare(
+      "SELECT COALESCE(SUM(points_earned - points_redeemed), 0) n FROM sales WHERE customer_id = ?",
+    )
+    .get(customerId) as { n: number };
+  const r = raw
+    .prepare(
+      `SELECT COALESCE(SUM(r.points_restored - r.points_reversed), 0) n
+       FROM sale_returns r JOIN sales s ON s.id = r.sale_id WHERE s.customer_id = ?`,
+    )
+    .get(customerId) as { n: number };
+  return s.n + r.n;
+}
+
+/** Every customer's points (only those with any) */
+export function allPointsBalances(raw: DatabaseSync): Record<string, number> {
+  const rows = raw
+    .prepare(
+      `SELECT customer_id id, SUM(n) n FROM (
+         SELECT customer_id, points_earned - points_redeemed n FROM sales
+         WHERE customer_id IS NOT NULL AND (points_earned > 0 OR points_redeemed > 0)
+         UNION ALL
+         SELECT s.customer_id, r.points_restored - r.points_reversed FROM sale_returns r
+         JOIN sales s ON s.id = r.sale_id
+         WHERE s.customer_id IS NOT NULL AND (r.points_restored > 0 OR r.points_reversed > 0)
+       ) GROUP BY customer_id`,
+    )
+    .all() as { id: string; n: number }[];
+  return Object.fromEntries(rows.map((r) => [r.id, r.n]));
+}
+
 export function owedBy(raw: DatabaseSync, customerId: string): number {
   const c = customerById(raw, customerId);
   if (!c) return 0;

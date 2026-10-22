@@ -152,6 +152,7 @@ export function shopRoutes(
   app.get("/api/customers", async () => ({
     customers: m.loadCustomers(raw),
     payments: m.loadCustomerPayments(raw),
+    points: customers.allPointsBalances(raw),
   }));
 
   // Stock

@@ -389,6 +389,12 @@ export const sales = sqliteTable(
     interstate: bool("interstate"),
     /** Composition scheme: a Bill of Supply, no GST */
     billOfSupply: bool("bill_of_supply"),
+    /** Loyalty: points earned / used on this bill, balance after it */
+    pointsEarned: paise("points_earned"),
+    pointsRedeemed: paise("points_redeemed"),
+    pointsBalance: integer("points_balance").notNull().default(0),
+    /** Value of the points used (already off net_paise) */
+    pointsPaise: paise("points_paise"),
     // totals
     itemCount: integer("item_count").notNull(),
     grossPaise: paise("gross_paise"),
@@ -497,6 +503,9 @@ export const saleReturns = sqliteTable(
     billedBy: text("billed_by").notNull().default(""),
     roundOffPaise: paise("round_off_paise"),
     refundPaise: paise("refund_paise"),
+    /** Loyalty: points taken back (earned) / given back (spent) */
+    pointsReversed: paise("points_reversed"),
+    pointsRestored: paise("points_restored"),
   },
   (t) => [
     index("sale_returns_sale_idx").on(t.saleId),

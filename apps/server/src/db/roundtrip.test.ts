@@ -10,7 +10,7 @@ import {
   demoSales,
 } from "@medicare/demo/seed";
 import { openDatabase, type Database } from "./client";
-import { seedDemoData } from "./seed";
+import { seedDemoData, withDemoPoints } from "./seed";
 import * as m from "./mappers";
 
 let database: Database;
@@ -29,7 +29,7 @@ const same = <T extends { id: string }>(a: readonly T[], b: readonly T[]) => {
 
 describe("what goes into the database comes back exactly the same", () => {
   it("sales — every line, every batch allocation, every paisa", () =>
-    same(m.loadSales(database.raw), demoSales));
+    same(m.loadSales(database.raw), withDemoPoints(demoSales)));
   it("sales returns", () =>
     same(m.loadSaleReturns(database.raw), demoSaleReturns));
   it("purchases with lines and totals (incl. a cancelled one)", () =>

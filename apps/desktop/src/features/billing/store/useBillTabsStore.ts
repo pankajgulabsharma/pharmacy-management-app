@@ -35,6 +35,8 @@ export type BillDraft = {
   /** null = a fresh payment with the default method */
   payment: PaymentDraft | null;
   udhaarCustomerId: string | null;
+  /** Loyalty: use the customer's points on this bill (as many as allowed) */
+  usePoints?: boolean;
   /** Last total shown for this bill (for the tab label) */
   netPaise: number;
 };
@@ -106,6 +108,7 @@ function cleanDrafts(v: unknown): BillDraft[] {
           ? (d.payment as PaymentDraft)
           : null,
       udhaarCustomerId: strOrNull(d.udhaarCustomerId),
+      usePoints: d.usePoints === true,
       netPaise: Number.isFinite(d.netPaise) ? (d.netPaise as number) : 0,
     }));
 }

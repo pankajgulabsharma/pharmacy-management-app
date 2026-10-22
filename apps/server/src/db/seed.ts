@@ -3,6 +3,8 @@
  * @medicare/demo with the real rules, so every number is consistent.
  * One transaction: all of it goes in, or nothing does.
  */
+import type { Sale } from "@medicare/domain/billing/types";
+import { earnedPoints } from "@medicare/domain/customers/loyalty";
 import { DEMO_SETTINGS } from "@medicare/domain/settings/defaults";
 import { mockMedicines } from "@medicare/demo/data/mockMedicines";
 import { mockSuppliers } from "@medicare/demo/data/mockSuppliers";
@@ -59,6 +61,33 @@ const demoPinHashes = () =>
     ),
   ));
 
+/** Demo customers' bills earn loyalty points (oldest first) */
+export function withDemoPoints(sales: readonly Sale[]): Sale[] {
+  const balance = new Map<string, number>();
+  const byDate = [...sales].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
+  const out = new Map<string, Sale>();
+  for (const s of byDate) {
+    const earned = s.customerId
+      ? earnedPoints(s.totals.netPaise, DEMO_SETTINGS.loyalty)
+      : 0;
+    if (!earned || !s.customerId) {
+      out.set(s.id, s);
+      continue;
+    }
+    const b = (balance.get(s.customerId) ?? 0) + earned;
+    balance.set(s.customerId, b);
+    out.set(s.id, {
+      ...s,
+      pointsEarned: earned,
+      pointsRedeemed: 0,
+      pointsBalance: b,
+    });
+  }
+  return sales.map((s) => out.get(s.id) ?? s);
+}
+
 /**
  * Puts the demo shop into the database in ONE transaction, using the same
  * mappers the server uses for every save — so seed and app can't disagree.
@@ -92,7 +121,7 @@ export async function seedDemoData({
     for (const r of demoReturns) insertPurchaseReturn(raw, r);
     insertRows(raw, t.customers, demoCustomers);
     insertRows(raw, t.customerPayments, demoCustomerPayments);
-    for (const sale of demoSales) insertSale(raw, sale);
+    for (const sale of withDemoPoints(demoSales)) insertSale(raw, sale);
     for (const r of demoSaleReturns) insertSaleReturn(raw, r);
     insertRows(raw, t.heldBills, demoHeldBills.map(heldToRow));
     insertRows(

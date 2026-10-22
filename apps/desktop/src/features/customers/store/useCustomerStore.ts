@@ -16,6 +16,8 @@ import { applyShopPatch } from "@/stores/applyShopPatch";
 type CustomerState = {
   customers: Customer[];
   payments: CustomerPayment[];
+  /** Loyalty points by customer id (only those with any) */
+  points: Record<string, number>;
   source: "none" | "server";
   loadFromServer: () => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
@@ -38,14 +40,21 @@ async function send<R extends { patch: ShopPatch }>(
 export const useCustomerStore = create<CustomerState>()((set) => ({
   customers: [],
   payments: [],
+  points: {},
   source: "none",
 
   loadFromServer: async () => {
     const r = await apiGet<{
       customers: Customer[];
       payments: CustomerPayment[];
+      points?: Record<string, number>;
     }>("/api/customers");
-    set({ customers: r.customers, payments: r.payments, source: "server" });
+    set({
+      customers: r.customers,
+      payments: r.payments,
+      points: r.points ?? {},
+      source: "server",
+    });
   },
 
   addCustomer: async (input) =>

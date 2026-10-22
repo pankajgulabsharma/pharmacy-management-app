@@ -127,6 +127,8 @@ export type SaleTotals = {
   sgstPaise: Paise;
   gstPaise: Paise;
   roundOffPaise: Paise;
+  /** Loyalty points used on the bill (already taken off netPaise) */
+  pointsPaise?: Paise;
   netPaise: Paise;
 };
 
@@ -170,6 +172,10 @@ export type Sale = {
    * no GST charged (the shop pays 1% of turnover itself)
    */
   billOfSupply?: boolean;
+  /** Loyalty: points this bill earned / used, and the balance after it */
+  pointsEarned?: number;
+  pointsRedeemed?: number;
+  pointsBalance?: number;
   /**
    * History imported from before this app tracked stock (demo: older
    * sales). Counted in reports, but never moved stock and can't be returned.
@@ -190,6 +196,8 @@ export type SaleInput = {
   customerGstin?: string;
   /** Optional: patient's address (for the H1 / X / NDPS register) */
   patientAddress?: string;
+  /** Loyalty points to use on this bill (saved customer only) */
+  redeemPoints?: number;
 };
 
 /* ------------------------------------------------------------------ */
@@ -258,6 +266,9 @@ export type SaleReturn = {
   roundOffPaise: Paise;
   /** Amount given back to the customer (rounded to the rupee) */
   refundPaise: Paise;
+  /** Loyalty: points earned on what came back (taken off) / spent on it (given back) */
+  pointsReversed?: number;
+  pointsRestored?: number;
 };
 
 export type SaleReturnInput = {

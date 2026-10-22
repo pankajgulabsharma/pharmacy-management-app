@@ -25,6 +25,8 @@ export type ShopPatch = {
   /** Deleted outright (an undone customer import) */
   customersRemoved?: string[];
   customerPayments?: CustomerPayment[];
+  /** Loyalty points balance of the customers this touched */
+  points?: Record<string, number>;
 };
 
 /**

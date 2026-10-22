@@ -1,3 +1,4 @@
+import { trn } from "@/lib/i18n";
 import { memo, useEffect } from "react";
 import { Eye, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -159,9 +160,11 @@ const ReturnRow = memo(function ReturnRow({
         <CodeChip title={r.invoiceNo}>{r.invoiceNo}</CodeChip>
       </td>
       <td className="px-3 py-2.5 align-middle whitespace-nowrap">
-        <p className="text-foreground">{r.lines.length} items</p>
+        <p className="text-foreground">
+          {trn(r.lines.length, "1 item", "{{n}} items")}
+        </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          {r.totalQty} packs
+          {trn(r.totalQty, "1 pack", "{{n}} packs")}
         </p>
       </td>
       <td className="px-3 py-2.5 align-middle">

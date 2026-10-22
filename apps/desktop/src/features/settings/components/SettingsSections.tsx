@@ -32,6 +32,7 @@ import {
 } from "@medicare/domain/settings/validation";
 import { SettingsCard } from "./SettingsCard";
 import { DoctorsEditor } from "./DoctorsEditor";
+import { LoyaltyCard } from "./LoyaltyCard";
 import { EditableList } from "./EditableList";
 
 /** Server refused / not reachable → its message */
@@ -223,152 +224,155 @@ export function BillingSection() {
   const f = useSectionForm<BillingDraft>(saved, validateBilling);
 
   return (
-    <SettingsCard
-      title="Billing"
-      description="Defaults used every time a new bill is started, and the note printed at the bottom of bills."
-      dirty={f.dirty}
-      onDiscard={f.discard}
-      onSubmit={() =>
-        saveSection(f.submit(updateBilling), "Billing settings saved")
-      }
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <FormField
-          label="Default counter"
-          htmlFor={`${id}-counter`}
-          hint="Manage counters under Doctors & counters"
-        >
-          <select
-            id={`${id}-counter`}
-            value={f.draft.defaultCounter}
-            onChange={(e) => f.set("defaultCounter", e.target.value)}
-            className={fieldClass}
+    <div className="space-y-3">
+      <SettingsCard
+        title="Billing"
+        description="Defaults used every time a new bill is started, and the note printed at the bottom of bills."
+        dirty={f.dirty}
+        onDiscard={f.discard}
+        onSubmit={() =>
+          saveSection(f.submit(updateBilling), "Billing settings saved")
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FormField
+            label="Default counter"
+            htmlFor={`${id}-counter`}
+            hint="Manage counters under Doctors & counters"
           >
-            {counters.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </FormField>
-        <div className="space-y-1">
-          <span className="block text-[11px] font-medium text-foreground">
-            Default payment method
-          </span>
-          <div
-            className="grid grid-cols-3 gap-1 p-0.5"
-            role="radiogroup"
-            aria-label="Default payment method"
-          >
-            {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map(
-              (m) => (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={f.draft.defaultPaymentMethod === m}
-                  onClick={() => f.set("defaultPaymentMethod", m)}
-                  className={cn(
-                    "h-8 rounded-md border text-[11px] font-medium",
-                    f.draft.defaultPaymentMethod === m
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {PAYMENT_METHOD_LABELS[m]}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
-        <FormField
-          label="Bill number prefix"
-          htmlFor={`${id}-prefix`}
-          error={f.errors.billPrefix}
-          hint={`Bills look like ${formatDocNo(f.draft.billPrefix || "INV", financialYear(), 1)} — the count starts again at 0001 every 1 April`}
-          className="sm:col-span-2"
-        >
-          <Input
-            id={`${id}-prefix`}
-            value={f.draft.billPrefix}
-            maxLength={5}
-            onChange={(e) =>
-              f.set(
-                "billPrefix",
-                e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
-              )
-            }
-            className={cn(
-              fieldClass,
-              "w-32 font-mono",
-              f.errors.billPrefix && invalidFieldClass,
-            )}
-          />
-        </FormField>
-        <FormField
-          label="Default udhaar limit for new customers (₹)"
-          htmlFor={`${id}-udhaar`}
-          hint="Filled in for every new customer — change it per customer anytime. Empty or 0 = no limit"
-          className="sm:col-span-2"
-        >
-          <Input
-            id={`${id}-udhaar`}
-            inputMode="numeric"
-            value={
-              f.draft.defaultUdhaarLimitPaise
-                ? String(Math.round(f.draft.defaultUdhaarLimitPaise / 100))
-                : ""
-            }
-            placeholder="No limit"
-            maxLength={7}
-            onChange={(e) =>
-              f.set(
-                "defaultUdhaarLimitPaise",
-                Math.min(
-                  L.maxUdhaarLimitPaise,
-                  (Number(e.target.value.replace(/\D/g, "")) || 0) * 100,
+            <select
+              id={`${id}-counter`}
+              value={f.draft.defaultCounter}
+              onChange={(e) => f.set("defaultCounter", e.target.value)}
+              className={fieldClass}
+            >
+              {counters.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <div className="space-y-1">
+            <span className="block text-[11px] font-medium text-foreground">
+              Default payment method
+            </span>
+            <div
+              className="grid grid-cols-3 gap-1 p-0.5"
+              role="radiogroup"
+              aria-label="Default payment method"
+            >
+              {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map(
+                (m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={f.draft.defaultPaymentMethod === m}
+                    onClick={() => f.set("defaultPaymentMethod", m)}
+                    className={cn(
+                      "h-8 rounded-md border text-[11px] font-medium",
+                      f.draft.defaultPaymentMethod === m
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {PAYMENT_METHOD_LABELS[m]}
+                  </button>
                 ),
-              )
-            }
-            className={cn(fieldClass, "w-40 tabular-nums")}
-          />
-        </FormField>
-        <FormField
-          label="Shop's UPI ID"
-          htmlFor={`${id}-upi`}
-          error={f.errors.upiId}
-          hint="Billing shows a QR with the bill amount — customers scan and pay"
-          className="sm:col-span-2"
-        >
-          <input
-            id={`${id}-upi`}
-            value={f.draft.upiId}
-            onChange={(e) =>
-              f.set("upiId", e.target.value.trim().toLowerCase())
-            }
-            placeholder="e.g. sharmamedical@okicici"
-            autoComplete="off"
-            spellCheck={false}
-            className={cn(fieldClass, "font-mono sm:w-80")}
-          />
-        </FormField>
-        <FormField
-          label="Bill footer note"
-          htmlFor={`${id}-footer`}
-          hint={`${f.draft.receiptFooter.length}/${L.footerMax} · printed at the bottom of every bill`}
-          className="sm:col-span-2"
-        >
-          <textarea
-            id={`${id}-footer`}
-            value={f.draft.receiptFooter}
-            maxLength={L.footerMax}
-            rows={2}
-            onChange={(e) => f.set("receiptFooter", e.target.value)}
-            className={cn(fieldClass, "h-auto py-2 resize-none")}
-          />
-        </FormField>
-      </div>
-    </SettingsCard>
+              )}
+            </div>
+          </div>
+          <FormField
+            label="Bill number prefix"
+            htmlFor={`${id}-prefix`}
+            error={f.errors.billPrefix}
+            hint={`Bills look like ${formatDocNo(f.draft.billPrefix || "INV", financialYear(), 1)} — the count starts again at 0001 every 1 April`}
+            className="sm:col-span-2"
+          >
+            <Input
+              id={`${id}-prefix`}
+              value={f.draft.billPrefix}
+              maxLength={5}
+              onChange={(e) =>
+                f.set(
+                  "billPrefix",
+                  e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+                )
+              }
+              className={cn(
+                fieldClass,
+                "w-32 font-mono",
+                f.errors.billPrefix && invalidFieldClass,
+              )}
+            />
+          </FormField>
+          <FormField
+            label="Default udhaar limit for new customers (₹)"
+            htmlFor={`${id}-udhaar`}
+            hint="Filled in for every new customer — change it per customer anytime. Empty or 0 = no limit"
+            className="sm:col-span-2"
+          >
+            <Input
+              id={`${id}-udhaar`}
+              inputMode="numeric"
+              value={
+                f.draft.defaultUdhaarLimitPaise
+                  ? String(Math.round(f.draft.defaultUdhaarLimitPaise / 100))
+                  : ""
+              }
+              placeholder="No limit"
+              maxLength={7}
+              onChange={(e) =>
+                f.set(
+                  "defaultUdhaarLimitPaise",
+                  Math.min(
+                    L.maxUdhaarLimitPaise,
+                    (Number(e.target.value.replace(/\D/g, "")) || 0) * 100,
+                  ),
+                )
+              }
+              className={cn(fieldClass, "w-40 tabular-nums")}
+            />
+          </FormField>
+          <FormField
+            label="Shop's UPI ID"
+            htmlFor={`${id}-upi`}
+            error={f.errors.upiId}
+            hint="Billing shows a QR with the bill amount — customers scan and pay"
+            className="sm:col-span-2"
+          >
+            <input
+              id={`${id}-upi`}
+              value={f.draft.upiId}
+              onChange={(e) =>
+                f.set("upiId", e.target.value.trim().toLowerCase())
+              }
+              placeholder="e.g. sharmamedical@okicici"
+              autoComplete="off"
+              spellCheck={false}
+              className={cn(fieldClass, "font-mono sm:w-80")}
+            />
+          </FormField>
+          <FormField
+            label="Bill footer note"
+            htmlFor={`${id}-footer`}
+            hint={`${f.draft.receiptFooter.length}/${L.footerMax} · printed at the bottom of every bill`}
+            className="sm:col-span-2"
+          >
+            <textarea
+              id={`${id}-footer`}
+              value={f.draft.receiptFooter}
+              maxLength={L.footerMax}
+              rows={2}
+              onChange={(e) => f.set("receiptFooter", e.target.value)}
+              className={cn(fieldClass, "h-auto py-2 resize-none")}
+            />
+          </FormField>
+        </div>
+      </SettingsCard>
+      <LoyaltyCard />
+    </div>
   );
 }
 

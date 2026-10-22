@@ -331,7 +331,10 @@ export function loadSales(
   );
   const lines = groupBy(lineRows, "saleId");
   return heads.map((h) => {
-    const totals = Object.fromEntries(SALE_TOTAL_KEYS.map((k) => [k, h[k]]));
+    const totals: Row = Object.fromEntries(
+      SALE_TOTAL_KEYS.map((k) => [k, h[k]]),
+    );
+    if (h.pointsPaise) totals.pointsPaise = h.pointsPaise;
     const split =
       (h.splitCashPaise as number) +
         (h.splitUpiPaise as number) +
@@ -375,6 +378,11 @@ export function loadSales(
     if (h.customerGstin) sale.customerGstin = h.customerGstin;
     if (h.interstate) sale.interstate = true;
     if (h.billOfSupply) sale.billOfSupply = true;
+    if (h.pointsEarned || h.pointsRedeemed) {
+      sale.pointsEarned = h.pointsEarned;
+      sale.pointsRedeemed = h.pointsRedeemed;
+      sale.pointsBalance = h.pointsBalance;
+    }
     if (h.patientAddress) sale.patientAddress = h.patientAddress;
     if (h.billedBy) sale.billedBy = h.billedBy;
     return sale as unknown as Sale;
@@ -430,6 +438,8 @@ export function loadSaleReturns(
       ({
         ...h,
         billedBy: (h.billedBy as string) || undefined,
+        pointsReversed: (h.pointsReversed as number) || undefined,
+        pointsRestored: (h.pointsRestored as number) || undefined,
         lines: (lines.get(h.id as string) ?? []).map(
           ({ returnId: _r, ...l }) => ({
             ...l,

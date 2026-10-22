@@ -26,6 +26,7 @@ const settingsChange = z
     doctorInfo: section.optional(),
     counters: list.optional(),
     roles: section.optional(),
+    loyalty: section.optional(),
   })
   .strict();
 

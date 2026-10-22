@@ -49,6 +49,7 @@ export const saleInput = z
     customerId: id.nullish(),
     customerGstin: str(20).optional(),
     patientAddress: str(300).optional(),
+    redeemPoints: z.number().int().min(0).max(1_000_000).optional(),
     doctor: str(200),
     counter: str(60),
     payment: z

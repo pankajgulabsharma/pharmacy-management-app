@@ -1,3 +1,4 @@
+import { DEFAULT_LOYALTY } from "../customers/loyalty";
 import { DEFAULT_BILL_PREFIX } from "../lib/docNo";
 import { DEFAULT_ROLE_ACCESS } from "../auth/permissions";
 import type { Settings } from "./types";
@@ -42,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   doctorInfo: {},
   counters: ["Counter 1"],
   roles: DEFAULT_ROLE_ACCESS,
+  loyalty: DEFAULT_LOYALTY,
 };
 
 /** The demo shop (development seed and tests) */
@@ -76,6 +78,7 @@ export const DEMO_SETTINGS: Settings = {
   counters: ["Counter 1", "Counter 2", "Counter 3"],
   // Demo only — a made-up UPI ID so the billing QR can be tried
   billing: { ...DEFAULT_SETTINGS.billing, upiId: "shreesaimedical@okaxis" },
+  loyalty: { ...DEFAULT_LOYALTY, enabled: true, minRedeem: 20 },
 };
 
 /** Shop details still missing that every bill needs (for a reminder) */
