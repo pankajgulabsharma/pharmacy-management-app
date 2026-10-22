@@ -286,6 +286,7 @@ export function saleRows(s: Sale) {
       billedBy: s.billedBy ?? "",
       customerGstin: s.customerGstin ?? "",
       interstate: s.interstate ?? false,
+      billOfSupply: s.billOfSupply ?? false,
       patientAddress: s.patientAddress ?? "",
     },
     lines: s.lines.map((l, position) => ({ ...l, saleId: s.id, position })),
@@ -373,6 +374,7 @@ export function loadSales(
     if (h.imported) sale.imported = true;
     if (h.customerGstin) sale.customerGstin = h.customerGstin;
     if (h.interstate) sale.interstate = true;
+    if (h.billOfSupply) sale.billOfSupply = true;
     if (h.patientAddress) sale.patientAddress = h.patientAddress;
     if (h.billedBy) sale.billedBy = h.billedBy;
     return sale as unknown as Sale;

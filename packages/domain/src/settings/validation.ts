@@ -42,6 +42,8 @@ export function validateShop(s: ShopProfile): Errors<ShopProfile> {
     const g = checkGstin(s.gstin);
     if (!g.ok) e.gstin = g.reason;
   }
+  if (s.gstScheme === "composition" && !s.gstin.trim())
+    e.gstScheme = "A composition shop is GST-registered — fill the GSTIN";
   if (cleanText(s.drugLicense, L.licenseMax).length < 3) {
     e.drugLicense =
       "Drug licence no. is required — it is printed on every bill";
@@ -145,6 +147,7 @@ export function sanitizeSettings(raw: unknown): Settings {
       email: str(shop.email, L.emailMax, d.shop.email).toLowerCase(),
       gstin: gstin === "" || checkGstin(gstin).ok ? gstin : d.shop.gstin,
       drugLicense: str(shop.drugLicense, L.licenseMax, d.shop.drugLicense),
+      gstScheme: shop.gstScheme === "composition" ? "composition" : "regular",
     },
     billing: {
       defaultCounter: safeCounters.includes(defaultCounter)

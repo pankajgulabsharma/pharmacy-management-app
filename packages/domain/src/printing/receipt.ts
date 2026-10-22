@@ -126,6 +126,10 @@ const schMark = (l: { schedule?: string }) =>
       ? " [NDPS]"
       : ` [Sch. ${esc(l.schedule)}]`;
 
+/** Printed on every Bill of Supply (CGST Rule 5(1)(g)) */
+export const COMPOSITION_NOTE =
+  "Composition taxable person, not eligible to collect tax on supplies";
+
 export function receiptHtml(input: ReceiptInput): string {
   return isThermal(input.format) ? thermal(input) : sheet(input);
 }
@@ -140,13 +144,14 @@ function thermal({ sale, shop, footer, format }: ReceiptInput) {
   const narrow = format === "thermal58";
   const w = narrow ? 48 : 72; // printable width of the roll
   const t = sale.totals;
+  const bos = sale.billOfSupply === true;
   const kv = (k: string, v: string, cls = "") =>
     `<div class="kv ${cls}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
   const items = sale.lines
     .map(
       (l) => `<div class="item">
   <div class="name">${esc(l.medicineName)}${schMark(l)}</div>
-  <div class="sub">${esc(batchText(l))}${l.hsn ? ` · HSN ${esc(l.hsn)}` : ""} · GST ${l.gstPercent}%${l.discountPercent ? ` · ${l.discountPercent}% off` : ""}</div>
+  <div class="sub">${esc(batchText(l))}${l.hsn ? ` · HSN ${esc(l.hsn)}` : ""}${bos ? "" : ` · GST ${l.gstPercent}%`}${l.discountPercent ? ` · ${l.discountPercent}% off` : ""}</div>
   <div class="kv"><span>${esc(qtyText(l))}</span><span>${money(l.amountPaise)}</span></div>
 </div>`,
     )
@@ -169,17 +174,17 @@ body { margin: 0; padding: 2mm ${narrow ? 1.5 : 3}mm; width: ${w + (narrow ? 3 :
 <div class="c"><div class="shop">${esc(shop.name)}</div>
 <div>${esc(shop.address)}</div><div>Ph ${esc(shop.phone)}</div>
 ${shop.gstin ? `<div>GSTIN ${esc(shop.gstin)}</div>` : ""}<div>DL ${esc(shop.drugLicense)}</div>
-<div class="b" style="margin-top:3px">TAX INVOICE</div></div>
+<div class="b" style="margin-top:3px">${bos ? "BILL OF SUPPLY" : "TAX INVOICE"}</div>${bos ? `<div class="small">${COMPOSITION_NOTE}</div>` : ""}</div>
 <div class="rule"></div>
 ${kv("Bill", sale.billNo)}${kv("Date", when(sale.createdAt))}${kv("Customer", sale.customerName)}${sale.patientAddress ? kv("Address", sale.patientAddress) : ""}${sale.customerGstin ? kv("GSTIN", sale.customerGstin) : ""}
 ${sale.doctor ? kv("Doctor", sale.doctor) : ""}${sale.counter ? kv("Counter", sale.counter) : ""}${sale.billedBy ? kv("Billed by", sale.billedBy) : ""}
 <div class="rule"></div>${items}<div class="rule"></div>
 ${kv("Items", String(sale.lines.length))}${kv("Subtotal", money(t.grossPaise))}
 ${t.discountPaise ? kv("Discount", `-${money(t.discountPaise)}`) : ""}
-${kv("Taxable value", money(t.taxablePaise))}${sale.interstate ? kv("IGST", money(t.gstPaise)) : `${kv("CGST", money(t.cgstPaise))}${kv("SGST", money(t.sgstPaise))}`}
+${bos ? "" : `${kv("Taxable value", money(t.taxablePaise))}${sale.interstate ? kv("IGST", money(t.gstPaise)) : `${kv("CGST", money(t.cgstPaise))}${kv("SGST", money(t.sgstPaise))}`}`}
 ${t.roundOffPaise ? kv("Round off", `${t.roundOffPaise > 0 ? "+" : "-"}${money(Math.abs(t.roundOffPaise))}`) : ""}
 ${kv("TOTAL", `Rs ${money(t.netPaise)}`, "total")}
-<div class="small">(Prices include GST)</div>
+${bos ? "" : `<div class="small">(Prices include GST)</div>`}
 <div class="rule"></div>${paymentRows(sale)
     .map(([k, v]) => kv(k, v))
     .join("")}
@@ -192,6 +197,7 @@ ${kv("TOTAL", `Rs ${money(t.netPaise)}`, "total")}
 function sheet({ sale, shop, footer, format }: ReceiptInput) {
   const a5 = format === "a5";
   const t = sale.totals;
+  const bos = sale.billOfSupply === true;
   const rows = sale.lines
     .map((l, i) => {
       const a = l.allocations;
@@ -207,7 +213,7 @@ function sheet({ sale, shop, footer, format }: ReceiptInput) {
 <td class="r">${mrp}</td>
 <td class="r">${rate}</td>
 <td class="r">${l.discountPercent ? `${l.discountPercent}%` : "-"}</td>
-<td class="r">${l.gstPercent}%</td>
+${bos ? "" : `<td class="r">${l.gstPercent}%</td>`}
 <td class="r">${money(l.amountPaise)}</td></tr>`;
     })
     .join("");
@@ -223,12 +229,16 @@ function sheet({ sale, shop, footer, format }: ReceiptInput) {
     ...(t.discountPaise
       ? ([["Discount", `-${money(t.discountPaise)}`]] as [string, string][])
       : []),
-    ["Taxable value", money(t.taxablePaise)],
-    ...((igst
-      ? [["IGST", money(t.gstPaise)]]
+    ...((bos
+      ? []
       : [
-          ["CGST", money(t.cgstPaise)],
-          ["SGST", money(t.sgstPaise)],
+          ["Taxable value", money(t.taxablePaise)],
+          ...(igst
+            ? [["IGST", money(t.gstPaise)]]
+            : [
+                ["CGST", money(t.cgstPaise)],
+                ["SGST", money(t.sgstPaise)],
+              ]),
         ]) as [string, string][]),
     ...(t.roundOffPaise
       ? ([
@@ -266,14 +276,14 @@ tr { page-break-inside: avoid; }`;
 <div class="shop">${esc(shop.name)}</div><div>${esc(shop.address)}</div>
 <div>Ph ${esc(shop.phone)}${shop.email ? ` · ${esc(shop.email)}` : ""}</div>
 <div>${shop.gstin ? `GSTIN ${esc(shop.gstin)} · ` : ""}DL ${esc(shop.drugLicense)}</div></div>
-<div><div class="title">TAX INVOICE</div>
+<div><div class="title">${bos ? "BILL OF SUPPLY" : "TAX INVOICE"}</div>
 <div class="r">Bill <b>${esc(sale.billNo)}</b></div><div class="r">${esc(when(sale.createdAt))}</div></div></div>
 <div class="meta"><div><b>${sale.customerGstin ? "Buyer" : "Patient / Customer"}:</b> ${esc(sale.customerName)}${sale.patientAddress ? `<br>${esc(sale.patientAddress)}` : ""}${sale.customerGstin ? `<br><b>Buyer GSTIN:</b> ${esc(sale.customerGstin)} · <b>Place of supply:</b> ${esc(placeOfSupply(sale.customerGstin))}` : ""}${sale.doctor ? `<br><b>Prescribed by:</b> ${esc(sale.doctor)}` : ""}</div>
 <div class="r">${sale.counter ? `Counter: ${esc(sale.counter)}<br>` : ""}${sale.billedBy ? `Billed by: ${esc(sale.billedBy)}` : ""}</div></div>
-<table class="items"><thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Batch</th><th>Exp</th><th>Qty</th><th>MRP</th><th>Rate</th><th>Disc</th><th>GST</th><th>Amount</th></tr></thead>
+<table class="items"><thead><tr><th>#</th><th>Product</th><th>HSN</th><th>Batch</th><th>Exp</th><th>Qty</th><th>MRP</th><th>Rate</th><th>Disc</th>${bos ? "" : "<th>GST</th>"}<th>Amount</th></tr></thead>
 <tbody>${rows}</tbody></table>
 <div class="bottom"><div>
-<table class="gst"><thead><tr><th>GST</th><th>Taxable</th>${igst ? "<th>IGST</th>" : "<th>CGST</th><th>SGST</th>"}<th>Total GST</th></tr></thead><tbody>${gst}</tbody></table>
+${bos ? `<div class="mut"><b>${COMPOSITION_NOTE}</b></div>` : `<table class="gst"><thead><tr><th>GST</th><th>Taxable</th>${igst ? "<th>IGST</th>" : "<th>CGST</th><th>SGST</th>"}<th>Total GST</th></tr></thead><tbody>${gst}</tbody></table>`}
 <div style="margin-top:6px">${paymentRows(sale)
     .map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`)
     .join(" · ")}</div></div>

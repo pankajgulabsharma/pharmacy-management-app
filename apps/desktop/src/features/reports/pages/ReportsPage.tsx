@@ -49,6 +49,7 @@ import { toISODate } from "@medicare/domain/lib/date";
 import { PeriodFilter } from "../components/PeriodFilter";
 import { ProfitCard } from "../components/ProfitCard";
 import { DeadStockCard, OrderListCard } from "../components/StockInsights";
+import { CompositionTab } from "../components/CompositionTab";
 import {
   GstTab,
   PurchasesTab,
@@ -59,6 +60,7 @@ import {
 import {
   customRange,
   describeRange,
+  inRange,
   presetRange,
   type PeriodPreset,
 } from "@medicare/domain/reports/period";
@@ -93,6 +95,9 @@ export default function ReportsPage() {
   const medicines = useMedicineStore((s) => s.medicines);
   const expiringDays = useSettingsStore((s) => s.inventory.expiringSoonDays);
   const shopGstin = useSettingsStore((s) => s.shop.gstin);
+  const composition = useSettingsStore(
+    (s) => s.shop.gstScheme === "composition",
+  );
   const doctorInfo = useSettingsStore((s) => s.doctorInfo);
 
   // Dashboard links like /reports?tab=sales&period=today
@@ -155,6 +160,13 @@ export default function ReportsPage() {
         ? gstReport(sales, saleReturns, purchases, debitNotes, range)
         : null,
     [tab, sales, saleReturns, purchases, debitNotes, range],
+  );
+  const oldInvoices = useMemo(
+    () =>
+      composition &&
+      tab === "gst" &&
+      sales.some((x) => !x.billOfSupply && inRange(x.createdAt, range)),
+    [composition, tab, sales, range],
   );
   const st = useMemo(
     () =>
@@ -290,7 +302,16 @@ export default function ReportsPage() {
           </div>
         ) : null}
         {pr ? <PurchasesTab r={pr} periodLabel={periodLabel} /> : null}
-        {gr ? (
+        {gr && composition ? (
+          <CompositionTab
+            sales={sales}
+            saleReturns={saleReturns}
+            range={range}
+            periodLabel={periodLabel}
+          />
+        ) : null}
+        {/* Tax invoices from before the switch still go in GSTR-1 / 3B */}
+        {gr && (!composition || oldInvoices) ? (
           <div className="space-y-3">
             <GstTab r={gr} periodLabel={periodLabel} />
             <GstReturns

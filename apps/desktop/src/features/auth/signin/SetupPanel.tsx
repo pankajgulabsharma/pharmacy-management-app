@@ -96,7 +96,11 @@ export function SetupPanel({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const found: typeof errors = validateShop({ ...shop, email: "" });
+    const found: typeof errors = validateShop({
+      ...shop,
+      email: "",
+      gstScheme: "regular",
+    });
     if (name.trim().length < 2) found.owner = "Enter your name";
     const pw = checkPassword(password, "admin");
     if (pw) found.password = pw;

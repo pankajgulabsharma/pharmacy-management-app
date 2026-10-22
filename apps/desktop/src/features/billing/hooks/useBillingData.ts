@@ -168,6 +168,8 @@ const ZERO: LineAmounts = {
 export function useBillView(cart: readonly CartLine[]) {
   const medicines = useMedicineStore((s) => s.medicines);
   const batches = useInventoryStore((s) => s.batches);
+  // Composition scheme: a Bill of Supply — no GST on the bill
+  const noGst = useSettingsStore((s) => s.shop.gstScheme === "composition");
   const expiringSoonDays = useSettingsStore(
     (s) => s.inventory.expiringSoonDays,
   );
@@ -210,7 +212,7 @@ export function useBillView(cart: readonly CartLine[]) {
           allocations,
           unitsPerPack(m),
           line.discountPercent,
-          m.gstPercent,
+          noGst ? 0 : m.gstPercent,
         ),
         error: stockError ?? ruleError,
         shortExpiry: allocations.some((a) =>
@@ -224,5 +226,5 @@ export function useBillView(cart: readonly CartLine[]) {
       totals: calcSaleTotals(lines.map((l) => l.amounts)),
       hasErrors: lines.some((l) => l.error !== null),
     };
-  }, [cart, medicines, batches, expiringSoonDays]);
+  }, [cart, medicines, batches, expiringSoonDays, noGst]);
 }

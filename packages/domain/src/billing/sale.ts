@@ -82,7 +82,10 @@ export function buildSaleLine(
   m: Medicine,
   batches: readonly StockBatch[],
   now: Date,
+  /** Composition scheme: no GST on the bill */
+  noGst = false,
 ): { saleLine: SaleLine; change: StockChangeLine[] } {
+  const gst = noGst ? 0 : m.gstPercent;
   const sellable = sellableBatches(batches, m.id, now);
   const { allocations, shortStrip, shortLoose } = allocateFefo(
     sellable,
@@ -105,13 +108,13 @@ export function buildSaleLine(
       hsn: m.hsn,
       unit: m.unit,
       unitsPerStrip: ups,
-      gstPercent: m.gstPercent,
+      gstPercent: gst,
       discountPercent: line.discountPercent,
       qtyStrip: line.qtyStrip,
       qtyLoose: line.qtyLoose,
       allocations,
       ...(m.schedule ? { schedule: m.schedule } : {}),
-      ...priceLine(allocations, ups, line.discountPercent, m.gstPercent),
+      ...priceLine(allocations, ups, line.discountPercent, gst),
     },
     change: allocations.map((a) => allocationDelta(a, ups)),
   };
@@ -210,6 +213,8 @@ export function buildSale(
   now: Date,
   /** This shop's GSTIN (Settings) — needed for a B2B bill */
   shopGstin = "",
+  /** Composition scheme: a Bill of Supply, no GST */
+  composition = false,
 ): { sale: Sale; change: StockChangeLine[] } {
   if (input.cart.length === 0) throw new SaleError("Add at least one medicine");
   if (input.cart.length > BILLING_LIMITS.maxLines) {
@@ -229,7 +234,7 @@ export function buildSale(
     const m = medicines.get(cartLine.medicineId);
     const err = validateCartLine(cartLine, m);
     if (err || !m) throw new SaleError(err ?? "Medicine not found");
-    const built = buildSaleLine(cartLine, m, batches, now);
+    const built = buildSaleLine(cartLine, m, batches, now, composition);
     lines.push(built.saleLine);
     change.push(...built.change);
   }
@@ -237,6 +242,11 @@ export function buildSale(
   const customerName =
     cleanText(input.customerName, BILLING_LIMITS.customerMax) || WALK_IN;
   const b2b = b2bParty(input.customerGstin, shopGstin, customerName);
+  // Composition shops may only sell within their own state
+  if (composition && b2b.interstate)
+    throw new SaleError(
+      "A composition shop can't bill a buyer from another state",
+    );
   const totals = calcSaleTotals(lines);
   // Another state: the whole GST is IGST (shown as such on the bill)
   if (b2b.interstate) {
@@ -269,6 +279,7 @@ export function buildSale(
       customerId: input.customerId ?? null,
       returnedPaise: 0,
       ...b2b,
+      ...(composition ? { billOfSupply: true } : {}),
       ...(input.patientAddress?.trim()
         ? { patientAddress: cleanText(input.patientAddress, 160) }
         : {}),

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { tr } from "@/lib/i18n";
 import { FormField } from "@/components/common/FormField";
 import { fieldClass, invalidFieldClass } from "@/components/common/formStyles";
 import {
@@ -143,6 +144,34 @@ export function ShopProfileSection() {
             aria-invalid={Boolean(f.errors.email)}
             className={cls("email")}
           />
+        </FormField>
+        <FormField
+          label="GST registration"
+          htmlFor={`${id}-scheme`}
+          error={f.errors.gstScheme}
+          hint={
+            f.draft.gstScheme === "composition"
+              ? "Bills print as “Bill of Supply”, no GST on them · you pay 1% of sales every quarter (CMP-08)"
+              : "Tax invoice with GST on every bill"
+          }
+          className="sm:col-span-2"
+        >
+          <select
+            id={`${id}-scheme`}
+            value={f.draft.gstScheme}
+            onChange={(e) =>
+              f.set("gstScheme", e.target.value as ShopProfile["gstScheme"])
+            }
+            aria-invalid={Boolean(f.errors.gstScheme)}
+            className={cls("gstScheme")}
+          >
+            <option value="regular">
+              {tr("Regular — tax invoice with GST")}
+            </option>
+            <option value="composition">
+              {tr("Composition scheme — bill of supply, 1% of turnover")}
+            </option>
+          </select>
         </FormField>
         <FormField
           label="Drug licence no(s). *"

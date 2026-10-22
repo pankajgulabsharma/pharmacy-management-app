@@ -1,0 +1,1 @@
+ALTER TABLE `sales` ADD `bill_of_supply` integer DEFAULT false NOT NULL;

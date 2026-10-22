@@ -15,6 +15,7 @@ import {
 import type { BillLineView } from "../hooks/useBillingData";
 import { PaymentPanel } from "../payment/PaymentPanel";
 import { tr } from "@/lib/i18n";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 type Props = {
   /** Shown when paying by udhaar: the customer account picker */
@@ -51,6 +52,9 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
 }: Props) {
   const { t } = useTranslation();
   const net = totals.netPaise;
+  const composition = useSettingsStore(
+    (s) => s.shop.gstScheme === "composition",
+  );
 
   const canSave = !blockReason && !saving;
 
@@ -130,7 +134,13 @@ export const BillSummaryPanel = memo(function BillSummaryPanel({
                   valueClass="text-emerald-600 dark:text-emerald-400"
                 />
               ) : null}
-              {interstate ? (
+              {composition ? (
+                <Row
+                  label="Bill of supply — no GST (composition)"
+                  value="—"
+                  valueClass="text-muted-foreground"
+                />
+              ) : interstate ? (
                 <Row
                   label="GST included (IGST — other state)"
                   value={inrFromPaise(totals.gstPaise)}

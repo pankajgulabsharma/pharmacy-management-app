@@ -112,6 +112,17 @@ describe("printed bill", () => {
     );
   });
 
+  it("composition: a Bill of Supply with no GST anywhere", () => {
+    const bos = { ...sale, billOfSupply: true };
+    for (const format of ["thermal80", "a4"] as const) {
+      const html = receiptHtml({ sale: bos, shop, footer: "", format });
+      expect(html).toContain("BILL OF SUPPLY");
+      expect(html).toContain("not eligible to collect tax");
+      expect(html).not.toContain("TAX INVOICE");
+      expect(html).not.toContain("CGST");
+    }
+  });
+
   it("thermal widths fit the roll", () => {
     expect(
       receiptHtml({ sale, shop, footer: "", format: "thermal80" }),

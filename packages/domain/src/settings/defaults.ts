@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
     email: "",
     gstin: "",
     drugLicense: "",
+    gstScheme: "regular",
   },
   billing: {
     defaultCounter: "Counter 1",
@@ -53,6 +54,7 @@ export const DEMO_SETTINGS: Settings = {
     email: "",
     gstin: "27AABCM1234F1ZX",
     drugLicense: "MH-TZ3-20B-552901 / 21B-552902",
+    gstScheme: "regular",
   },
   doctors: [
     "Dr. Prakash Iyer, MD (Cardiologist)",

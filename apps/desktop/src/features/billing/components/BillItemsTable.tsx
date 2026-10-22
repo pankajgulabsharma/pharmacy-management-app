@@ -13,6 +13,7 @@ import type { BillLineView } from "../hooks/useBillingData";
 import { sellsLoose, unitsPerPack } from "@medicare/domain/billing/allocate";
 import { BatchExpiry } from "./BatchExpiry";
 import { tr } from "@/lib/i18n";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 type Props = {
   lines: BillLineView[];
@@ -158,6 +159,10 @@ const BillRow = memo(function BillRow({
     shortExpiry,
   } = view;
   const name = m?.name ?? "Unknown medicine";
+  // Composition scheme: a Bill of Supply — no GST rate on the line
+  const composition = useSettingsStore(
+    (st) => st.shop.gstScheme === "composition",
+  );
 
   if (!m) {
     return (
@@ -203,7 +208,8 @@ const BillRow = memo(function BillRow({
           {m.name} <ScheduleBadge schedule={m.schedule} />
         </p>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          {m.brand} · HSN {m.hsn} · GST {m.gstPercent}%
+          {m.brand} · HSN {m.hsn}
+          {composition ? "" : ` · GST ${m.gstPercent}%`}
         </p>
         {m.rack ? (
           <p className="text-[10px] text-muted-foreground">Rack {m.rack}</p>

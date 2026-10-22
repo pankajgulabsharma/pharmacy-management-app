@@ -387,6 +387,8 @@ export const sales = sqliteTable(
     patientAddress: text("patient_address").notNull().default(""),
     /** Buyer in another state → IGST */
     interstate: bool("interstate"),
+    /** Composition scheme: a Bill of Supply, no GST */
+    billOfSupply: bool("bill_of_supply"),
     // totals
     itemCount: integer("item_count").notNull(),
     grossPaise: paise("gross_paise"),

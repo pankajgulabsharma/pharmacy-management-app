@@ -166,6 +166,11 @@ export type Sale = {
   /** Buyer in another state → IGST instead of CGST + SGST */
   interstate?: boolean;
   /**
+   * Made while the shop was on the composition scheme: a Bill of Supply,
+   * no GST charged (the shop pays 1% of turnover itself)
+   */
+  billOfSupply?: boolean;
+  /**
    * History imported from before this app tracked stock (demo: older
    * sales). Counted in reports, but never moved stock and can't be returned.
    */

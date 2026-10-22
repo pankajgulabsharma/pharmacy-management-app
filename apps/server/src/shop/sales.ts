@@ -81,6 +81,7 @@ export function completeSale(
       ),
       now,
       settings.shop.gstin,
+      settings.shop.gstScheme === "composition",
     );
     const { change } = built;
     const sale: Sale = billedBy ? { ...built.sale, billedBy } : built.sale;

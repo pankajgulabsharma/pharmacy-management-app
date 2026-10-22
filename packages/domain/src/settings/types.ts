@@ -11,7 +11,14 @@ export type ShopProfile = {
   gstin: string;
   /** Retail drug licence no(s). (Form 20 / 21) — printed on every bill */
   drugLicense: string;
+  /**
+   * GST registration type. "composition": bills are a Bill of Supply (no
+   * GST charged or shown), tax is 1% of turnover paid quarterly (CMP-08).
+   */
+  gstScheme: GstScheme;
 };
+
+export type GstScheme = "regular" | "composition";
 
 export type BillingPrefs = {
   defaultCounter: string;

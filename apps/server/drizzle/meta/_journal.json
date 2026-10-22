@@ -134,6 +134,13 @@
       "when": 1792677601595,
       "tag": "0018_purchase_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792678533700,
+      "tag": "0019_bill_of_supply",
+      "breakpoints": true
     }
   ]
 }
